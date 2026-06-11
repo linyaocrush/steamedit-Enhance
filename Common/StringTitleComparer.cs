@@ -19,6 +19,7 @@ internal class StringTitleComparer : IComparer<string>
 
 	public static string Normalize(string s)
 	{
+		if (s == null) return "";
 		s = s.Trim();
 		if (s.StartsWith("the ", StringComparison.InvariantCultureIgnoreCase))
 		{

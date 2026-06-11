@@ -178,6 +178,7 @@ internal static class SteamData
 			{
 				array[i].Kill();
 			}
+			// Intentionally ignoring cancellation/timeout — proceed with Save/Apply regardless
 			using (var dlg = new WaitingDialog(SteamEdit.Strings.SteamData_WaitingForClose))
 				dlg.ShowAndWait(() => Process.GetProcessesByName("steam").Length != 0);
 			flag = true;

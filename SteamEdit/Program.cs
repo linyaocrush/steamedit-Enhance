@@ -80,6 +80,7 @@ internal static class Program
             });
             if (!loading.ShowAndWait(() => !task.IsCompleted))
             {
+                Log.WriteLine("Load cancelled by user or timed out");
                 task.Wait(TimeSpan.FromSeconds(5));
                 return false;
             }
@@ -119,35 +120,41 @@ internal static class Program
 
     private static bool ResolveAndLoadAsyncFallback(SteamDataInitProps dataInit)
     {
-        string appInfoPath = ShowPathDialog();
-        if (appInfoPath == null) return false;
-
-        if (!LoadSteamData(ref dataInit, appInfoPath))
+        while (true)
         {
-            return ResolveAndLoadAsyncFallback(dataInit);
-        }
+            string appInfoPath = ShowPathDialog();
+            if (appInfoPath == null) return false;
 
-        Settings.Default.AppInfoPath = appInfoPath;
-        Settings.Default.Save();
-        return true;
+            if (LoadSteamData(ref dataInit, appInfoPath))
+            {
+                Settings.Default.AppInfoPath = appInfoPath;
+                Settings.Default.Save();
+                return true;
+            }
+        }
     }
 
     private static bool InitializeSteamData(ref SteamDataInitProps dataInit, bool tryCurrentPath, bool silent)
     {
-        string appInfoPath = ResolveAppInfoPath(trySavedPath: tryCurrentPath, allowManual: !silent);
-        if (appInfoPath == null) return false;
-
-        if (!LoadSteamData(ref dataInit, appInfoPath))
+        bool firstAttempt = true;
+        while (true)
         {
-            return InitializeSteamData(ref dataInit, tryCurrentPath: false, silent);
-        }
+            string appInfoPath = ResolveAppInfoPath(trySavedPath: firstAttempt && tryCurrentPath, allowManual: !silent);
+            if (appInfoPath == null) return false;
 
-        if (appInfoPath != Settings.Default.AppInfoPath)
-        {
-            Settings.Default.AppInfoPath = appInfoPath;
-            Settings.Default.Save();
+            if (LoadSteamData(ref dataInit, appInfoPath))
+            {
+                if (appInfoPath != Settings.Default.AppInfoPath)
+                {
+                    Settings.Default.AppInfoPath = appInfoPath;
+                    Settings.Default.Save();
+                }
+                return true;
+            }
+
+            if (silent) return false;
+            firstAttempt = false;
         }
-        return true;
     }
 
     [STAThread]

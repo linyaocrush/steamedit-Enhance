@@ -28,18 +28,7 @@ internal static class PropertyTableIO
 		writer.Write((byte)0);
 	}
 
-	private static string ReadString_0x00000000(BinaryReader reader)
-	{
-		byte[] buf = new byte[256];
-		int len = 0;
-		byte value;
-		while ((value = reader.ReadByte()) != 0)
-		{
-			if (len == buf.Length) Array.Resize(ref buf, buf.Length * 2);
-			buf[len++] = value;
-		}
-		return Encoding.UTF8.GetString(buf, 0, len);
-	}
+	private static string ReadString_0x00000000(BinaryReader reader) => ReadZString(reader);
 
 	private static string ReadWideString_0x00000000(BinaryReader reader)
 	{

@@ -288,7 +288,7 @@ internal class MainWindow : Form
 
 	private void SortEntries()
 	{
-		IAppInfoEntry selectedItem = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry selectedItem = appSelection.SelectedItem as IAppInfoEntry;
 		var keys = new Dictionary<IAppInfoEntry, string>(_entries.Count);
 		foreach (var e in _entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
 		_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
@@ -315,7 +315,7 @@ internal class MainWindow : Form
 
 	private void ResortEntry(IAppInfoEntry entry)
 	{
-		IAppInfoEntry selectedItem = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry selectedItem = appSelection.SelectedItem as IAppInfoEntry;
 		int i = _entries.IndexOf(entry);
 		int index = i;
 		while (i > 0 && StringTitleComparer.CompareStrings(entry.SortAs, _entries[i - 1].SortAs) < 0)
