@@ -28,6 +28,34 @@ SteamEdit 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo
 
 ---
 
+## 相比原版的新功能
+
+| 功能 | 说明 |
+|:---|:---|
+| **AI 翻译** | 集成 OpenAI 兼容 API，一键翻译游戏名称。支持自定义 API 地址、密钥、模型选择，可获取模型列表 |
+| **中英双语界面** | 支持 English 和简体中文，设置中即时切换，无需重启 |
+| **开机自启动** | 可设置 Windows 启动时自动运行，支持附加 `-autofix`（自动应用更改）和 `-forcestart`（重启 Steam）参数 |
+| **DPI 感知** | 启用 PerMonitorV2 高 DPI 支持，4K/高分屏不再模糊 |
+| **异步加载** | appinfo.vdf 加载过程异步执行，显示等待对话框，支持取消和 30 秒超时 |
+| **过滤防抖** | 搜索框输入时 500ms 防抖，避免频繁刷新列表 |
+
+---
+
+## 相比原版的优化
+
+| 优化 | 说明 |
+|:---|:---|
+| **属性查找加速** | PropertyTable 引入 Dictionary 并行存储，属性查找从 O(n) 降至 O(1) |
+| **日志缓冲写入** | StreamWriter 替代 File.AppendAllLines，每 20 条自动刷新，减少磁盘 I/O |
+| **代码重构** | 三个 AppInfoEntry 版本提取公共基类，消除 ~800 行重复代码 |
+| **路径解析合并** | 启动路径解析逻辑统一为单一方法，消除三重重复 |
+| **排序预计算** | 排序时预计算规范化键值，避免 O(n log n) 次重复字符串处理 |
+| **资源管理** | SHA1 等 IDisposable 资源正确释放，消除内存泄漏 |
+| **空引用防护** | 9+ 个事件处理器添加 null 检查，防止列表为空时崩溃 |
+| **UI 布局修复** | 自启动区域改用 FlowLayoutPanel，中文文本不再覆盖相邻控件 |
+
+---
+
 ## 功能特性
 
 | 功能 | 说明 |
@@ -39,8 +67,6 @@ SteamEdit 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo
 | **条目类型** | 修改游戏类型（Game、DLC、Demo 等） |
 | **控制器支持** | 批量设置控制器支持级别（无 / 部分 / 完整） |
 | **VR 类别** | 批量设置 VR 类别（默认 / 已移除） |
-| **中英双语** | 支持 English 和简体中文，可在设置中即时切换 |
-| **单文件发布** | 编译为单个 EXE 文件，无需安装 |
 
 ---
 
@@ -69,7 +95,7 @@ dotnet publish SteamEdit.csproj -c Release
 dotnet run --project SteamEdit.csproj
 ```
 
-发布产物位于 `publish_output/` 目录，仅包含 `SteamEdit.exe` 和 `SteamEdit.pdb`。
+发布产物位于 `bin/Release/net10.0-windows/win-x64/publish/` 目录，仅包含 `SteamEdit.exe`。
 
 ---
 
@@ -88,6 +114,15 @@ dotnet run --project SteamEdit.csproj
 2. 修改右侧的名称、排序、控制器支持等字段
 3. 点击 **保存** → **应用** → **重启 Steam** 使更改生效
 
+### AI 翻译
+
+1. 打开 **设置**，填写 AI API 地址（如 `https://api.openai.com/v1`）和 API Key
+2. 点击 **获取模型列表** 选择模型，或手动输入模型名称
+3. 选择目标翻译语言（简体中文 / English）
+4. 在主界面选择游戏，点击 **AI 翻译** 按钮即可自动翻译并填入名称
+
+支持所有兼容 OpenAI Chat Completions API 的服务（OpenAI、Claude API 中转、本地 Ollama 等）。
+
 ### 命令行模式
 
 ```bash
@@ -104,7 +139,7 @@ SteamEdit.exe -autofix -forcestart
 
 ## 国际化
 
-SteamEdit 内置英语和简体中文两种语言，通过 `.resx` 资源文件管理（共 108 个翻译键）。
+SteamEdit 内置英语和简体中文两种语言，通过 `.resx` 资源文件管理。
 
 ### 切换语言
 
@@ -127,7 +162,7 @@ steamedit/
 ├── SteamEdit/                    # WinForms UI 层
 │   ├── MainWindow.cs             # 主窗口（游戏列表 + 编辑面板）
 │   ├── LaunchEditor.cs           # 启动配置编辑器
-│   ├── SettingsDlg.cs            # 设置对话框（语言切换）
+│   ├── SettingsDlg.cs            # 设置对话框
 │   ├── ControllerBatch.cs        # 控制器支持批量修改
 │   ├── VRBatch.cs                # VR 类别批量修改
 │   ├── I18n.cs                   # 语言管理器
@@ -137,14 +172,17 @@ steamedit/
 ├── SteamEdit.Data/               # 核心数据模型与 I/O
 │   ├── SteamData.cs              # 数据加载/保存/应用
 │   ├── AppInfoFactory.cs         # 版本分发工厂
+│   ├── PropertyTable.cs          # 属性表（Dictionary 优化）
 │   └── Mods.cs                   # mods.dat 读写
 ├── SteamEdit.Data.Impl/          # appinfo.vdf 版本实现
+│   ├── AppInfoEntryBase.cs       # 入口基类（共享逻辑）
 │   ├── AppInfo_0x07564427.cs     # 旧版格式
 │   ├── AppInfo_0x07564428.cs     # 中版格式
 │   └── AppInfo_0x07564429.cs     # 新版格式
 ├── Common/                       # 共享工具
 │   ├── Settings.cs               # 用户设置（XML 序列化）
-│   ├── Log.cs                    # 日志
+│   ├── Log.cs                    # 缓冲日志
+│   ├── AiTranslator.cs           # AI 翻译（OpenAI 兼容 API）
 │   └── AppHelper.cs              # 路径与参数工具
 └── SteamEdit.csproj              # 项目文件
 ```
