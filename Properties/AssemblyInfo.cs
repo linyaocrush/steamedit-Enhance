@@ -1,0 +1,18 @@
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+
+[assembly: InternalsVisibleTo("SteamEditTests")]
+[assembly: AssemblyTitle("SteamEdit")]
+[assembly: AssemblyDescription("Tool for editing local Steam appinfo")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("Tim Green")]
+[assembly: AssemblyProduct("SteamEdit")]
+[assembly: AssemblyCopyright("Copyright © 2017-2025 Tim Green")]
+[assembly: AssemblyTrademark("")]
+[assembly: ComVisible(false)]
+[assembly: Guid("efbdb732-b46f-4189-9c91-7f33557bcbd5")]
+[assembly: AssemblyFileVersion("1.4.1")]
+[assembly: AssemblyVersion("1.4.1.0")]
