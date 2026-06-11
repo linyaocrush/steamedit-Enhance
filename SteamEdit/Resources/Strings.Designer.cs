@@ -52,6 +52,7 @@ namespace SteamEdit {
         internal static string MainWindow_BtnSaveApplyRestart => ResourceManager.GetString("MainWindow_BtnSaveApplyRestart", resourceCulture);
         internal static string MainWindow_BtnEditLaunch => ResourceManager.GetString("MainWindow_BtnEditLaunch", resourceCulture);
         internal static string MainWindow_BtnRevert => ResourceManager.GetString("MainWindow_BtnRevert", resourceCulture);
+        internal static string MainWindow_BtnTranslate => ResourceManager.GetString("MainWindow_BtnTranslate", resourceCulture);
         internal static string MainWindow_LabelName => ResourceManager.GetString("MainWindow_LabelName", resourceCulture);
         internal static string MainWindow_LabelSortAs => ResourceManager.GetString("MainWindow_LabelSortAs", resourceCulture);
         internal static string MainWindow_LabelControllerSupport => ResourceManager.GetString("MainWindow_LabelControllerSupport", resourceCulture);
@@ -92,6 +93,16 @@ namespace SteamEdit {
         internal static string Tooltip_AutoStart => ResourceManager.GetString("Tooltip_AutoStart", resourceCulture);
         internal static string Tooltip_AutoStartAutoFix => ResourceManager.GetString("Tooltip_AutoStartAutoFix", resourceCulture);
         internal static string Tooltip_AutoStartForceStart => ResourceManager.GetString("Tooltip_AutoStartForceStart", resourceCulture);
+        internal static string Settings_AiApiUrl => ResourceManager.GetString("Settings_AiApiUrl", resourceCulture);
+        internal static string Settings_AiApiKey => ResourceManager.GetString("Settings_AiApiKey", resourceCulture);
+        internal static string Settings_AiTargetLanguage => ResourceManager.GetString("Settings_AiTargetLanguage", resourceCulture);
+        internal static string Tooltip_AiApiUrl => ResourceManager.GetString("Tooltip_AiApiUrl", resourceCulture);
+        internal static string Tooltip_AiApiKey => ResourceManager.GetString("Tooltip_AiApiKey", resourceCulture);
+        internal static string Tooltip_Translate => ResourceManager.GetString("Tooltip_Translate", resourceCulture);
+        internal static string Msg_Translating => ResourceManager.GetString("Msg_Translating", resourceCulture);
+        internal static string Msg_TranslateFailed => ResourceManager.GetString("Msg_TranslateFailed", resourceCulture);
+        internal static string AiLang_zhCN => ResourceManager.GetString("AiLang_zhCN", resourceCulture);
+        internal static string AiLang_en => ResourceManager.GetString("AiLang_en", resourceCulture);
         internal static string LaunchEditor_Title => ResourceManager.GetString("LaunchEditor_Title", resourceCulture);
         internal static string LaunchEditor_LabelInstallPath => ResourceManager.GetString("LaunchEditor_LabelInstallPath", resourceCulture);
         internal static string LaunchEditor_BtnAddNew => ResourceManager.GetString("LaunchEditor_BtnAddNew", resourceCulture);

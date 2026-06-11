@@ -65,6 +65,9 @@
   <data name="MainWindow_BtnRevert" xml:space="preserve">
     <value>Revert Game</value>
   </data>
+  <data name="MainWindow_BtnTranslate" xml:space="preserve">
+    <value>AI Translate</value>
+  </data>
   <data name="MainWindow_LabelName" xml:space="preserve">
     <value>Name:</value>
   </data>
@@ -188,6 +191,36 @@
   </data>
   <data name="Tooltip_AutoStartForceStart" xml:space="preserve">
     <value>Also restart Steam after applying changes (forcestart). Requires autofix.</value>
+  </data>
+  <data name="Settings_AiApiUrl" xml:space="preserve">
+    <value>AI API URL</value>
+  </data>
+  <data name="Settings_AiApiKey" xml:space="preserve">
+    <value>AI API Key</value>
+  </data>
+  <data name="Settings_AiTargetLanguage" xml:space="preserve">
+    <value>AI Target Language</value>
+  </data>
+  <data name="Tooltip_AiApiUrl" xml:space="preserve">
+    <value>OpenAI-compatible API endpoint (e.g. https://api.openai.com/v1/chat/completions)</value>
+  </data>
+  <data name="Tooltip_AiApiKey" xml:space="preserve">
+    <value>API key for AI translation service</value>
+  </data>
+  <data name="Tooltip_Translate" xml:space="preserve">
+    <value>Translate game name using AI</value>
+  </data>
+  <data name="Msg_Translating" xml:space="preserve">
+    <value>Translating...</value>
+  </data>
+  <data name="Msg_TranslateFailed" xml:space="preserve">
+    <value>Translation failed: {0}</value>
+  </data>
+  <data name="AiLang_zhCN" xml:space="preserve">
+    <value>Simplified Chinese</value>
+  </data>
+  <data name="AiLang_en" xml:space="preserve">
+    <value>English</value>
   </data>
 
   <!-- LaunchEditor -->

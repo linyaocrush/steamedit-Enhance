@@ -52,6 +52,18 @@ internal class SettingsDlg : Form
 
     private FlowLayoutPanel panelAutoStartSub;
 
+    private Label lblAiApiUrl;
+
+    private TextBox textAiApiUrl;
+
+    private Label lblAiApiKey;
+
+    private TextBox textAiApiKey;
+
+    private Label lblAiTargetLanguage;
+
+    private ComboBox comboAiTargetLanguage;
+
     private bool _loading;
     private bool _snapshotAutoStart;
     private bool _snapshotAutoFix;
@@ -76,6 +88,8 @@ internal class SettingsDlg : Form
         _snapshotAutoStart = Settings.Default.AutoStart;
         _snapshotAutoFix = Settings.Default.AutoStartAutoFix;
         _snapshotForceStart = Settings.Default.AutoStartForceStart;
+        textAiApiUrl.Text = Settings.Default.AiApiUrl;
+        textAiApiKey.Text = Settings.Default.AiApiKey;
         _loading = false;
         UpdateAutoStartSubEnabled();
 
@@ -93,6 +107,9 @@ internal class SettingsDlg : Form
             comboLanguage.SelectedIndex = 0;
         }
 
+        string aiLang = Settings.Default.AiTargetLanguage;
+        comboAiTargetLanguage.SelectedIndex = aiLang == "en" ? 1 : 0;
+
         ApplyLanguage();
     }
 
@@ -108,6 +125,9 @@ internal class SettingsDlg : Form
             Settings.Default.AutoStart = checkAutoStart.Checked;
             Settings.Default.AutoStartAutoFix = checkAutoStartAutoFix.Checked;
             Settings.Default.AutoStartForceStart = checkAutoStartForceStart.Checked;
+            Settings.Default.AiApiUrl = textAiApiUrl.Text;
+            Settings.Default.AiApiKey = textAiApiKey.Text;
+            Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : "zh-CN";
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
         }
@@ -236,16 +256,21 @@ internal class SettingsDlg : Form
         checkAutoStartAutoFix.Text = Strings.Settings_AutoStartAutoFix;
         checkAutoStartForceStart.Text = Strings.Settings_AutoStartForceStart;
         checkReplaceLocalizedNames.Text = "";
+        lblAiApiUrl.Text = Strings.Settings_AiApiUrl;
+        lblAiApiKey.Text = Strings.Settings_AiApiKey;
+        lblAiTargetLanguage.Text = Strings.Settings_AiTargetLanguage;
+        comboAiTargetLanguage.Items[0] = Strings.AiLang_zhCN;
+        comboAiTargetLanguage.Items[1] = Strings.AiLang_en;
         toolTip.SetToolTip(checkReplaceLocalizedNames, Strings.Tooltip_ReplaceLocalizedNames);
-        checkEnabledHidden.Text = "";
         toolTip.SetToolTip(checkEnabledHidden, Strings.Tooltip_EnableHidden);
-        checkEnableCompleted.Text = "";
         toolTip.SetToolTip(checkEnableCompleted, Strings.Tooltip_EnableCompleted);
         toolTip.SetToolTip(textAppInfoPath, Strings.Tooltip_AppInfoPath);
         toolTip.SetToolTip(textPassThroughArgs, Strings.Tooltip_PassThroughArgs);
         toolTip.SetToolTip(checkAutoStart, Strings.Tooltip_AutoStart);
         toolTip.SetToolTip(checkAutoStartAutoFix, Strings.Tooltip_AutoStartAutoFix);
         toolTip.SetToolTip(checkAutoStartForceStart, Strings.Tooltip_AutoStartForceStart);
+        toolTip.SetToolTip(textAiApiUrl, Strings.Tooltip_AiApiUrl);
+        toolTip.SetToolTip(textAiApiKey, Strings.Tooltip_AiApiKey);
     }
 
     protected override void OnLoad(EventArgs e)
@@ -294,6 +319,12 @@ internal class SettingsDlg : Form
         this.checkAutoStartAutoFix = new System.Windows.Forms.CheckBox();
         this.checkAutoStartForceStart = new System.Windows.Forms.CheckBox();
         this.panelAutoStartSub = new System.Windows.Forms.FlowLayoutPanel();
+        this.lblAiApiUrl = new System.Windows.Forms.Label();
+        this.textAiApiUrl = new System.Windows.Forms.TextBox();
+        this.lblAiApiKey = new System.Windows.Forms.Label();
+        this.textAiApiKey = new System.Windows.Forms.TextBox();
+        this.lblAiTargetLanguage = new System.Windows.Forms.Label();
+        this.comboAiTargetLanguage = new System.Windows.Forms.ComboBox();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
         panel.SuspendLayout();
@@ -302,7 +333,7 @@ internal class SettingsDlg : Form
         // btnOK
         button.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 280);
+        button.Location = new System.Drawing.Point(12, 395);
         button.Name = "btnOK";
         button.Size = new System.Drawing.Size(88, 30);
         button.TabIndex = 3;
@@ -311,83 +342,65 @@ internal class SettingsDlg : Form
         button.Click += new System.EventHandler(btnOK_Click);
         // label1 (Completed)
         this.label1.AutoSize = true;
-        this.label1.Location = new System.Drawing.Point(6, 6);
         this.label1.Margin = new System.Windows.Forms.Padding(6);
         this.label1.Name = "label1";
-        this.label1.Size = new System.Drawing.Size(103, 13);
         this.label1.TabIndex = 0;
         this.label1.Text = "Enable \"Completed\"";
         // label2 (Hidden)
         this.label2.AutoSize = true;
-        this.label2.Location = new System.Drawing.Point(6, 32);
         this.label2.Margin = new System.Windows.Forms.Padding(6);
         this.label2.Name = "label2";
-        this.label2.Size = new System.Drawing.Size(87, 13);
         this.label2.TabIndex = 1;
         this.label2.Text = "Enable \"Hidden\"";
         // lblLanguage
         this.lblLanguage.AutoSize = true;
-        this.lblLanguage.Location = new System.Drawing.Point(6, 58);
         this.lblLanguage.Margin = new System.Windows.Forms.Padding(6);
         this.lblLanguage.Name = "lblLanguage";
-        this.lblLanguage.Size = new System.Drawing.Size(55, 13);
         this.lblLanguage.TabIndex = 10;
         this.lblLanguage.Text = "Language:";
         // comboLanguage
         this.comboLanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
         this.comboLanguage.FormattingEnabled = true;
         this.comboLanguage.Items.AddRange(new object[] { "English", "简体中文" });
-        this.comboLanguage.Location = new System.Drawing.Point(168, 55);
         this.comboLanguage.Name = "comboLanguage";
         this.comboLanguage.Size = new System.Drawing.Size(121, 21);
         this.comboLanguage.TabIndex = 11;
         this.comboLanguage.SelectedIndexChanged += new System.EventHandler(comboLanguage_SelectedIndexChanged);
         // label5 (ReplaceLocalizedNames)
         this.label5.AutoSize = true;
-        this.label5.Location = new System.Drawing.Point(6, 84);
         this.label5.Margin = new System.Windows.Forms.Padding(6);
         this.label5.Name = "label5";
-        this.label5.Size = new System.Drawing.Size(145, 13);
         this.label5.TabIndex = 9;
         this.label5.Text = "Replace All Localized Names";
         // checkReplaceLocalizedNames
         this.checkReplaceLocalizedNames.AutoSize = true;
-        this.checkReplaceLocalizedNames.Location = new System.Drawing.Point(171, 84);
         this.checkReplaceLocalizedNames.Margin = new System.Windows.Forms.Padding(6);
         this.checkReplaceLocalizedNames.Name = "checkReplaceLocalizedNames";
-        this.checkReplaceLocalizedNames.Size = new System.Drawing.Size(15, 14);
         this.checkReplaceLocalizedNames.TabIndex = 8;
         this.toolTip.SetToolTip(this.checkReplaceLocalizedNames, "Replace all localized game names with the original name.");
         this.checkReplaceLocalizedNames.UseVisualStyleBackColor = true;
         // checkEnabledHidden
         this.checkEnabledHidden.AutoSize = true;
-        this.checkEnabledHidden.Location = new System.Drawing.Point(171, 32);
         this.checkEnabledHidden.Margin = new System.Windows.Forms.Padding(6);
         this.checkEnabledHidden.Name = "checkEnabledHidden";
-        this.checkEnabledHidden.Size = new System.Drawing.Size(15, 14);
         this.checkEnabledHidden.TabIndex = 1;
         this.toolTip.SetToolTip(this.checkEnabledHidden, "Hide games in Steam's list.");
         this.checkEnabledHidden.UseVisualStyleBackColor = true;
         // checkEnableCompleted
         this.checkEnableCompleted.AutoSize = true;
-        this.checkEnableCompleted.Location = new System.Drawing.Point(171, 6);
         this.checkEnableCompleted.Margin = new System.Windows.Forms.Padding(6);
         this.checkEnableCompleted.Name = "checkEnableCompleted";
-        this.checkEnableCompleted.Size = new System.Drawing.Size(15, 14);
         this.checkEnableCompleted.TabIndex = 0;
         this.toolTip.SetToolTip(this.checkEnableCompleted, "Append symbol on completed games");
         this.checkEnableCompleted.UseVisualStyleBackColor = true;
         // label4 (PassThrough)
         this.label4.AutoSize = true;
-        this.label4.Location = new System.Drawing.Point(6, 110);
         this.label4.Margin = new System.Windows.Forms.Padding(6);
         this.label4.Name = "label4";
-        this.label4.Size = new System.Drawing.Size(126, 13);
         this.label4.TabIndex = 4;
         this.label4.Text = "Pass-Through Arguments";
         // textPassThroughArgs
         this.textPassThroughArgs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-        this.textPassThroughArgs.Location = new System.Drawing.Point(168, 107);
         this.textPassThroughArgs.Name = "textPassThroughArgs";
         this.textPassThroughArgs.Size = new System.Drawing.Size(224, 20);
         this.textPassThroughArgs.TabIndex = 5;
@@ -396,16 +409,13 @@ internal class SettingsDlg : Form
         panel.Controls.Add(button2);
         panel.Controls.Add(this.textAppInfoPath);
         panel.Dock = System.Windows.Forms.DockStyle.Fill;
-        panel.Location = new System.Drawing.Point(165, 157);
         panel.Margin = new System.Windows.Forms.Padding(0);
         panel.Name = "panel1";
-        panel.Size = new System.Drawing.Size(230, 27);
         panel.TabIndex = 7;
         // btnSelectAppInfo
         button2.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
         button2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
         button2.Image = SteamEdit.Properties.Resources.openfolderHS;
-        button2.Location = new System.Drawing.Point(201, 0);
         button2.Margin = new System.Windows.Forms.Padding(0);
         button2.Name = "btnSelectAppInfo";
         button2.Size = new System.Drawing.Size(26, 25);
@@ -414,25 +424,20 @@ internal class SettingsDlg : Form
         button2.Click += new System.EventHandler(btnSelectAppInfo_Click);
         // textAppInfoPath
         this.textAppInfoPath.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-        this.textAppInfoPath.Location = new System.Drawing.Point(3, 3);
         this.textAppInfoPath.Name = "textAppInfoPath";
         this.textAppInfoPath.Size = new System.Drawing.Size(195, 20);
         this.textAppInfoPath.TabIndex = 7;
         this.toolTip.SetToolTip(this.textAppInfoPath, "Path to Steam's appinfo.vdf file");
         // label6 (AppInfo Path)
         this.label6.AutoSize = true;
-        this.label6.Location = new System.Drawing.Point(6, 139);
         this.label6.Margin = new System.Windows.Forms.Padding(6);
         this.label6.Name = "label6";
-        this.label6.Size = new System.Drawing.Size(147, 13);
         this.label6.TabIndex = 6;
         this.label6.Text = "AppInfo Path (requires restart)";
         // lblAutoStart
         this.lblAutoStart.AutoSize = true;
-        this.lblAutoStart.Location = new System.Drawing.Point(6, 7);
         this.lblAutoStart.Margin = new System.Windows.Forms.Padding(6);
         this.lblAutoStart.Name = "lblAutoStart";
-        this.lblAutoStart.Size = new System.Drawing.Size(80, 13);
         this.lblAutoStart.TabIndex = 13;
         this.lblAutoStart.Text = "Start on Boot";
         // checkAutoStart
@@ -473,8 +478,45 @@ internal class SettingsDlg : Form
         this.panelAutoStartSub.WrapContents = false;
         this.panelAutoStartSub.Margin = new System.Windows.Forms.Padding(0);
         this.panelAutoStartSub.Name = "panelAutoStartSub";
-        this.panelAutoStartSub.Size = new System.Drawing.Size(230, 0);
         this.panelAutoStartSub.TabIndex = 17;
+        // lblAiApiUrl
+        this.lblAiApiUrl.AutoSize = true;
+        this.lblAiApiUrl.Margin = new System.Windows.Forms.Padding(6);
+        this.lblAiApiUrl.Name = "lblAiApiUrl";
+        this.lblAiApiUrl.TabIndex = 18;
+        this.lblAiApiUrl.Text = "AI API URL";
+        // textAiApiUrl
+        this.textAiApiUrl.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.textAiApiUrl.Name = "textAiApiUrl";
+        this.textAiApiUrl.Size = new System.Drawing.Size(224, 20);
+        this.textAiApiUrl.TabIndex = 19;
+        this.toolTip.SetToolTip(this.textAiApiUrl, "OpenAI-compatible API endpoint");
+        // lblAiApiKey
+        this.lblAiApiKey.AutoSize = true;
+        this.lblAiApiKey.Margin = new System.Windows.Forms.Padding(6);
+        this.lblAiApiKey.Name = "lblAiApiKey";
+        this.lblAiApiKey.TabIndex = 20;
+        this.lblAiApiKey.Text = "AI API Key";
+        // textAiApiKey
+        this.textAiApiKey.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.textAiApiKey.Name = "textAiApiKey";
+        this.textAiApiKey.Size = new System.Drawing.Size(224, 20);
+        this.textAiApiKey.TabIndex = 21;
+        this.textAiApiKey.UseSystemPasswordChar = true;
+        this.toolTip.SetToolTip(this.textAiApiKey, "API key for AI translation service");
+        // lblAiTargetLanguage
+        this.lblAiTargetLanguage.AutoSize = true;
+        this.lblAiTargetLanguage.Margin = new System.Windows.Forms.Padding(6);
+        this.lblAiTargetLanguage.Name = "lblAiTargetLanguage";
+        this.lblAiTargetLanguage.TabIndex = 22;
+        this.lblAiTargetLanguage.Text = "AI Target Language";
+        // comboAiTargetLanguage
+        this.comboAiTargetLanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+        this.comboAiTargetLanguage.FormattingEnabled = true;
+        this.comboAiTargetLanguage.Items.AddRange(new object[] { "简体中文", "English" });
+        this.comboAiTargetLanguage.Name = "comboAiTargetLanguage";
+        this.comboAiTargetLanguage.Size = new System.Drawing.Size(121, 21);
+        this.comboAiTargetLanguage.TabIndex = 23;
         // tableLayoutPanel
         tableLayoutPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         tableLayoutPanel.ColumnCount = 2;
@@ -494,10 +536,16 @@ internal class SettingsDlg : Form
         tableLayoutPanel.Controls.Add(panel, 1, 5);
         tableLayoutPanel.Controls.Add(this.lblAutoStart, 0, 6);
         tableLayoutPanel.Controls.Add(this.panelAutoStartSub, 1, 6);
+        tableLayoutPanel.Controls.Add(this.lblAiApiUrl, 0, 7);
+        tableLayoutPanel.Controls.Add(this.textAiApiUrl, 1, 7);
+        tableLayoutPanel.Controls.Add(this.lblAiApiKey, 0, 8);
+        tableLayoutPanel.Controls.Add(this.textAiApiKey, 1, 8);
+        tableLayoutPanel.Controls.Add(this.lblAiTargetLanguage, 0, 9);
+        tableLayoutPanel.Controls.Add(this.comboAiTargetLanguage, 1, 9);
         tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
         tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
         tableLayoutPanel.Name = "tableLayoutPanel1";
-        tableLayoutPanel.RowCount = 7;
+        tableLayoutPanel.RowCount = 10;
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -505,12 +553,15 @@ internal class SettingsDlg : Form
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.Size = new System.Drawing.Size(395, 265);
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.Size = new System.Drawing.Size(395, 380);
         tableLayoutPanel.TabIndex = 7;
         // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-        button3.Location = new System.Drawing.Point(106, 280);
+        button3.Location = new System.Drawing.Point(106, 395);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
         button3.TabIndex = 8;
@@ -521,7 +572,7 @@ internal class SettingsDlg : Form
         base.AcceptButton = button;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
         base.CancelButton = button3;
-        base.ClientSize = new System.Drawing.Size(413, 316);
+        base.ClientSize = new System.Drawing.Size(413, 431);
         base.ControlBox = false;
         base.Controls.Add(button3);
         base.Controls.Add(tableLayoutPanel);

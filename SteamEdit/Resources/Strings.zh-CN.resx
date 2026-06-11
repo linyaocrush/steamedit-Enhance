@@ -65,6 +65,9 @@
   <data name="MainWindow_BtnRevert" xml:space="preserve">
     <value>还原游戏</value>
   </data>
+  <data name="MainWindow_BtnTranslate" xml:space="preserve">
+    <value>AI 翻译</value>
+  </data>
   <data name="MainWindow_LabelName" xml:space="preserve">
     <value>名称：</value>
   </data>
@@ -188,6 +191,36 @@
   </data>
   <data name="Tooltip_AutoStartForceStart" xml:space="preserve">
     <value>应用更改后重启 Steam (forcestart)，需要勾选 autofix</value>
+  </data>
+  <data name="Settings_AiApiUrl" xml:space="preserve">
+    <value>AI 接口地址</value>
+  </data>
+  <data name="Settings_AiApiKey" xml:space="preserve">
+    <value>AI 密钥</value>
+  </data>
+  <data name="Settings_AiTargetLanguage" xml:space="preserve">
+    <value>AI 目标语言</value>
+  </data>
+  <data name="Tooltip_AiApiUrl" xml:space="preserve">
+    <value>兼容 OpenAI 的 API 接口地址（如 https://api.openai.com/v1/chat/completions）</value>
+  </data>
+  <data name="Tooltip_AiApiKey" xml:space="preserve">
+    <value>AI 翻译服务的 API 密钥</value>
+  </data>
+  <data name="Tooltip_Translate" xml:space="preserve">
+    <value>使用 AI 翻译游戏名称</value>
+  </data>
+  <data name="Msg_Translating" xml:space="preserve">
+    <value>翻译中...</value>
+  </data>
+  <data name="Msg_TranslateFailed" xml:space="preserve">
+    <value>翻译失败：{0}</value>
+  </data>
+  <data name="AiLang_zhCN" xml:space="preserve">
+    <value>简体中文</value>
+  </data>
+  <data name="AiLang_en" xml:space="preserve">
+    <value>英文</value>
   </data>
 
   <!-- LaunchEditor -->

@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
@@ -78,6 +79,8 @@ internal class MainWindow : Form
 	private Button btnSettings;
 
 	private Button btnHelp;
+
+	private Button btnTranslate;
 
 	private ComboBox listVR;
 
@@ -470,6 +473,7 @@ internal class MainWindow : Form
 		checkCompleted.Enabled = flag;
 		btnEditLaunch.Enabled = flag;
 		btnRevert.Enabled = flag;
+		btnTranslate.Enabled = flag && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 		listControllerSupport.Enabled = flag;
 		listVR.Enabled = flag;
 		btnVRBatch.Enabled = flag;
@@ -704,6 +708,8 @@ internal class MainWindow : Form
 		btnSave.Text = Strings.MainWindow_BtnSave;
 		btnSaveApply.Text = Strings.MainWindow_BtnSaveApply;
 		btnSaveApplyRestart.Text = Strings.MainWindow_BtnSaveApplyRestart;
+		btnTranslate.Text = Strings.MainWindow_BtnTranslate;
+		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
 		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
 		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
 		toolTips.SetToolTip(btnSaveApplyRestart, Strings.Tooltip_SaveApplyRestart);
@@ -799,6 +805,35 @@ internal class MainWindow : Form
 				SteamData.AppInfoData.RemoveEntry(appInfoEntry);
 				RefreshGameList();
 			}
+		}
+	}
+
+	private async void OnBtnTranslate_Click(object sender, EventArgs e)
+	{
+		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		string originalName = entry.Name;
+		if (string.IsNullOrWhiteSpace(originalName)) return;
+
+		string targetLang = Settings.Default.AiTargetLanguage;
+		btnTranslate.Enabled = false;
+		btnTranslate.Text = Strings.Msg_Translating;
+
+		try
+		{
+			string translated = await AiTranslator.TranslateAsync(originalName, targetLang);
+			if (!string.IsNullOrWhiteSpace(translated) && translated != originalName)
+			{
+				textGameName.Text = translated;
+			}
+		}
+		catch (Exception ex)
+		{
+			MessageBox.Show(this, string.Format(Strings.Msg_TranslateFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+		}
+		finally
+		{
+			btnTranslate.Text = Strings.MainWindow_BtnTranslate;
+			btnTranslate.Enabled = true;
 		}
 	}
 
@@ -1129,6 +1164,7 @@ internal class MainWindow : Form
 		this.components = new System.ComponentModel.Container();
 		this.btnEditLaunch = new System.Windows.Forms.Button();
 		this.btnRevert = new System.Windows.Forms.Button();
+		this.btnTranslate = new System.Windows.Forms.Button();
 		this.lblNumAppsShown = new System.Windows.Forms.ToolStripStatusLabel();
 		this.checkCompleted = new System.Windows.Forms.CheckBox();
 		this.checkHidden = new System.Windows.Forms.CheckBox();
@@ -1211,6 +1247,7 @@ internal class MainWindow : Form
 		flowLayoutPanel.BackColor = System.Drawing.Color.Transparent;
 		flowLayoutPanel.Controls.Add(this.btnEditLaunch);
 		flowLayoutPanel.Controls.Add(this.btnRevert);
+		flowLayoutPanel.Controls.Add(this.btnTranslate);
 		flowLayoutPanel.Location = new System.Drawing.Point(14, 151);
 		flowLayoutPanel.Margin = new System.Windows.Forms.Padding(2);
 		flowLayoutPanel.Name = "flowLayoutPanel2";
@@ -1231,6 +1268,12 @@ internal class MainWindow : Form
 		this.btnRevert.Text = "Revert Game";
 		this.btnRevert.UseVisualStyleBackColor = true;
 		this.btnRevert.Click += new System.EventHandler(OnBtnRevert_Click);
+		this.btnTranslate.Name = "btnTranslate";
+		this.btnTranslate.Size = new System.Drawing.Size(75, 34);
+		this.btnTranslate.TabIndex = 2;
+		this.btnTranslate.Text = "AI Translate";
+		this.btnTranslate.UseVisualStyleBackColor = true;
+		this.btnTranslate.Click += new System.EventHandler(OnBtnTranslate_Click);
 		flowLayoutPanel2.AutoSize = true;
 		flowLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 		flowLayoutPanel2.Controls.Add(this.btnSave);

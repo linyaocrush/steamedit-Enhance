@@ -250,6 +250,45 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue("")]
+	public string AiApiUrl
+	{
+		get
+		{
+			return (string)_values["AiApiUrl"];
+		}
+		set
+		{
+			_values["AiApiUrl"] = value;
+		}
+	}
+
+	[DefaultValue("")]
+	public string AiApiKey
+	{
+		get
+		{
+			return (string)_values["AiApiKey"];
+		}
+		set
+		{
+			_values["AiApiKey"] = value;
+		}
+	}
+
+	[DefaultValue("zh-CN")]
+	public string AiTargetLanguage
+	{
+		get
+		{
+			return (string)_values["AiTargetLanguage"];
+		}
+		set
+		{
+			_values["AiTargetLanguage"] = value;
+		}
+	}
+
 	private Settings()
 	{
 		_values = new Dictionary<string, object>();
