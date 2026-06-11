@@ -13,8 +13,13 @@ internal static class AiTranslator
 
 	public static async Task<string> TranslateAsync(string gameName, string targetLanguage, CancellationToken cancellationToken = default)
 	{
-		string apiUrl = Settings.Default.AiApiUrl;
+		string apiUrl = Settings.Default.AiApiUrl.TrimEnd('/');
 		string apiKey = Settings.Default.AiApiKey;
+
+		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
+		{
+			apiUrl += "/chat/completions";
+		}
 
 		if (string.IsNullOrWhiteSpace(apiUrl))
 			throw new InvalidOperationException("AI API URL is not configured.");
