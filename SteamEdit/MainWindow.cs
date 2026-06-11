@@ -47,6 +47,8 @@ internal class MainWindow : Form
 
 	private Timer appSearchTermTimer = new Timer();
 
+	private Timer _filterDebounceTimer = new Timer();
+
 	private ImageAttributes _bgLogoAttributes;
 
 	private int appSelection_LastHoverI = -1;
@@ -140,6 +142,12 @@ internal class MainWindow : Form
 		{
 			appSearchTerm.Clear();
 			appSearchTermTimer.Stop();
+		};
+		_filterDebounceTimer.Interval = 500;
+		_filterDebounceTimer.Tick += delegate
+		{
+			_filterDebounceTimer.Stop();
+			RefreshGameList();
 		};
 		_currentFilters = Settings.Default.Filters;
 		_filterImages = new Dictionary<AppInfoEntryType, Image>
@@ -960,7 +968,8 @@ internal class MainWindow : Form
 
 	private void OnAppFilterText_TextChanged(object sender, EventArgs e)
 	{
-		RefreshGameList();
+		_filterDebounceTimer.Stop();
+		_filterDebounceTimer.Start();
 	}
 
 	private void OnAppSelection_SizeChanged(object sender, EventArgs e)
