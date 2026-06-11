@@ -92,10 +92,10 @@ dotnet run --project SteamEdit.csproj
 
 ```bash
 # 自动应用待处理更改（无 GUI）
-SteamEdit.exe autofix
+SteamEdit.exe -autofix
 
 # 自动应用并重启 Steam
-SteamEdit.exe autofix forcestart
+SteamEdit.exe -autofix -forcestart
 ```
 
 适合配合计划任务实现定期自动维护。

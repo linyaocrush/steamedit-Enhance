@@ -473,7 +473,7 @@ internal class SettingsDlg : Form
         this.panelAutoStartSub.WrapContents = false;
         this.panelAutoStartSub.Margin = new System.Windows.Forms.Padding(0);
         this.panelAutoStartSub.Name = "panelAutoStartSub";
-        this.panelAutoStartSub.Size = new System.Drawing.Size(230, 27);
+        this.panelAutoStartSub.Size = new System.Drawing.Size(230, 0);
         this.panelAutoStartSub.TabIndex = 17;
         // tableLayoutPanel
         tableLayoutPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
