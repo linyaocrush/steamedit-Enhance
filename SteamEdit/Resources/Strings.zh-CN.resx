@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- MainWindow -->
+  <data name="MainWindow_Title" xml:space="preserve">
+    <value>SteamEdit</value>
+  </data>
+  <data name="MainWindow_UnsavedSuffix" xml:space="preserve">
+    <value> [未保存]</value>
+  </data>
+  <data name="MainWindow_UnappliedSuffix" xml:space="preserve">
+    <value> [未应用]</value>
+  </data>
+  <data name="MainWindow_BtnSave" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="MainWindow_BtnSaveApply" xml:space="preserve">
+    <value>保存并应用</value>
+  </data>
+  <data name="MainWindow_BtnSaveApplyRestart" xml:space="preserve">
+    <value>保存并应用并重启</value>
+  </data>
+  <data name="MainWindow_BtnEditLaunch" xml:space="preserve">
+    <value>编辑启动项</value>
+  </data>
+  <data name="MainWindow_BtnRevert" xml:space="preserve">
+    <value>还原游戏</value>
+  </data>
+  <data name="MainWindow_LabelName" xml:space="preserve">
+    <value>名称：</value>
+  </data>
+  <data name="MainWindow_LabelSortAs" xml:space="preserve">
+    <value>排序依据：</value>
+  </data>
+  <data name="MainWindow_LabelControllerSupport" xml:space="preserve">
+    <value>控制器支持：</value>
+  </data>
+  <data name="MainWindow_LabelVRCategory" xml:space="preserve">
+    <value>VR 分类：</value>
+  </data>
+  <data name="MainWindow_CheckHidden" xml:space="preserve">
+    <value>隐藏</value>
+  </data>
+  <data name="MainWindow_CheckCompleted" xml:space="preserve">
+    <value>已完成</value>
+  </data>
+  <data name="MainWindow_StatusShown" xml:space="preserve">
+    <value>显示：({0}/{1})</value>
+  </data>
+  <data name="MainWindow_Filter_All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="MainWindow_Filter_OnlyModified" xml:space="preserve">
+    <value>仅已修改</value>
+  </data>
+  <data name="MainWindow_Filter_OnlyUnmodified" xml:space="preserve">
+    <value>仅未修改</value>
+  </data>
+  <data name="MainWindow_Controller_None" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="MainWindow_Controller_Partial" xml:space="preserve">
+    <value>部分</value>
+  </data>
+  <data name="MainWindow_Controller_Full" xml:space="preserve">
+    <value>完整</value>
+  </data>
+  <data name="MainWindow_VR_Default" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="MainWindow_VR_Removed" xml:space="preserve">
+    <value>已移除</value>
+  </data>
+
+  <!-- Tooltips -->
+  <data name="Tooltip_Save" xml:space="preserve">
+    <value>将所有编辑保存到 mods 文件</value>
+  </data>
+  <data name="Tooltip_SaveApply" xml:space="preserve">
+    <value>将所有编辑保存到 mods 文件，并应用到 Steam。</value>
+  </data>
+  <data name="Tooltip_SaveApplyRestart" xml:space="preserve">
+    <value>保存编辑，应用到 Steam，并重启 Steam。</value>
+  </data>
+  <data name="Tooltip_Settings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Tooltip_About" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  <data name="Tooltip_BatchController" xml:space="preserve">
+    <value>批量修改控制器支持</value>
+  </data>
+  <data name="Tooltip_BatchVR" xml:space="preserve">
+    <value>批量修改 VR</value>
+  </data>
+
+  <!-- Settings -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Settings_EnableCompleted" xml:space="preserve">
+    <value>启用"已完成"</value>
+  </data>
+  <data name="Settings_EnableHidden" xml:space="preserve">
+    <value>启用"隐藏"</value>
+  </data>
+  <data name="Settings_Language" xml:space="preserve">
+    <value>语言：</value>
+  </data>
+  <data name="Settings_ReplaceLocalizedNames" xml:space="preserve">
+    <value>替换所有本地化名称</value>
+  </data>
+  <data name="Settings_PassThroughArgs" xml:space="preserve">
+    <value>传递参数</value>
+  </data>
+  <data name="Settings_AppInfoPath" xml:space="preserve">
+    <value>AppInfo 路径（需要重启）</value>
+  </data>
+  <data name="Tooltip_ReplaceLocalizedNames" xml:space="preserve">
+    <value>将所有本地化游戏名称替换为原始名称。</value>
+  </data>
+  <data name="Tooltip_EnableHidden" xml:space="preserve">
+    <value>在 Steam 列表中隐藏游戏。</value>
+  </data>
+  <data name="Tooltip_EnableCompleted" xml:space="preserve">
+    <value>在已完成的游戏上附加符号</value>
+  </data>
+  <data name="Tooltip_AppInfoPath" xml:space="preserve">
+    <value>Steam 的 appinfo.vdf 文件路径</value>
+  </data>
+  <data name="Tooltip_PassThroughArgs" xml:space="preserve">
+    <value>启动 Steam 时传递的参数...</value>
+  </data>
+
+  <!-- LaunchEditor -->
+  <data name="LaunchEditor_Title" xml:space="preserve">
+    <value>启动编辑器</value>
+  </data>
+  <data name="LaunchEditor_LabelInstallPath" xml:space="preserve">
+    <value>安装路径：</value>
+  </data>
+  <data name="LaunchEditor_BtnAddNew" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="LaunchEditor_BtnOK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="LaunchEditor_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="LaunchEditor_InstallDirPlaceholder" xml:space="preserve">
+    <value>[安装目录]</value>
+  </data>
+
+  <!-- LaunchEditorItem -->
+  <data name="LaunchEditorItem_LabelExecutable" xml:space="preserve">
+    <value>可执行文件：</value>
+  </data>
+  <data name="LaunchEditorItem_LabelLabel" xml:space="preserve">
+    <value>标签：</value>
+  </data>
+  <data name="LaunchEditorItem_LabelWorkingDir" xml:space="preserve">
+    <value>工作目录：</value>
+  </data>
+  <data name="LaunchEditorItem_LabelArguments" xml:space="preserve">
+    <value>参数：</value>
+  </data>
+  <data name="LaunchEditorItem_BtnUp" xml:space="preserve">
+    <value>上移</value>
+  </data>
+  <data name="LaunchEditorItem_BtnDown" xml:space="preserve">
+    <value>下移</value>
+  </data>
+  <data name="LaunchEditorItem_BtnDelete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="LaunchEditorItem_BtnCopy" xml:space="preserve">
+    <value>复制...</value>
+  </data>
+  <data name="LaunchEditorItem_PlayPrefix" xml:space="preserve">
+    <value>启动 </value>
+  </data>
+
+  <!-- ControllerBatch -->
+  <data name="ControllerBatch_Title" xml:space="preserve">
+    <value>批量控制器设置</value>
+  </data>
+  <data name="ControllerBatch_LabelChange" xml:space="preserve">
+    <value>将</value>
+  </data>
+  <data name="ControllerBatch_LabelTo" xml:space="preserve">
+    <value>改为</value>
+  </data>
+  <data name="ControllerBatch_BtnOkay" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="ControllerBatch_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+
+  <!-- VRBatch -->
+  <data name="VRBatch_Title" xml:space="preserve">
+    <value>批量 VR 设置</value>
+  </data>
+  <data name="VRBatch_LabelSetAll" xml:space="preserve">
+    <value>全部设置为</value>
+  </data>
+  <data name="VRBatch_BtnOkay" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="VRBatch_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="VRBatch_Value_Remove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+
+  <!-- SelectAppLaunch -->
+  <data name="SelectAppLaunch_Title" xml:space="preserve">
+    <value>选择启动信息</value>
+  </data>
+  <data name="SelectAppLaunch_LabelLaunchItem" xml:space="preserve">
+    <value>启动项：</value>
+  </data>
+  <data name="SelectAppLaunch_BtnOK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="SelectAppLaunch_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+
+  <!-- ReleaseNotesView -->
+  <data name="ReleaseNotesView_Title" xml:space="preserve">
+    <value>版本说明</value>
+  </data>
+
+  <!-- MessageBoxWithDetails -->
+  <data name="MessageBoxWithDetails_BtnClose" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="MessageBoxWithDetails_BtnCopyClipboard" xml:space="preserve">
+    <value>复制到剪贴板</value>
+  </data>
+
+  <!-- WaitingDialog -->
+  <data name="WaitingDialog_Title" xml:space="preserve">
+    <value>请稍候...</value>
+  </data>
+  <data name="WaitingDialog_Waiting" xml:space="preserve">
+    <value>[等待中...]</value>
+  </data>
+
+  <!-- About -->
+  <data name="About_Title" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  <data name="About_LabelWebsite" xml:space="preserve">
+    <value>网站：</value>
+  </data>
+  <data name="About_LabelAuthor" xml:space="preserve">
+    <value>作者：</value>
+  </data>
+  <data name="About_AppName" xml:space="preserve">
+    <value>SteamEdit</value>
+  </data>
+  <data name="About_ReleaseNotes" xml:space="preserve">
+    <value>版本说明</value>
+  </data>
+  <data name="About_BtnClose" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_UnsavedChanges" xml:space="preserve">
+    <value>您有未保存的更改！是否在关闭前保存？</value>
+  </data>
+  <data name="Msg_SaveFirst" xml:space="preserve">
+    <value>先保存？</value>
+  </data>
+  <data name="Msg_FailedRevert" xml:space="preserve">
+    <value>还原 '{0}' 失败。是否要从本地 appinfo 中移除它？这将导致 Steam 在下次启动时刷新该数据。</value>
+  </data>
+  <data name="Msg_FailedRevertTitle" xml:space="preserve">
+    <value>还原失败</value>
+  </data>
+  <data name="Msg_SaveFailed" xml:space="preserve">
+    <value>保存失败：&#10;{0}</value>
+  </data>
+  <data name="Msg_ApplyFailed" xml:space="preserve">
+    <value>应用失败：&#10;{0}</value>
+  </data>
+  <data name="Msg_MakeItMatch" xml:space="preserve">
+    <value>是否要将工作目录更改为与可执行文件位置匹配？</value>
+  </data>
+  <data name="Msg_MakeItMatchTitle" xml:space="preserve">
+    <value>匹配目录</value>
+  </data>
+  <data name="Msg_SelectAppInfoTitle" xml:space="preserve">
+    <value>选择 Steam 的 appinfo.vdf 文件</value>
+  </data>
+  <data name="Msg_UnknownVersion" xml:space="preserve">
+    <value>尝试加载 appinfo.vdf 时发现未知版本。可能是文件选择错误，或者 Steam 已更新，需要修复 SteamEdit</value>
+  </data>
+  <data name="Msg_CriticalError" xml:space="preserve">
+    <value>SteamEdit：严重错误</value>
+  </data>
+  <data name="Msg_LoadFailed" xml:space="preserve">
+    <value>加载 appinfo.vdf 失败。文件可能已损坏，请定位您的 appinfo.vdf 文件。</value>
+  </data>
+  <data name="Msg_UnhandledException" xml:space="preserve">
+    <value>发生未处理的异常。不确定出了什么问题，但您可能可以继续工作。</value>
+  </data>
+  <data name="Msg_UnhandledExceptionTitle" xml:space="preserve">
+    <value>SteamEdit：未处理的异常</value>
+  </data>
+
+  <!-- SteamData -->
+  <data name="SteamData_WaitingForClose" xml:space="preserve">
+    <value>等待 Steam 关闭...</value>
+  </data>
+
+  <!-- Enum display names -->
+  <data name="Enum_Game" xml:space="preserve">
+    <value>游戏</value>
+  </data>
+  <data name="Enum_Application" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="Enum_Video" xml:space="preserve">
+    <value>视频</value>
+  </data>
+  <data name="Enum_Music" xml:space="preserve">
+    <value>音乐</value>
+  </data>
+  <data name="Enum_Guide" xml:space="preserve">
+    <value>指南</value>
+  </data>
+  <data name="Enum_DLC" xml:space="preserve">
+    <value>DLC</value>
+  </data>
+  <data name="Enum_Demo" xml:space="preserve">
+    <value>试玩</value>
+  </data>
+  <data name="Enum_Tool" xml:space="preserve">
+    <value>工具</value>
+  </data>
+  <data name="Enum_Config" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="Enum_Beta" xml:space="preserve">
+    <value>测试版</value>
+  </data>
+  <data name="Enum_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+</root>

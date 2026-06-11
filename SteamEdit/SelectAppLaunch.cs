@@ -20,11 +20,15 @@ internal class SelectAppLaunch : Form
 
 	private Button btnOK;
 
+	private Label lblLaunchItem;
+
 	public LaunchItem LaunchInfo { get; private set; }
 
 	public SelectAppLaunch()
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		List<IAppInfoEntry> list = new List<IAppInfoEntry>(SteamData.AppInfoData.Entries.Where((IAppInfoEntry ent) => ent.Type == AppInfoEntryType.Game));
 		list.Sort((IAppInfoEntry a, IAppInfoEntry b) => StringTitleComparer.CompareStrings(a.ToString(), b.ToString()));
 		appSelection.BeginUpdate();
@@ -34,6 +38,21 @@ internal class SelectAppLaunch : Form
 		items.AddRange(items2);
 		appSelection.EndUpdate();
 		Set(null, null);
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.SelectAppLaunch_Title;
+		lblLaunchItem.Text = Strings.SelectAppLaunch_LabelLaunchItem;
+		btnOK.Text = Strings.SelectAppLaunch_BtnOK;
+		var btnCancel = Controls.Find("btnCancel", true).FirstOrDefault() as Button;
+		if (btnCancel != null) btnCancel.Text = Strings.SelectAppLaunch_BtnCancel;
 	}
 
 	private void appSelection_SelectedIndexChanged(object sender, EventArgs e)
@@ -99,15 +118,15 @@ internal class SelectAppLaunch : Form
 		this.appSelection = new System.Windows.Forms.ComboBox();
 		this.launchSelection = new System.Windows.Forms.ComboBox();
 		this.btnOK = new System.Windows.Forms.Button();
-		System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+		this.lblLaunchItem = new System.Windows.Forms.Label();
 		System.Windows.Forms.Button button = new System.Windows.Forms.Button();
 		base.SuspendLayout();
-		label.AutoSize = true;
-		label.Location = new System.Drawing.Point(12, 40);
-		label.Name = "label1";
-		label.Size = new System.Drawing.Size(69, 13);
-		label.TabIndex = 3;
-		label.Text = "Launch Item:";
+		this.lblLaunchItem.AutoSize = true;
+		this.lblLaunchItem.Location = new System.Drawing.Point(12, 40);
+		this.lblLaunchItem.Name = "label1";
+		this.lblLaunchItem.Size = new System.Drawing.Size(69, 13);
+		this.lblLaunchItem.TabIndex = 3;
+		this.lblLaunchItem.Text = "Launch Item:";
 		this.appSelection.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.appSelection.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Append;
 		this.appSelection.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
@@ -151,7 +170,7 @@ internal class SelectAppLaunch : Form
 		base.ControlBox = false;
 		base.Controls.Add(button);
 		base.Controls.Add(this.btnOK);
-		base.Controls.Add(label);
+		base.Controls.Add(this.lblLaunchItem);
 		base.Controls.Add(this.launchSelection);
 		base.Controls.Add(this.appSelection);
 		base.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;

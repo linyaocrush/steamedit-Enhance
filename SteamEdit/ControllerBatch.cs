@@ -1,5 +1,7 @@
+using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace SteamEdit;
@@ -19,6 +21,8 @@ public class ControllerBatch : Form
 	public ControllerBatch()
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		listFrom.Items.Add("none");
 		listFrom.Items.Add("partial");
 		listFrom.Items.Add("full");
@@ -27,6 +31,25 @@ public class ControllerBatch : Form
 		listTo.Items.Add("partial");
 		listTo.Items.Add("full");
 		listTo.SelectedItem = "none";
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.ControllerBatch_Title;
+		var label1 = Controls.Find("label1", true).FirstOrDefault();
+		if (label1 != null) label1.Text = Strings.ControllerBatch_LabelChange;
+		var label2 = Controls.Find("label2", true).FirstOrDefault();
+		if (label2 != null) label2.Text = Strings.ControllerBatch_LabelTo;
+		var btnOkay = Controls.Find("btnOkay", true).FirstOrDefault() as Button;
+		if (btnOkay != null) btnOkay.Text = Strings.ControllerBatch_BtnOkay;
+		var btnCancel = Controls.Find("btnCancel", true).FirstOrDefault() as Button;
+		if (btnCancel != null) btnCancel.Text = Strings.ControllerBatch_BtnCancel;
 	}
 
 	protected override void Dispose(bool disposing)

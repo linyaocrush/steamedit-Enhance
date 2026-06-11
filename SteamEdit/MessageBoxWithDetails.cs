@@ -23,6 +23,8 @@ public class MessageBoxWithDetails : Form
 	public MessageBoxWithDetails(string message, string title, string details = null)
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		lblMessage.Text = message;
 		Text = title;
 		if (details != null)
@@ -42,6 +44,18 @@ public class MessageBoxWithDetails : Form
 			Log.WriteLine(details);
 		}
 		Log.WriteLine("-----------------");
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		btnClose.Text = Strings.MessageBoxWithDetails_BtnClose;
+		btnCopy.Text = Strings.MessageBoxWithDetails_BtnCopyClipboard;
 	}
 
 	public static void Show(string message, string title, string details = null)

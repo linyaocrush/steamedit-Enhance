@@ -19,7 +19,20 @@ public class ReleaseNotesView : Form
 	public ReleaseNotesView()
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		ShownVersion = "";
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.ReleaseNotesView_Title;
 	}
 
 	public bool FillNotes(string sinceVersion)
@@ -61,7 +74,7 @@ public class ReleaseNotesView : Form
 		}
 		catch (Exception ex)
 		{
-			Log.WriteLine("Exception while reading release notes:\n{}", ex.ToString());
+			Log.WriteLine("Exception while reading release notes:\n{0}", ex.ToString());
 			Close();
 		}
 		return result;

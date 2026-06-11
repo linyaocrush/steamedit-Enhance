@@ -22,6 +22,8 @@ internal class LaunchEditor : Form
 
 	private TextBox lblInstall;
 
+	private Label lblInstallPath;
+
 	public IEnumerable<LaunchItem> LaunchItems => from item in flowLayout.Controls.OfType<LaunchEditorItem>()
 		select new LaunchItem
 		{
@@ -34,6 +36,8 @@ internal class LaunchEditor : Form
 	public LaunchEditor(IEnumerable<LaunchItem> items, string baseDir, string gameName)
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		DoubleBuffered = true;
 		_baseDir = baseDir;
 		_gameName = gameName;
@@ -43,6 +47,24 @@ internal class LaunchEditor : Form
 		{
 			AddItem(item);
 		}
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.LaunchEditor_Title;
+		lblInstallPath.Text = Strings.LaunchEditor_LabelInstallPath;
+		var btnAdd = Controls.Find("btnAdd", true).FirstOrDefault() as Button;
+		if (btnAdd != null) btnAdd.Text = Strings.LaunchEditor_BtnAddNew;
+		var btnOK = Controls.Find("btnOK", true).FirstOrDefault() as Button;
+		if (btnOK != null) btnOK.Text = Strings.LaunchEditor_BtnOK;
+		var btnCancel = Controls.Find("btnCancel", true).FirstOrDefault() as Button;
+		if (btnCancel != null) btnCancel.Text = Strings.LaunchEditor_BtnCancel;
 	}
 
 	private void AddItem(LaunchItem item)
@@ -86,7 +108,7 @@ internal class LaunchEditor : Form
 		if (openFileDialog.ShowDialog(this) == DialogResult.OK)
 		{
 			e.Executable = AppHelper.MakePathRelative(openFileDialog.FileName, _baseDir);
-			DialogResult dialogResult = MessageBox.Show(this, "Do you want to change the working directory to match the executable's location?", "Make It Match", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+			DialogResult dialogResult = MessageBox.Show(this, Strings.Msg_MakeItMatch, Strings.Msg_MakeItMatchTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
 			e.MakeWorkingDirMatch = dialogResult == DialogResult.Yes;
 		}
 	}
@@ -174,18 +196,18 @@ internal class LaunchEditor : Form
 	{
 		this.flowLayout = new System.Windows.Forms.FlowLayoutPanel();
 		this.lblInstall = new System.Windows.Forms.TextBox();
-		System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+		this.lblInstallPath = new System.Windows.Forms.Label();
 		System.Windows.Forms.Button button = new System.Windows.Forms.Button();
 		System.Windows.Forms.Button button2 = new System.Windows.Forms.Button();
 		System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
 		base.SuspendLayout();
-		label.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-		label.AutoSize = true;
-		label.Location = new System.Drawing.Point(89, 336);
-		label.Name = "label1";
-		label.Size = new System.Drawing.Size(62, 13);
-		label.TabIndex = 5;
-		label.Text = "Install Path:";
+		this.lblInstallPath.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+		this.lblInstallPath.AutoSize = true;
+		this.lblInstallPath.Location = new System.Drawing.Point(89, 336);
+		this.lblInstallPath.Name = "label1";
+		this.lblInstallPath.Size = new System.Drawing.Size(62, 13);
+		this.lblInstallPath.TabIndex = 5;
+		this.lblInstallPath.Text = "Install Path:";
 		this.flowLayout.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayout.AutoScroll = true;
 		this.flowLayout.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
@@ -239,7 +261,7 @@ internal class LaunchEditor : Form
 		base.ClientSize = new System.Drawing.Size(734, 365);
 		base.ControlBox = false;
 		base.Controls.Add(this.lblInstall);
-		base.Controls.Add(label);
+		base.Controls.Add(this.lblInstallPath);
 		base.Controls.Add(button3);
 		base.Controls.Add(button2);
 		base.Controls.Add(button);

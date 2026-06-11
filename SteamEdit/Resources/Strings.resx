@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- MainWindow -->
+  <data name="MainWindow_Title" xml:space="preserve">
+    <value>SteamEdit</value>
+  </data>
+  <data name="MainWindow_UnsavedSuffix" xml:space="preserve">
+    <value> [unsaved]</value>
+  </data>
+  <data name="MainWindow_UnappliedSuffix" xml:space="preserve">
+    <value> [unapplied]</value>
+  </data>
+  <data name="MainWindow_BtnSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="MainWindow_BtnSaveApply" xml:space="preserve">
+    <value>Save &amp; Apply</value>
+  </data>
+  <data name="MainWindow_BtnSaveApplyRestart" xml:space="preserve">
+    <value>Save &amp; Apply &amp; Restart</value>
+  </data>
+  <data name="MainWindow_BtnEditLaunch" xml:space="preserve">
+    <value>Edit Launch</value>
+  </data>
+  <data name="MainWindow_BtnRevert" xml:space="preserve">
+    <value>Revert Game</value>
+  </data>
+  <data name="MainWindow_LabelName" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="MainWindow_LabelSortAs" xml:space="preserve">
+    <value>Sort As:</value>
+  </data>
+  <data name="MainWindow_LabelControllerSupport" xml:space="preserve">
+    <value>Controller Support:</value>
+  </data>
+  <data name="MainWindow_LabelVRCategory" xml:space="preserve">
+    <value>VR Category:</value>
+  </data>
+  <data name="MainWindow_CheckHidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="MainWindow_CheckCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="MainWindow_StatusShown" xml:space="preserve">
+    <value>Shown: ({0}/{1})</value>
+  </data>
+  <data name="MainWindow_Filter_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="MainWindow_Filter_OnlyModified" xml:space="preserve">
+    <value>Only Modified</value>
+  </data>
+  <data name="MainWindow_Filter_OnlyUnmodified" xml:space="preserve">
+    <value>Only Unmodified</value>
+  </data>
+  <data name="MainWindow_Controller_None" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="MainWindow_Controller_Partial" xml:space="preserve">
+    <value>partial</value>
+  </data>
+  <data name="MainWindow_Controller_Full" xml:space="preserve">
+    <value>full</value>
+  </data>
+  <data name="MainWindow_VR_Default" xml:space="preserve">
+    <value>default</value>
+  </data>
+  <data name="MainWindow_VR_Removed" xml:space="preserve">
+    <value>removed</value>
+  </data>
+
+  <!-- Tooltips -->
+  <data name="Tooltip_Save" xml:space="preserve">
+    <value>Save all edits to mods file</value>
+  </data>
+  <data name="Tooltip_SaveApply" xml:space="preserve">
+    <value>Save all edits to mods file, and apply to Steam.</value>
+  </data>
+  <data name="Tooltip_SaveApplyRestart" xml:space="preserve">
+    <value>Save edits, apply to Steam, and restart Steam.</value>
+  </data>
+  <data name="Tooltip_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Tooltip_About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Tooltip_BatchController" xml:space="preserve">
+    <value>Batch controller support</value>
+  </data>
+  <data name="Tooltip_BatchVR" xml:space="preserve">
+    <value>Batch VR</value>
+  </data>
+
+  <!-- Settings -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings_EnableCompleted" xml:space="preserve">
+    <value>Enable "Completed"</value>
+  </data>
+  <data name="Settings_EnableHidden" xml:space="preserve">
+    <value>Enable "Hidden"</value>
+  </data>
+  <data name="Settings_Language" xml:space="preserve">
+    <value>Language:</value>
+  </data>
+  <data name="Settings_ReplaceLocalizedNames" xml:space="preserve">
+    <value>Replace All Localized Names</value>
+  </data>
+  <data name="Settings_PassThroughArgs" xml:space="preserve">
+    <value>Pass-Through Arguments</value>
+  </data>
+  <data name="Settings_AppInfoPath" xml:space="preserve">
+    <value>AppInfo Path (requires restart)</value>
+  </data>
+  <data name="Tooltip_ReplaceLocalizedNames" xml:space="preserve">
+    <value>Replace all localized game names with the original name.</value>
+  </data>
+  <data name="Tooltip_EnableHidden" xml:space="preserve">
+    <value>Hide games in Steam's list.</value>
+  </data>
+  <data name="Tooltip_EnableCompleted" xml:space="preserve">
+    <value>Append symbol on completed games</value>
+  </data>
+  <data name="Tooltip_AppInfoPath" xml:space="preserve">
+    <value>Path to Steam's appinfo.vdf file</value>
+  </data>
+  <data name="Tooltip_PassThroughArgs" xml:space="preserve">
+    <value>Arguments to pass along when launching Steam...</value>
+  </data>
+
+  <!-- LaunchEditor -->
+  <data name="LaunchEditor_Title" xml:space="preserve">
+    <value>Launch Editor</value>
+  </data>
+  <data name="LaunchEditor_LabelInstallPath" xml:space="preserve">
+    <value>Install Path:</value>
+  </data>
+  <data name="LaunchEditor_BtnAddNew" xml:space="preserve">
+    <value>Add New</value>
+  </data>
+  <data name="LaunchEditor_BtnOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="LaunchEditor_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="LaunchEditor_InstallDirPlaceholder" xml:space="preserve">
+    <value>[Install Dir]</value>
+  </data>
+
+  <!-- LaunchEditorItem -->
+  <data name="LaunchEditorItem_LabelExecutable" xml:space="preserve">
+    <value>Executable:</value>
+  </data>
+  <data name="LaunchEditorItem_LabelLabel" xml:space="preserve">
+    <value>Label:</value>
+  </data>
+  <data name="LaunchEditorItem_LabelWorkingDir" xml:space="preserve">
+    <value>Working Dir:</value>
+  </data>
+  <data name="LaunchEditorItem_LabelArguments" xml:space="preserve">
+    <value>Arguments:</value>
+  </data>
+  <data name="LaunchEditorItem_BtnUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="LaunchEditorItem_BtnDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="LaunchEditorItem_BtnDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="LaunchEditorItem_BtnCopy" xml:space="preserve">
+    <value>Copy...</value>
+  </data>
+  <data name="LaunchEditorItem_PlayPrefix" xml:space="preserve">
+    <value>Play </value>
+  </data>
+
+  <!-- ControllerBatch -->
+  <data name="ControllerBatch_Title" xml:space="preserve">
+    <value>Controller Batch</value>
+  </data>
+  <data name="ControllerBatch_LabelChange" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="ControllerBatch_LabelTo" xml:space="preserve">
+    <value>to</value>
+  </data>
+  <data name="ControllerBatch_BtnOkay" xml:space="preserve">
+    <value>Okay</value>
+  </data>
+  <data name="ControllerBatch_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <!-- VRBatch -->
+  <data name="VRBatch_Title" xml:space="preserve">
+    <value>VR Batch</value>
+  </data>
+  <data name="VRBatch_LabelSetAll" xml:space="preserve">
+    <value>Set all</value>
+  </data>
+  <data name="VRBatch_BtnOkay" xml:space="preserve">
+    <value>Okay</value>
+  </data>
+  <data name="VRBatch_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="VRBatch_Value_Remove" xml:space="preserve">
+    <value>remove</value>
+  </data>
+
+  <!-- SelectAppLaunch -->
+  <data name="SelectAppLaunch_Title" xml:space="preserve">
+    <value>Select Launch Info</value>
+  </data>
+  <data name="SelectAppLaunch_LabelLaunchItem" xml:space="preserve">
+    <value>Launch Item:</value>
+  </data>
+  <data name="SelectAppLaunch_BtnOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="SelectAppLaunch_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <!-- ReleaseNotesView -->
+  <data name="ReleaseNotesView_Title" xml:space="preserve">
+    <value>Release Notes</value>
+  </data>
+
+  <!-- MessageBoxWithDetails -->
+  <data name="MessageBoxWithDetails_BtnClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="MessageBoxWithDetails_BtnCopyClipboard" xml:space="preserve">
+    <value>Copy To Clipboard</value>
+  </data>
+
+  <!-- WaitingDialog -->
+  <data name="WaitingDialog_Title" xml:space="preserve">
+    <value>Please Wait...</value>
+  </data>
+  <data name="WaitingDialog_Waiting" xml:space="preserve">
+    <value>[Waiting...]</value>
+  </data>
+
+  <!-- About -->
+  <data name="About_Title" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="About_LabelWebsite" xml:space="preserve">
+    <value>Website:</value>
+  </data>
+  <data name="About_LabelAuthor" xml:space="preserve">
+    <value>Author:</value>
+  </data>
+  <data name="About_AppName" xml:space="preserve">
+    <value>SteamEdit</value>
+  </data>
+  <data name="About_ReleaseNotes" xml:space="preserve">
+    <value>Release Notes</value>
+  </data>
+  <data name="About_BtnClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_UnsavedChanges" xml:space="preserve">
+    <value>You have unsaved changes! Do you want to save before closing?</value>
+  </data>
+  <data name="Msg_SaveFirst" xml:space="preserve">
+    <value>Save First?</value>
+  </data>
+  <data name="Msg_FailedRevert" xml:space="preserve">
+    <value>Failed to revert '{0}'. Do you want to remove it from your local appinfo? This should cause Steam to refresh it on next launch.</value>
+  </data>
+  <data name="Msg_FailedRevertTitle" xml:space="preserve">
+    <value>Failed to Revert</value>
+  </data>
+  <data name="Msg_SaveFailed" xml:space="preserve">
+    <value>Save failed:&#10;{0}</value>
+  </data>
+  <data name="Msg_ApplyFailed" xml:space="preserve">
+    <value>Apply failed:&#10;{0}</value>
+  </data>
+  <data name="Msg_MakeItMatch" xml:space="preserve">
+    <value>Do you want to change the working directory to match the executable's location?</value>
+  </data>
+  <data name="Msg_MakeItMatchTitle" xml:space="preserve">
+    <value>Make It Match</value>
+  </data>
+  <data name="Msg_SelectAppInfoTitle" xml:space="preserve">
+    <value>Select Steam's appinfo.vdf file</value>
+  </data>
+  <data name="Msg_UnknownVersion" xml:space="preserve">
+    <value>Unknown version while trying to load appinfo.vdf. Either we're trying to load the wrong file, or maybe Steam has updated something, and a fix is needed for SteamEdit</value>
+  </data>
+  <data name="Msg_CriticalError" xml:space="preserve">
+    <value>SteamEdit: Critical Error</value>
+  </data>
+  <data name="Msg_LoadFailed" xml:space="preserve">
+    <value>Failed to load appinfo.vdf. Possibly corrupted. Please locate your appinfo.vdf file.</value>
+  </data>
+  <data name="Msg_UnhandledException" xml:space="preserve">
+    <value>Unhandled exception. Not sure what went wrong, but you might be able to continue working.</value>
+  </data>
+  <data name="Msg_UnhandledExceptionTitle" xml:space="preserve">
+    <value>SteamEdit: Unhandled exception</value>
+  </data>
+
+  <!-- SteamData -->
+  <data name="SteamData_WaitingForClose" xml:space="preserve">
+    <value>Waiting for Steam to close...</value>
+  </data>
+
+  <!-- Enum display names -->
+  <data name="Enum_Game" xml:space="preserve">
+    <value>Game</value>
+  </data>
+  <data name="Enum_Application" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="Enum_Video" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="Enum_Music" xml:space="preserve">
+    <value>Music</value>
+  </data>
+  <data name="Enum_Guide" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="Enum_DLC" xml:space="preserve">
+    <value>DLC</value>
+  </data>
+  <data name="Enum_Demo" xml:space="preserve">
+    <value>Demo</value>
+  </data>
+  <data name="Enum_Tool" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="Enum_Config" xml:space="preserve">
+    <value>Config</value>
+  </data>
+  <data name="Enum_Beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="Enum_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+</root>

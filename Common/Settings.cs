@@ -94,32 +94,6 @@ internal class Settings
 		}
 	}
 
-	[DefaultValue(true)]
-	public bool EnableAutoUpdate
-	{
-		get
-		{
-			return (bool)_values["EnableAutoUpdate"];
-		}
-		set
-		{
-			_values["EnableAutoUpdate"] = value;
-		}
-	}
-
-	[DefaultValue("")]
-	public string AutoUpdateFeed
-	{
-		get
-		{
-			return (string)_values["AutoUpdateFeed"];
-		}
-		set
-		{
-			_values["AutoUpdateFeed"] = value;
-		}
-	}
-
 	[DefaultValue("")]
 	public string AppInfoPath
 	{
@@ -221,6 +195,19 @@ internal class Settings
 		set
 		{
 			_values["MainWindowSplitter"] = value;
+		}
+	}
+
+	[DefaultValue("")]
+	public string Language
+	{
+		get
+		{
+			return (string)_values["Language"];
+		}
+		set
+		{
+			_values["Language"] = value;
 		}
 	}
 

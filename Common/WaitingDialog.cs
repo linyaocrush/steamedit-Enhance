@@ -1,7 +1,9 @@
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using SteamEdit;
 
 namespace Common;
 
@@ -30,7 +32,7 @@ internal class WaitingDialog : Form
 	}
 
 	public WaitingDialog()
-		: this("")
+		: this(Strings.WaitingDialog_Waiting)
 	{
 	}
 
@@ -38,6 +40,19 @@ internal class WaitingDialog : Form
 	{
 		InitializeComponent();
 		Message = message;
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.WaitingDialog_Title;
 	}
 
 	public void ShowAndWait(IWin32Window parent, WaitWhileDelegate waitWhile)

@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using SteamEdit.Data;
 using SteamEdit.Properties;
@@ -25,6 +26,14 @@ internal class LaunchEditorItem : UserControl
 	private TextBox txtArguments;
 
 	private TextBox txtWorkingDir;
+
+	private Label lblExecutable;
+
+	private Label lblLabel;
+
+	private Label lblWorkingDir;
+
+	private Label lblArguments;
 
 	public string Label => txtLabel.Text;
 
@@ -51,14 +60,43 @@ internal class LaunchEditorItem : UserControl
 		_gameName = gameName;
 		_isFirst = isFirst;
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		Set(info);
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		lblExecutable.Text = Strings.LaunchEditorItem_LabelExecutable;
+		lblLabel.Text = Strings.LaunchEditorItem_LabelLabel;
+		lblWorkingDir.Text = Strings.LaunchEditorItem_LabelWorkingDir;
+		lblArguments.Text = Strings.LaunchEditorItem_LabelArguments;
+		var btnUp = Controls.Find("btnMoveUp", true).FirstOrDefault() as Button;
+		if (btnUp != null) btnUp.Text = Strings.LaunchEditorItem_BtnUp;
+		var btnDown = Controls.Find("btnDown", true).FirstOrDefault() as Button;
+		if (btnDown != null) btnDown.Text = Strings.LaunchEditorItem_BtnDown;
+		var btnDel = Controls.Find("btnDelete", true).FirstOrDefault() as Button;
+		if (btnDel != null) btnDel.Text = Strings.LaunchEditorItem_BtnDelete;
+		var btnCopy = Controls.Find("btnCopy", true).FirstOrDefault() as Button;
+		if (btnCopy != null) btnCopy.Text = Strings.LaunchEditorItem_BtnCopy;
+
+		if (_isFirst)
+		{
+			txtLabel.Text = Strings.LaunchEditorItem_PlayPrefix + _gameName;
+		}
 	}
 
 	private void Set(LaunchItem info)
 	{
 		if (_isFirst)
 		{
-			txtLabel.Text = "Play " + _gameName;
+			txtLabel.Text = Strings.LaunchEditorItem_PlayPrefix + _gameName;
 			txtLabel.Enabled = false;
 		}
 		else
@@ -173,10 +211,10 @@ internal class LaunchEditorItem : UserControl
 		this.txtArguments = new System.Windows.Forms.TextBox();
 		this.txtExec = new System.Windows.Forms.TextBox();
 		this.txtLabel = new System.Windows.Forms.TextBox();
-		System.Windows.Forms.Label label = new System.Windows.Forms.Label();
-		System.Windows.Forms.Label label2 = new System.Windows.Forms.Label();
-		System.Windows.Forms.Label label3 = new System.Windows.Forms.Label();
-		System.Windows.Forms.Label label4 = new System.Windows.Forms.Label();
+		this.lblExecutable = new System.Windows.Forms.Label();
+		this.lblLabel = new System.Windows.Forms.Label();
+		this.lblWorkingDir = new System.Windows.Forms.Label();
+		this.lblArguments = new System.Windows.Forms.Label();
 		System.Windows.Forms.Button button = new System.Windows.Forms.Button();
 		System.Windows.Forms.Button button2 = new System.Windows.Forms.Button();
 		System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
@@ -186,42 +224,42 @@ internal class LaunchEditorItem : UserControl
 		System.Windows.Forms.Button button6 = new System.Windows.Forms.Button();
 		panel.SuspendLayout();
 		base.SuspendLayout();
-		label.Location = new System.Drawing.Point(6, 36);
-		label.Name = "label1";
-		label.Size = new System.Drawing.Size(77, 19);
-		label.TabIndex = 2;
-		label.Text = "Executable:";
-		label.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-		label2.Location = new System.Drawing.Point(3, 8);
-		label2.Name = "label2";
-		label2.Size = new System.Drawing.Size(80, 19);
-		label2.TabIndex = 3;
-		label2.Text = "Label:";
-		label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+		this.lblExecutable.Location = new System.Drawing.Point(6, 36);
+		this.lblExecutable.Name = "label1";
+		this.lblExecutable.Size = new System.Drawing.Size(77, 19);
+		this.lblExecutable.TabIndex = 2;
+		this.lblExecutable.Text = "Executable:";
+		this.lblExecutable.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+		this.lblLabel.Location = new System.Drawing.Point(3, 8);
+		this.lblLabel.Name = "label2";
+		this.lblLabel.Size = new System.Drawing.Size(80, 19);
+		this.lblLabel.TabIndex = 3;
+		this.lblLabel.Text = "Label:";
+		this.lblLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 		this.txtWorkingDir.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.txtWorkingDir.Font = new System.Drawing.Font("Microsoft Sans Serif", 16f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, 0);
 		this.txtWorkingDir.Location = new System.Drawing.Point(89, 92);
 		this.txtWorkingDir.Name = "txtWorkingDir";
 		this.txtWorkingDir.Size = new System.Drawing.Size(356, 26);
 		this.txtWorkingDir.TabIndex = 9;
-		label3.Location = new System.Drawing.Point(6, 94);
-		label3.Name = "label4";
-		label3.Size = new System.Drawing.Size(77, 22);
-		label3.TabIndex = 8;
-		label3.Text = "Working Dir:";
-		label3.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+		this.lblWorkingDir.Location = new System.Drawing.Point(6, 94);
+		this.lblWorkingDir.Name = "label4";
+		this.lblWorkingDir.Size = new System.Drawing.Size(77, 22);
+		this.lblWorkingDir.TabIndex = 8;
+		this.lblWorkingDir.Text = "Working Dir:";
+		this.lblWorkingDir.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 		this.txtArguments.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.txtArguments.Font = new System.Drawing.Font("Microsoft Sans Serif", 16f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, 0);
 		this.txtArguments.Location = new System.Drawing.Point(89, 62);
 		this.txtArguments.Name = "txtArguments";
 		this.txtArguments.Size = new System.Drawing.Size(384, 26);
 		this.txtArguments.TabIndex = 7;
-		label4.Location = new System.Drawing.Point(6, 64);
-		label4.Name = "label3";
-		label4.Size = new System.Drawing.Size(77, 22);
-		label4.TabIndex = 6;
-		label4.Text = "Arguments:";
-		label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+		this.lblArguments.Location = new System.Drawing.Point(6, 64);
+		this.lblArguments.Name = "label3";
+		this.lblArguments.Size = new System.Drawing.Size(77, 22);
+		this.lblArguments.TabIndex = 6;
+		this.lblArguments.Text = "Arguments:";
+		this.lblArguments.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 		this.txtExec.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.txtExec.Font = new System.Drawing.Font("Microsoft Sans Serif", 16f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, 0);
 		this.txtExec.Location = new System.Drawing.Point(89, 34);
@@ -280,15 +318,15 @@ internal class LaunchEditorItem : UserControl
 		button5.Click += new System.EventHandler(btnSelectExec_Click);
 		panel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		panel.Controls.Add(button4);
-		panel.Controls.Add(label2);
+		panel.Controls.Add(this.lblLabel);
 		panel.Controls.Add(button5);
-		panel.Controls.Add(label);
+		panel.Controls.Add(this.lblExecutable);
 		panel.Controls.Add(this.txtWorkingDir);
 		panel.Controls.Add(this.txtLabel);
-		panel.Controls.Add(label3);
+		panel.Controls.Add(this.lblWorkingDir);
 		panel.Controls.Add(this.txtExec);
 		panel.Controls.Add(this.txtArguments);
-		panel.Controls.Add(label4);
+		panel.Controls.Add(this.lblArguments);
 		panel.ForeColor = System.Drawing.SystemColors.ControlText;
 		panel.Location = new System.Drawing.Point(4, 4);
 		panel.Margin = new System.Windows.Forms.Padding(4);

@@ -1,6 +1,8 @@
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using SteamEdit.Properties;
 
@@ -17,8 +19,35 @@ public class About : Form
 	public About()
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		linkWebsite.Text = Resources.WebsiteUrl;
 		lblVersion.Text = "v" + Application.ProductVersion;
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.About_Title;
+		var panel = Controls.Find("panel1", true).FirstOrDefault() as Panel;
+		if (panel != null)
+		{
+			var lbl = panel.Controls.Find("label1", true).FirstOrDefault();
+			if (lbl != null) lbl.Text = Strings.About_AppName;
+			var lbl2 = panel.Controls.Find("label2", true).FirstOrDefault();
+			if (lbl2 != null) lbl2.Text = Strings.About_LabelAuthor;
+			var lbl3 = panel.Controls.Find("label3", true).FirstOrDefault();
+			if (lbl3 != null) lbl3.Text = Strings.About_LabelWebsite;
+			var btnClose = panel.Controls.Find("btnClose", true).FirstOrDefault() as Button;
+			if (btnClose != null) btnClose.Text = Strings.About_BtnClose;
+			var linkRN = panel.Controls.Find("linkReleaseNotes", true).FirstOrDefault() as LinkLabel;
+			if (linkRN != null) linkRN.Text = Strings.About_ReleaseNotes;
+		}
 	}
 
 	private void linkWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -19,6 +20,10 @@ internal class MainWindow : Form
 	private string _originalNumShownLabelText;
 
 	private List<IAppInfoEntry> _entries;
+
+	private static readonly string[] ControllerRawValues = { "none", "partial", "full" };
+
+	private static readonly string[] VRRawValues = { "default", "removed" };
 
 	private Dictionary<AppInfoEntryType, Image> _filterImages;
 
@@ -87,6 +92,20 @@ internal class MainWindow : Form
 	private ComboBox listEntryType;
 
 	private ToolStripStatusLabel lblNumAppsShown;
+
+	private Label lblSortAs;
+
+	private Label lblName;
+
+	private Label lblControllerSupport;
+
+	private Label lblVRCategory;
+
+	private Button btnSave;
+
+	private Button btnSaveApply;
+
+	private Button btnSaveApplyRestart;
 
 	public MainWindow()
 	{
@@ -173,7 +192,7 @@ internal class MainWindow : Form
 		listEntryType.BeginUpdate();
 		foreach (KeyValuePair<AppInfoEntryType, Image> filterImage in _filterImages)
 		{
-			ToolStripMenuItem toolStripMenuItem = new ToolStripMenuItem(filterImage.Key.ToString(), filterImage.Value)
+			ToolStripMenuItem toolStripMenuItem = new ToolStripMenuItem(I18n.GetEnumDisplayName(filterImage.Key), filterImage.Value)
 			{
 				DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
 				CheckOnClick = true,
@@ -192,6 +211,13 @@ internal class MainWindow : Form
 		AddShowEntriesMenuItem("Only Modified", ShowEntriesMode.OnlyModified);
 		AddShowEntriesMenuItem("Only Unmodified", ShowEntriesMode.OnlyUnmodified);
 		listEntryType.EndUpdate();
+		listEntryType.Format += (s, e) =>
+		{
+			if (e.ListItem is AppInfoEntryType entryType)
+			{
+				e.Value = I18n.GetEnumDisplayName(entryType);
+			}
+		};
 		listControllerSupport.Items.Add("none");
 		listControllerSupport.Items.Add("partial");
 		listControllerSupport.Items.Add("full");
@@ -240,11 +266,11 @@ internal class MainWindow : Form
 		Text = _originalTitle;
 		if (SteamData.NeedsSave)
 		{
-			Text += " [unsaved]";
+			Text += Strings.MainWindow_UnsavedSuffix;
 		}
 		if (SteamData.NeedsApply)
 		{
-			Text += " [unapplied]";
+			Text += Strings.MainWindow_UnappliedSuffix;
 		}
 	}
 
@@ -356,6 +382,8 @@ internal class MainWindow : Form
 			Settings.Default.Save();
 		}
 		appSelection.Select();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 	}
 
 	private bool IsFuzzyMatch(string testString, string pattern)
@@ -447,7 +475,9 @@ internal class MainWindow : Form
 			textSortAs.ClearXVisible = appInfoEntry.IsModified && appInfoEntry.Modification.Changes.HasProperty("appinfo", "common", "sortas");
 			checkHidden.Checked = appInfoEntry.IsHidden;
 			checkCompleted.Checked = appInfoEntry.IsCompleted;
-			listControllerSupport.SelectedItem = appInfoEntry.GetPropertyValue("none", "appinfo", "common", "controller_support");
+			string csRaw = appInfoEntry.GetPropertyValue("none", "appinfo", "common", "controller_support");
+			int csIdx = Array.IndexOf(ControllerRawValues, csRaw);
+			listControllerSupport.SelectedIndex = csIdx >= 0 ? csIdx : 0;
 			listEntryType.SelectedItem = appInfoEntry.Type;
 			if (appInfoEntry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport") == int.MaxValue)
 			{
@@ -558,10 +588,11 @@ internal class MainWindow : Form
 
 	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
 	{
+		I18n.LanguageChanged -= OnLanguageChanged;
 		Settings.Default.Save();
 		if (SteamData.NeedsSave)
 		{
-			switch (MessageBox.Show("You have unsaved changes! Do you want to save before closing?", "Save First?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))
+			switch (MessageBox.Show(Strings.Msg_UnsavedChanges, Strings.Msg_SaveFirst, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))
 			{
 			case DialogResult.Yes:
 				SteamData.Save();
@@ -571,6 +602,99 @@ internal class MainWindow : Form
 				break;
 			}
 		}
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired)
+		{
+			BeginInvoke(new Action(ApplyLanguage));
+			return;
+		}
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		_originalTitle = Strings.MainWindow_Title;
+		Text = _originalTitle;
+		if (SteamData.NeedsSave)
+			Text += Strings.MainWindow_UnsavedSuffix;
+		if (SteamData.NeedsApply)
+			Text += Strings.MainWindow_UnappliedSuffix;
+
+		_originalNumShownLabelText = Strings.MainWindow_StatusShown;
+
+		checkHidden.Text = Strings.MainWindow_CheckHidden;
+		checkCompleted.Text = Strings.MainWindow_CheckCompleted;
+
+		_isSettingUpEntry = true;
+
+		// Refresh controller combo
+		int csIdx = listControllerSupport.SelectedIndex;
+		listControllerSupport.Items.Clear();
+		listControllerSupport.Items.Add(Strings.MainWindow_Controller_None);
+		listControllerSupport.Items.Add(Strings.MainWindow_Controller_Partial);
+		listControllerSupport.Items.Add(Strings.MainWindow_Controller_Full);
+		if (csIdx >= 0 && csIdx < listControllerSupport.Items.Count)
+			listControllerSupport.SelectedIndex = csIdx;
+
+		// Refresh VR combo
+		int vrIdx = listVR.SelectedIndex;
+		listVR.Items.Clear();
+		listVR.Items.Add(Strings.MainWindow_VR_Default);
+		listVR.Items.Add(Strings.MainWindow_VR_Removed);
+		if (vrIdx >= 0 && vrIdx < listVR.Items.Count)
+			listVR.SelectedIndex = vrIdx;
+
+		_isSettingUpEntry = false;
+
+		// Refresh filter menu items
+		foreach (object item in filterSelectorMenu.Items)
+		{
+			if (item is ToolStripMenuItem menuItem)
+			{
+				if (menuItem.Tag is ShowEntriesMode mode)
+				{
+					switch (mode)
+					{
+						case ShowEntriesMode.All:
+							menuItem.Text = Strings.MainWindow_Filter_All;
+							break;
+						case ShowEntriesMode.OnlyModified:
+							menuItem.Text = Strings.MainWindow_Filter_OnlyModified;
+							break;
+						case ShowEntriesMode.OnlyUnmodified:
+							menuItem.Text = Strings.MainWindow_Filter_OnlyUnmodified;
+							break;
+					}
+				}
+				else if (menuItem.Tag is AppInfoEntryType entryType)
+				{
+					menuItem.Text = I18n.GetEnumDisplayName(entryType);
+				}
+			}
+		}
+
+		// Refresh entry type combo display (items are enum values, Format event handles translation)
+		listEntryType.Refresh();
+
+		// Promoted label/button text
+		lblName.Text = Strings.MainWindow_LabelName;
+		lblSortAs.Text = Strings.MainWindow_LabelSortAs;
+		lblControllerSupport.Text = Strings.MainWindow_LabelControllerSupport;
+		lblVRCategory.Text = Strings.MainWindow_LabelVRCategory;
+		btnSave.Text = Strings.MainWindow_BtnSave;
+		btnSaveApply.Text = Strings.MainWindow_BtnSaveApply;
+		btnSaveApplyRestart.Text = Strings.MainWindow_BtnSaveApplyRestart;
+		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
+		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
+		toolTips.SetToolTip(btnSaveApplyRestart, Strings.Tooltip_SaveApplyRestart);
+
+		// Refresh status bar
+		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, SteamData.AppInfoData.Entries.Count());
+
+		Setup();
 	}
 
 	private void OnBtnEditLaunch_Click(object sender, EventArgs e)
@@ -648,7 +772,7 @@ internal class MainWindow : Form
 		}
 		catch (NotImplementedException)
 		{
-			if (MessageBox.Show(this, "Failed to revert '" + appInfoEntry.ToString() + "'. Do you want to remove it from your local appinfo? This should cause Steam to refresh it on next launch.", "Failed to Revert", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
+			if (MessageBox.Show(this, string.Format(Strings.Msg_FailedRevert, appInfoEntry.ToString()), Strings.Msg_FailedRevertTitle, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
 			{
 				SteamData.AppInfoData.RemoveEntry(appInfoEntry);
 				RefreshGameList();
@@ -664,7 +788,7 @@ internal class MainWindow : Form
 		}
 		catch (Exception ex)
 		{
-			MessageBox.Show("Save failed:\n" + ex.ToString());
+			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
 		}
 	}
 
@@ -676,7 +800,7 @@ internal class MainWindow : Form
 		}
 		catch (Exception ex)
 		{
-			MessageBox.Show("Save failed:\n" + ex.ToString());
+			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
 		}
 		try
 		{
@@ -684,7 +808,7 @@ internal class MainWindow : Form
 		}
 		catch (Exception ex2)
 		{
-			MessageBox.Show("Apply failed:\n" + ex2.ToString());
+			MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.ToString()));
 		}
 	}
 
@@ -696,7 +820,7 @@ internal class MainWindow : Form
 		}
 		catch (Exception ex)
 		{
-			MessageBox.Show("Save failed:\n" + ex.ToString());
+			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
 		}
 	}
 
@@ -704,7 +828,9 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			((IAppInfoEntry)appSelection.SelectedItem).SetPropertyValue(PropertyType.String, (string)listControllerSupport.SelectedItem, "appinfo", "common", "controller_support");
+			int idx = listControllerSupport.SelectedIndex;
+			string rawValue = (idx >= 0 && idx < ControllerRawValues.Length) ? ControllerRawValues[idx] : "none";
+			((IAppInfoEntry)appSelection.SelectedItem).SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
 		}
 	}
 
@@ -995,17 +1121,17 @@ internal class MainWindow : Form
 		this.textGameName = new SteamEdit.ClearableTextBox();
 		this.textSortAs = new SteamEdit.ClearableTextBox();
 		this.flowLayoutPanel3 = new System.Windows.Forms.FlowLayoutPanel();
-		System.Windows.Forms.Button button = new System.Windows.Forms.Button();
-		System.Windows.Forms.Label label = new System.Windows.Forms.Label();
-		System.Windows.Forms.Button button2 = new System.Windows.Forms.Button();
-		System.Windows.Forms.Label label2 = new System.Windows.Forms.Label();
-		System.Windows.Forms.Label label3 = new System.Windows.Forms.Label();
+		this.btnSave = new System.Windows.Forms.Button();
+		this.lblSortAs = new System.Windows.Forms.Label();
+		this.btnSaveApply = new System.Windows.Forms.Button();
+		this.lblName = new System.Windows.Forms.Label();
+		this.lblControllerSupport = new System.Windows.Forms.Label();
 		System.Windows.Forms.FlowLayoutPanel flowLayoutPanel = new System.Windows.Forms.FlowLayoutPanel();
 		System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
-		System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
+		this.btnSaveApplyRestart = new System.Windows.Forms.Button();
 		System.Windows.Forms.Button button4 = new System.Windows.Forms.Button();
 		System.Windows.Forms.Button button5 = new System.Windows.Forms.Button();
-		System.Windows.Forms.Label label4 = new System.Windows.Forms.Label();
+		this.lblVRCategory = new System.Windows.Forms.Label();
 		System.Windows.Forms.StatusStrip statusStrip = new System.Windows.Forms.StatusStrip();
 		flowLayoutPanel.SuspendLayout();
 		flowLayoutPanel2.SuspendLayout();
@@ -1017,43 +1143,43 @@ internal class MainWindow : Form
 		this.panel1.SuspendLayout();
 		this.flowLayoutPanel3.SuspendLayout();
 		base.SuspendLayout();
-		button.Location = new System.Drawing.Point(3, 3);
-		button.Name = "btnSave";
-		button.Size = new System.Drawing.Size(75, 34);
-		button.TabIndex = 0;
-		button.Text = "Save";
-		this.toolTips.SetToolTip(button, "Save all edits to mods file");
-		button.UseVisualStyleBackColor = true;
-		button.Click += new System.EventHandler(OnBtnSave_Click);
-		label.AutoSize = true;
-		label.BackColor = System.Drawing.Color.Transparent;
-		label.Location = new System.Drawing.Point(8, 36);
-		label.Name = "label2";
-		label.Size = new System.Drawing.Size(44, 13);
-		label.TabIndex = 11;
-		label.Text = "Sort As:";
-		button2.Location = new System.Drawing.Point(84, 3);
-		button2.Name = "btnSaveApply";
-		button2.Size = new System.Drawing.Size(84, 34);
-		button2.TabIndex = 1;
-		button2.Text = "Save && Apply";
-		this.toolTips.SetToolTip(button2, "Save all edits to mods file, and apply to Steam.");
-		button2.UseVisualStyleBackColor = true;
-		button2.Click += new System.EventHandler(OnBtnSaveApply_Click);
-		label2.AutoSize = true;
-		label2.BackColor = System.Drawing.Color.Transparent;
-		label2.Location = new System.Drawing.Point(14, 10);
-		label2.Name = "label1";
-		label2.Size = new System.Drawing.Size(38, 13);
-		label2.TabIndex = 1;
-		label2.Text = "Name:";
-		label3.AutoSize = true;
-		label3.BackColor = System.Drawing.Color.Transparent;
-		label3.Location = new System.Drawing.Point(55, 92);
-		label3.Name = "label3";
-		label3.Size = new System.Drawing.Size(94, 13);
-		label3.TabIndex = 21;
-		label3.Text = "Controller Support:";
+		this.btnSave.Location = new System.Drawing.Point(3, 3);
+		this.btnSave.Name = "btnSave";
+		this.btnSave.Size = new System.Drawing.Size(90, 34);
+		this.btnSave.TabIndex = 0;
+		this.btnSave.Text = "Save";
+		this.toolTips.SetToolTip(this.btnSave, "Save all edits to mods file");
+		this.btnSave.UseVisualStyleBackColor = true;
+		this.btnSave.Click += new System.EventHandler(OnBtnSave_Click);
+		this.lblSortAs.AutoSize = true;
+		this.lblSortAs.BackColor = System.Drawing.Color.Transparent;
+		this.lblSortAs.Location = new System.Drawing.Point(8, 36);
+		this.lblSortAs.Name = "label2";
+		this.lblSortAs.Size = new System.Drawing.Size(44, 13);
+		this.lblSortAs.TabIndex = 11;
+		this.lblSortAs.Text = "Sort As:";
+		this.btnSaveApply.Location = new System.Drawing.Point(84, 3);
+		this.btnSaveApply.Name = "btnSaveApply";
+		this.btnSaveApply.Size = new System.Drawing.Size(110, 34);
+		this.btnSaveApply.TabIndex = 1;
+		this.btnSaveApply.Text = "Save && Apply";
+		this.toolTips.SetToolTip(this.btnSaveApply, "Save all edits to mods file, and apply to Steam.");
+		this.btnSaveApply.UseVisualStyleBackColor = true;
+		this.btnSaveApply.Click += new System.EventHandler(OnBtnSaveApply_Click);
+		this.lblName.AutoSize = true;
+		this.lblName.BackColor = System.Drawing.Color.Transparent;
+		this.lblName.Location = new System.Drawing.Point(14, 10);
+		this.lblName.Name = "label1";
+		this.lblName.Size = new System.Drawing.Size(38, 13);
+		this.lblName.TabIndex = 1;
+		this.lblName.Text = "Name:";
+		this.lblControllerSupport.AutoSize = true;
+		this.lblControllerSupport.BackColor = System.Drawing.Color.Transparent;
+		this.lblControllerSupport.Location = new System.Drawing.Point(55, 92);
+		this.lblControllerSupport.Name = "label3";
+		this.lblControllerSupport.Size = new System.Drawing.Size(94, 13);
+		this.lblControllerSupport.TabIndex = 21;
+		this.lblControllerSupport.Text = "Controller Support:";
 		flowLayoutPanel.AutoSize = true;
 		flowLayoutPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 		flowLayoutPanel.BackColor = System.Drawing.Color.Transparent;
@@ -1081,22 +1207,24 @@ internal class MainWindow : Form
 		this.btnRevert.Click += new System.EventHandler(OnBtnRevert_Click);
 		flowLayoutPanel2.AutoSize = true;
 		flowLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-		flowLayoutPanel2.Controls.Add(button);
-		flowLayoutPanel2.Controls.Add(button2);
-		flowLayoutPanel2.Controls.Add(button3);
+		flowLayoutPanel2.Controls.Add(this.btnSave);
+		flowLayoutPanel2.Controls.Add(this.btnSaveApply);
+		flowLayoutPanel2.Controls.Add(this.btnSaveApplyRestart);
 		flowLayoutPanel2.Location = new System.Drawing.Point(0, 0);
 		flowLayoutPanel2.Margin = new System.Windows.Forms.Padding(0);
 		flowLayoutPanel2.Name = "flowLayoutPanel1";
-		flowLayoutPanel2.Size = new System.Drawing.Size(261, 40);
+		flowLayoutPanel2.AutoSize = true;
+		flowLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+		flowLayoutPanel2.Size = new System.Drawing.Size(350, 40);
 		flowLayoutPanel2.TabIndex = 9;
-		button3.Location = new System.Drawing.Point(174, 3);
-		button3.Name = "btnSaveApplyRestart";
-		button3.Size = new System.Drawing.Size(84, 34);
-		button3.TabIndex = 2;
-		button3.Text = "Save && Apply && Restart";
-		this.toolTips.SetToolTip(button3, "Save edits, apply to Steam, and restart Steam.");
-		button3.UseVisualStyleBackColor = true;
-		button3.Click += new System.EventHandler(OnBtnSaveApplyRestart_Click);
+		this.btnSaveApplyRestart.Location = new System.Drawing.Point(174, 3);
+		this.btnSaveApplyRestart.Name = "btnSaveApplyRestart";
+		this.btnSaveApplyRestart.Size = new System.Drawing.Size(140, 34);
+		this.btnSaveApplyRestart.TabIndex = 2;
+		this.btnSaveApplyRestart.Text = "Save && Apply && Restart";
+		this.toolTips.SetToolTip(this.btnSaveApplyRestart, "Save edits, apply to Steam, and restart Steam.");
+		this.btnSaveApplyRestart.UseVisualStyleBackColor = true;
+		this.btnSaveApplyRestart.Click += new System.EventHandler(OnBtnSaveApplyRestart_Click);
 		button4.Image = SteamEdit.Properties.Resources.base_cog_32;
 		button4.Location = new System.Drawing.Point(3, 3);
 		button4.Name = "btnSettings";
@@ -1113,13 +1241,13 @@ internal class MainWindow : Form
 		this.toolTips.SetToolTip(button5, "About");
 		button5.UseVisualStyleBackColor = true;
 		button5.Click += new System.EventHandler(OnHelp_Click);
-		label4.AutoSize = true;
-		label4.BackColor = System.Drawing.Color.Transparent;
-		label4.Location = new System.Drawing.Point(79, 126);
-		label4.Name = "label4";
-		label4.Size = new System.Drawing.Size(70, 13);
-		label4.TabIndex = 24;
-		label4.Text = "VR Category:";
+		this.lblVRCategory.AutoSize = true;
+		this.lblVRCategory.BackColor = System.Drawing.Color.Transparent;
+		this.lblVRCategory.Location = new System.Drawing.Point(79, 126);
+		this.lblVRCategory.Name = "label4";
+		this.lblVRCategory.Size = new System.Drawing.Size(70, 13);
+		this.lblVRCategory.TabIndex = 24;
+		this.lblVRCategory.Text = "VR Category:";
 		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[1] { this.lblNumAppsShown });
 		statusStrip.Location = new System.Drawing.Point(0, 306);
 		statusStrip.Name = "statusStrip1";
@@ -1237,15 +1365,15 @@ internal class MainWindow : Form
 		this.panel1.Controls.Add(this.textGameName);
 		this.panel1.Controls.Add(flowLayoutPanel);
 		this.panel1.Controls.Add(this.checkCompleted);
-		this.panel1.Controls.Add(label2);
+		this.panel1.Controls.Add(this.lblName);
 		this.panel1.Controls.Add(this.btnVRBatch);
-		this.panel1.Controls.Add(label3);
+		this.panel1.Controls.Add(this.lblControllerSupport);
 		this.panel1.Controls.Add(this.checkHidden);
 		this.panel1.Controls.Add(this.textSortAs);
 		this.panel1.Controls.Add(this.listVR);
 		this.panel1.Controls.Add(this.listControllerSupport);
-		this.panel1.Controls.Add(label4);
-		this.panel1.Controls.Add(label);
+		this.panel1.Controls.Add(this.lblVRCategory);
+		this.panel1.Controls.Add(this.lblSortAs);
 		this.panel1.Controls.Add(this.btnControllerBatch);
 		this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
 		this.panel1.Location = new System.Drawing.Point(0, 0);

@@ -1,5 +1,7 @@
+using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace SteamEdit;
@@ -27,9 +29,25 @@ public class VRBatch : Form
 	public VRBatch()
 	{
 		InitializeComponent();
+		I18n.LanguageChanged += OnLanguageChanged;
+		ApplyLanguage();
 		listValue.Items.Add("default");
 		listValue.Items.Add("remove");
 		listValue.SelectedItem = "default";
+	}
+
+	private void OnLanguageChanged(object sender, EventArgs e)
+	{
+		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
+		ApplyLanguage();
+	}
+
+	private void ApplyLanguage()
+	{
+		Text = Strings.VRBatch_Title;
+		label1.Text = Strings.VRBatch_LabelSetAll;
+		btnOkay.Text = Strings.VRBatch_BtnOkay;
+		btnCancel.Text = Strings.VRBatch_BtnCancel;
 	}
 
 	protected override void Dispose(bool disposing)
