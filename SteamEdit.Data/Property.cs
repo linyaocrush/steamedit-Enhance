@@ -138,7 +138,7 @@ internal class Property
 		bool result = false;
 		if (obj is Property property)
 		{
-			result = Name == property.Name && _propType == property._propType && _value.Equals(property.Value);
+			result = Name == property.Name && _propType == property._propType && Equals(_value, property.Value);
 		}
 		return result;
 	}

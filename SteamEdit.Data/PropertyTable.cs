@@ -8,6 +8,7 @@ namespace SteamEdit.Data;
 internal class PropertyTable : IEquatable<PropertyTable>
 {
 	private List<Property> _properties = new List<Property>();
+	private Dictionary<string, Property> _propertyMap = new Dictionary<string, Property>(StringComparer.Ordinal);
 
 	public int Count => _properties.Count;
 
@@ -15,7 +16,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	internal IEnumerable<Property> Properties => _properties;
 
-	internal Property this[string name] => _properties.FirstOrDefault((Property prop) => prop.Name == name);
+	internal Property this[string name] => _propertyMap.TryGetValue(name, out var prop) ? prop : null;
 
 	public bool HasProperty(params string[] PropertyPath)
 	{
@@ -142,6 +143,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	{
 		Property item = new Property(name, type, value);
 		_properties.Add(item);
+		_propertyMap[name] = item;
 	}
 
 	public bool SetPropertyValue(string name, PropertyType type, object value)
@@ -151,6 +153,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		{
 			property = new Property(name);
 			_properties.Add(property);
+			_propertyMap[name] = property;
 		}
 		bool result = property.PropertyType != type || !property.Value.Equals(value);
 		property.PropertyType = type;
@@ -184,6 +187,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public void RemoveProperty(string name)
 	{
 		_properties.RemoveAll((Property prop) => prop.Name == name);
+		_propertyMap.Remove(name);
 	}
 
 	public void RemoveProperty(params string[] propertyPath)
@@ -221,6 +225,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public void Clear()
 	{
 		_properties.Clear();
+		_propertyMap.Clear();
 	}
 
 	public PropertyTable()
@@ -230,6 +235,10 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public PropertyTable(PropertyTable other)
 	{
 		_properties.AddRange(other._properties.Select((Property prop) => new Property(prop)));
+		foreach (var prop in _properties)
+		{
+			_propertyMap[prop.Name] = prop;
+		}
 	}
 
 	public bool Equals(PropertyTable other)

@@ -889,7 +889,7 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			IAppInfoEntry entry = (IAppInfoEntry)appSelection.SelectedItem;
-			SetEntryVR(entry, listControllerSupport.SelectedIndex != 0);
+			SetEntryVR(entry, listVR.SelectedIndex != 0);
 		}
 	}
 

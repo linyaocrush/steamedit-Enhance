@@ -54,7 +54,8 @@ public class ReleaseNotesView : Form
 				string text2 = array[i];
 				if (text2.StartsWith("v"))
 				{
-					text = text2.Substring(1, text2.IndexOf(' ') - 1);
+					int spaceIndex = text2.IndexOf(' ');
+					text = spaceIndex > 0 ? text2.Substring(1, spaceIndex - 1) : text2.Substring(1);
 					if (ShownVersion.Length == 0)
 					{
 						ShownVersion = text;
