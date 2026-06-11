@@ -198,6 +198,45 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue(false)]
+	public bool AutoStart
+	{
+		get
+		{
+			return (bool)_values["AutoStart"];
+		}
+		set
+		{
+			_values["AutoStart"] = value;
+		}
+	}
+
+	[DefaultValue(false)]
+	public bool AutoStartAutoFix
+	{
+		get
+		{
+			return (bool)_values["AutoStartAutoFix"];
+		}
+		set
+		{
+			_values["AutoStartAutoFix"] = value;
+		}
+	}
+
+	[DefaultValue(false)]
+	public bool AutoStartForceStart
+	{
+		get
+		{
+			return (bool)_values["AutoStartForceStart"];
+		}
+		set
+		{
+			_values["AutoStartForceStart"] = value;
+		}
+	}
+
 	[DefaultValue("")]
 	public string Language
 	{

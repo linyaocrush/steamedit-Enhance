@@ -171,6 +171,24 @@
   <data name="Tooltip_PassThroughArgs" xml:space="preserve">
     <value>Arguments to pass along when launching Steam...</value>
   </data>
+  <data name="Settings_AutoStart" xml:space="preserve">
+    <value>Start on Boot</value>
+  </data>
+  <data name="Settings_AutoStartAutoFix" xml:space="preserve">
+    <value>autofix</value>
+  </data>
+  <data name="Settings_AutoStartForceStart" xml:space="preserve">
+    <value>forcestart</value>
+  </data>
+  <data name="Tooltip_AutoStart" xml:space="preserve">
+    <value>Add SteamEdit to Windows startup registry</value>
+  </data>
+  <data name="Tooltip_AutoStartAutoFix" xml:space="preserve">
+    <value>Auto-apply pending changes on startup (autofix)</value>
+  </data>
+  <data name="Tooltip_AutoStartForceStart" xml:space="preserve">
+    <value>Also restart Steam after applying changes (forcestart). Requires autofix.</value>
+  </data>
 
   <!-- LaunchEditor -->
   <data name="LaunchEditor_Title" xml:space="preserve">

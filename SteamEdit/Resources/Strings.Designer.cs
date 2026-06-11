@@ -86,6 +86,12 @@ namespace SteamEdit {
         internal static string Tooltip_EnableCompleted => ResourceManager.GetString("Tooltip_EnableCompleted", resourceCulture);
         internal static string Tooltip_AppInfoPath => ResourceManager.GetString("Tooltip_AppInfoPath", resourceCulture);
         internal static string Tooltip_PassThroughArgs => ResourceManager.GetString("Tooltip_PassThroughArgs", resourceCulture);
+        internal static string Settings_AutoStart => ResourceManager.GetString("Settings_AutoStart", resourceCulture);
+        internal static string Settings_AutoStartAutoFix => ResourceManager.GetString("Settings_AutoStartAutoFix", resourceCulture);
+        internal static string Settings_AutoStartForceStart => ResourceManager.GetString("Settings_AutoStartForceStart", resourceCulture);
+        internal static string Tooltip_AutoStart => ResourceManager.GetString("Tooltip_AutoStart", resourceCulture);
+        internal static string Tooltip_AutoStartAutoFix => ResourceManager.GetString("Tooltip_AutoStartAutoFix", resourceCulture);
+        internal static string Tooltip_AutoStartForceStart => ResourceManager.GetString("Tooltip_AutoStartForceStart", resourceCulture);
         internal static string LaunchEditor_Title => ResourceManager.GetString("LaunchEditor_Title", resourceCulture);
         internal static string LaunchEditor_LabelInstallPath => ResourceManager.GetString("LaunchEditor_LabelInstallPath", resourceCulture);
         internal static string LaunchEditor_BtnAddNew => ResourceManager.GetString("LaunchEditor_BtnAddNew", resourceCulture);

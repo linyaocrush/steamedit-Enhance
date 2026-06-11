@@ -171,6 +171,24 @@
   <data name="Tooltip_PassThroughArgs" xml:space="preserve">
     <value>启动 Steam 时传递的参数...</value>
   </data>
+  <data name="Settings_AutoStart" xml:space="preserve">
+    <value>开机自启动</value>
+  </data>
+  <data name="Settings_AutoStartAutoFix" xml:space="preserve">
+    <value>自动修复</value>
+  </data>
+  <data name="Settings_AutoStartForceStart" xml:space="preserve">
+    <value>强制重启</value>
+  </data>
+  <data name="Tooltip_AutoStart" xml:space="preserve">
+    <value>将 SteamEdit 添加到 Windows 开机启动项</value>
+  </data>
+  <data name="Tooltip_AutoStartAutoFix" xml:space="preserve">
+    <value>启动时自动应用待处理的更改 (autofix)</value>
+  </data>
+  <data name="Tooltip_AutoStartForceStart" xml:space="preserve">
+    <value>应用更改后重启 Steam (forcestart)，需要勾选 autofix</value>
+  </data>
 
   <!-- LaunchEditor -->
   <data name="LaunchEditor_Title" xml:space="preserve">

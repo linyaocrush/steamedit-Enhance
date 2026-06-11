@@ -4,12 +4,16 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using Common;
+using Microsoft.Win32;
 using SteamEdit.Properties;
 
 namespace SteamEdit;
 
 internal class SettingsDlg : Form
 {
+    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string RunValueName = "SteamEdit";
+
     private IContainer components;
 
     private CheckBox checkEnableCompleted;
@@ -38,6 +42,16 @@ internal class SettingsDlg : Form
 
     private Label label6;
 
+    private Label lblAutoStart;
+
+    private CheckBox checkAutoStart;
+
+    private CheckBox checkAutoStartAutoFix;
+
+    private CheckBox checkAutoStartForceStart;
+
+    private Panel panelAutoStartSub;
+
     public SettingsDlg()
     {
         InitializeComponent();
@@ -50,8 +64,11 @@ internal class SettingsDlg : Form
         checkReplaceLocalizedNames.Checked = Settings.Default.ReplaceLocalizedNames;
         textPassThroughArgs.Text = Settings.Default.PassThroughArguments;
         textAppInfoPath.Text = Settings.Default.AppInfoPath;
+        checkAutoStart.Checked = Settings.Default.AutoStart;
+        checkAutoStartAutoFix.Checked = Settings.Default.AutoStartAutoFix;
+        checkAutoStartForceStart.Checked = Settings.Default.AutoStartForceStart;
+        UpdateAutoStartSubEnabled();
 
-        // Set language combo selection
         string savedLang = Settings.Default.Language;
         if (string.IsNullOrEmpty(savedLang))
         {
@@ -78,7 +95,11 @@ internal class SettingsDlg : Form
             Settings.Default.ReplaceLocalizedNames = checkReplaceLocalizedNames.Checked;
             Settings.Default.PassThroughArguments = textPassThroughArgs.Text;
             Settings.Default.AppInfoPath = textAppInfoPath.Text;
+            Settings.Default.AutoStart = checkAutoStart.Checked;
+            Settings.Default.AutoStartAutoFix = checkAutoStartAutoFix.Checked;
+            Settings.Default.AutoStartForceStart = checkAutoStartForceStart.Checked;
             Settings.Default.Save();
+            ApplyAutoStartRegistry();
         }
     }
 
@@ -112,6 +133,57 @@ internal class SettingsDlg : Form
         I18n.SetLanguage(cultureCode);
     }
 
+    private void checkAutoStart_CheckedChanged(object sender, EventArgs e)
+    {
+        UpdateAutoStartSubEnabled();
+    }
+
+    private void checkAutoStartForceStart_CheckedChanged(object sender, EventArgs e)
+    {
+        if (checkAutoStartForceStart.Checked)
+        {
+            checkAutoStartAutoFix.Checked = true;
+        }
+    }
+
+    private void UpdateAutoStartSubEnabled()
+    {
+        bool enabled = checkAutoStart.Checked;
+        checkAutoStartAutoFix.Enabled = enabled;
+        checkAutoStartForceStart.Enabled = enabled;
+        if (!enabled)
+        {
+            checkAutoStartAutoFix.Checked = false;
+            checkAutoStartForceStart.Checked = false;
+        }
+    }
+
+    private static void ApplyAutoStartRegistry()
+    {
+        try
+        {
+            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+            if (key == null) return;
+
+            if (Settings.Default.AutoStart)
+            {
+                string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+                string args = "";
+                if (Settings.Default.AutoStartAutoFix) args += " autofix";
+                if (Settings.Default.AutoStartForceStart) args += " forcestart";
+                key.SetValue(RunValueName, $"\"{exePath}\"{args}");
+            }
+            else
+            {
+                key.DeleteValue(RunValueName, throwOnMissingValue: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.WriteLine("Failed to update auto-start registry: {0}", ex.Message);
+        }
+    }
+
     private void OnLanguageChanged(object sender, EventArgs e)
     {
         if (InvokeRequired)
@@ -131,6 +203,10 @@ internal class SettingsDlg : Form
         label4.Text = Strings.Settings_PassThroughArgs;
         label5.Text = Strings.Settings_ReplaceLocalizedNames;
         label6.Text = Strings.Settings_AppInfoPath;
+        lblAutoStart.Text = Strings.Settings_AutoStart;
+        checkAutoStart.Text = "";
+        checkAutoStartAutoFix.Text = Strings.Settings_AutoStartAutoFix;
+        checkAutoStartForceStart.Text = Strings.Settings_AutoStartForceStart;
         checkReplaceLocalizedNames.Text = "";
         toolTip.SetToolTip(checkReplaceLocalizedNames, Strings.Tooltip_ReplaceLocalizedNames);
         checkEnabledHidden.Text = "";
@@ -139,6 +215,9 @@ internal class SettingsDlg : Form
         toolTip.SetToolTip(checkEnableCompleted, Strings.Tooltip_EnableCompleted);
         toolTip.SetToolTip(textAppInfoPath, Strings.Tooltip_AppInfoPath);
         toolTip.SetToolTip(textPassThroughArgs, Strings.Tooltip_PassThroughArgs);
+        toolTip.SetToolTip(checkAutoStart, Strings.Tooltip_AutoStart);
+        toolTip.SetToolTip(checkAutoStartAutoFix, Strings.Tooltip_AutoStartAutoFix);
+        toolTip.SetToolTip(checkAutoStartForceStart, Strings.Tooltip_AutoStartForceStart);
     }
 
     protected override void OnLoad(EventArgs e)
@@ -182,19 +261,27 @@ internal class SettingsDlg : Form
         System.Windows.Forms.Panel panel = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button2 = new System.Windows.Forms.Button();
         this.label6 = new System.Windows.Forms.Label();
+        this.lblAutoStart = new System.Windows.Forms.Label();
+        this.checkAutoStart = new System.Windows.Forms.CheckBox();
+        this.checkAutoStartAutoFix = new System.Windows.Forms.CheckBox();
+        this.checkAutoStartForceStart = new System.Windows.Forms.CheckBox();
+        this.panelAutoStartSub = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
         panel.SuspendLayout();
+        this.panelAutoStartSub.SuspendLayout();
         base.SuspendLayout();
+        // btnOK
         button.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 226);
+        button.Location = new System.Drawing.Point(12, 280);
         button.Name = "btnOK";
         button.Size = new System.Drawing.Size(88, 30);
         button.TabIndex = 3;
         button.Text = "OK";
         button.UseVisualStyleBackColor = true;
         button.Click += new System.EventHandler(btnOK_Click);
+        // label1 (Completed)
         this.label1.AutoSize = true;
         this.label1.Location = new System.Drawing.Point(6, 6);
         this.label1.Margin = new System.Windows.Forms.Padding(6);
@@ -202,6 +289,7 @@ internal class SettingsDlg : Form
         this.label1.Size = new System.Drawing.Size(103, 13);
         this.label1.TabIndex = 0;
         this.label1.Text = "Enable \"Completed\"";
+        // label2 (Hidden)
         this.label2.AutoSize = true;
         this.label2.Location = new System.Drawing.Point(6, 32);
         this.label2.Margin = new System.Windows.Forms.Padding(6);
@@ -209,6 +297,7 @@ internal class SettingsDlg : Form
         this.label2.Size = new System.Drawing.Size(87, 13);
         this.label2.TabIndex = 1;
         this.label2.Text = "Enable \"Hidden\"";
+        // lblLanguage
         this.lblLanguage.AutoSize = true;
         this.lblLanguage.Location = new System.Drawing.Point(6, 58);
         this.lblLanguage.Margin = new System.Windows.Forms.Padding(6);
@@ -216,6 +305,7 @@ internal class SettingsDlg : Form
         this.lblLanguage.Size = new System.Drawing.Size(55, 13);
         this.lblLanguage.TabIndex = 10;
         this.lblLanguage.Text = "Language:";
+        // comboLanguage
         this.comboLanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
         this.comboLanguage.FormattingEnabled = true;
         this.comboLanguage.Items.AddRange(new object[] { "English", "简体中文" });
@@ -224,41 +314,7 @@ internal class SettingsDlg : Form
         this.comboLanguage.Size = new System.Drawing.Size(121, 21);
         this.comboLanguage.TabIndex = 11;
         this.comboLanguage.SelectedIndexChanged += new System.EventHandler(comboLanguage_SelectedIndexChanged);
-        this.label4.AutoSize = true;
-        this.label4.Location = new System.Drawing.Point(6, 110);
-        this.label4.Margin = new System.Windows.Forms.Padding(6);
-        this.label4.Name = "label4";
-        this.label4.Size = new System.Drawing.Size(126, 13);
-        this.label4.TabIndex = 4;
-        this.label4.Text = "Pass-Through Arguments";
-        tableLayoutPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-        tableLayoutPanel.ColumnCount = 2;
-        tableLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 41.91617f));
-        tableLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 58.08383f));
-        tableLayoutPanel.Controls.Add(this.label5, 0, 2);
-        tableLayoutPanel.Controls.Add(this.checkReplaceLocalizedNames, 1, 2);
-        tableLayoutPanel.Controls.Add(this.checkEnabledHidden, 1, 1);
-        tableLayoutPanel.Controls.Add(this.checkEnableCompleted, 1, 0);
-        tableLayoutPanel.Controls.Add(this.label1, 0, 0);
-        tableLayoutPanel.Controls.Add(this.label2, 0, 1);
-        tableLayoutPanel.Controls.Add(panel, 1, 5);
-        tableLayoutPanel.Controls.Add(this.label6, 0, 5);
-        tableLayoutPanel.Controls.Add(this.textPassThroughArgs, 1, 4);
-        tableLayoutPanel.Controls.Add(this.lblLanguage, 0, 3);
-        tableLayoutPanel.Controls.Add(this.comboLanguage, 1, 3);
-        tableLayoutPanel.Controls.Add(this.label4, 0, 4);
-        tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
-        tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
-        tableLayoutPanel.Name = "tableLayoutPanel1";
-        tableLayoutPanel.RowCount = 6;
-        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
-        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 13f));
-        tableLayoutPanel.Size = new System.Drawing.Size(395, 214);
-        tableLayoutPanel.TabIndex = 7;
+        // label5 (ReplaceLocalizedNames)
         this.label5.AutoSize = true;
         this.label5.Location = new System.Drawing.Point(6, 84);
         this.label5.Margin = new System.Windows.Forms.Padding(6);
@@ -266,6 +322,7 @@ internal class SettingsDlg : Form
         this.label5.Size = new System.Drawing.Size(145, 13);
         this.label5.TabIndex = 9;
         this.label5.Text = "Replace All Localized Names";
+        // checkReplaceLocalizedNames
         this.checkReplaceLocalizedNames.AutoSize = true;
         this.checkReplaceLocalizedNames.Location = new System.Drawing.Point(171, 84);
         this.checkReplaceLocalizedNames.Margin = new System.Windows.Forms.Padding(6);
@@ -274,6 +331,7 @@ internal class SettingsDlg : Form
         this.checkReplaceLocalizedNames.TabIndex = 8;
         this.toolTip.SetToolTip(this.checkReplaceLocalizedNames, "Replace all localized game names with the original name.");
         this.checkReplaceLocalizedNames.UseVisualStyleBackColor = true;
+        // checkEnabledHidden
         this.checkEnabledHidden.AutoSize = true;
         this.checkEnabledHidden.Location = new System.Drawing.Point(171, 32);
         this.checkEnabledHidden.Margin = new System.Windows.Forms.Padding(6);
@@ -282,6 +340,7 @@ internal class SettingsDlg : Form
         this.checkEnabledHidden.TabIndex = 1;
         this.toolTip.SetToolTip(this.checkEnabledHidden, "Hide games in Steam's list.");
         this.checkEnabledHidden.UseVisualStyleBackColor = true;
+        // checkEnableCompleted
         this.checkEnableCompleted.AutoSize = true;
         this.checkEnableCompleted.Location = new System.Drawing.Point(171, 6);
         this.checkEnableCompleted.Margin = new System.Windows.Forms.Padding(6);
@@ -290,14 +349,31 @@ internal class SettingsDlg : Form
         this.checkEnableCompleted.TabIndex = 0;
         this.toolTip.SetToolTip(this.checkEnableCompleted, "Append symbol on completed games");
         this.checkEnableCompleted.UseVisualStyleBackColor = true;
+        // label4 (PassThrough)
+        this.label4.AutoSize = true;
+        this.label4.Location = new System.Drawing.Point(6, 110);
+        this.label4.Margin = new System.Windows.Forms.Padding(6);
+        this.label4.Name = "label4";
+        this.label4.Size = new System.Drawing.Size(126, 13);
+        this.label4.TabIndex = 4;
+        this.label4.Text = "Pass-Through Arguments";
+        // textPassThroughArgs
+        this.textPassThroughArgs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.textPassThroughArgs.Location = new System.Drawing.Point(168, 107);
+        this.textPassThroughArgs.Name = "textPassThroughArgs";
+        this.textPassThroughArgs.Size = new System.Drawing.Size(224, 20);
+        this.textPassThroughArgs.TabIndex = 5;
+        this.toolTip.SetToolTip(this.textPassThroughArgs, "Arguments to pass along when launching Steam...");
+        // panel (AppInfo Path)
         panel.Controls.Add(button2);
         panel.Controls.Add(this.textAppInfoPath);
         panel.Dock = System.Windows.Forms.DockStyle.Fill;
         panel.Location = new System.Drawing.Point(165, 157);
         panel.Margin = new System.Windows.Forms.Padding(0);
         panel.Name = "panel1";
-        panel.Size = new System.Drawing.Size(230, 57);
+        panel.Size = new System.Drawing.Size(230, 27);
         panel.TabIndex = 7;
+        // btnSelectAppInfo
         button2.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
         button2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
         button2.Image = SteamEdit.Properties.Resources.openfolderHS;
@@ -308,38 +384,115 @@ internal class SettingsDlg : Form
         button2.TabIndex = 12;
         button2.UseVisualStyleBackColor = true;
         button2.Click += new System.EventHandler(btnSelectAppInfo_Click);
+        // textAppInfoPath
         this.textAppInfoPath.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         this.textAppInfoPath.Location = new System.Drawing.Point(3, 3);
         this.textAppInfoPath.Name = "textAppInfoPath";
         this.textAppInfoPath.Size = new System.Drawing.Size(195, 20);
         this.textAppInfoPath.TabIndex = 7;
         this.toolTip.SetToolTip(this.textAppInfoPath, "Path to Steam's appinfo.vdf file");
+        // label6 (AppInfo Path)
         this.label6.AutoSize = true;
-        this.label6.Location = new System.Drawing.Point(6, 163);
+        this.label6.Location = new System.Drawing.Point(6, 139);
         this.label6.Margin = new System.Windows.Forms.Padding(6);
         this.label6.Name = "label6";
         this.label6.Size = new System.Drawing.Size(147, 13);
         this.label6.TabIndex = 6;
         this.label6.Text = "AppInfo Path (requires restart)";
-        this.textPassThroughArgs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-        this.textPassThroughArgs.Location = new System.Drawing.Point(168, 107);
-        this.textPassThroughArgs.Name = "textPassThroughArgs";
-        this.textPassThroughArgs.Size = new System.Drawing.Size(224, 20);
-        this.textPassThroughArgs.TabIndex = 5;
-        this.toolTip.SetToolTip(this.textPassThroughArgs, "Arguments to pass along when launching Steam...");
+        // lblAutoStart
+        this.lblAutoStart.AutoSize = true;
+        this.lblAutoStart.Location = new System.Drawing.Point(6, 7);
+        this.lblAutoStart.Margin = new System.Windows.Forms.Padding(6);
+        this.lblAutoStart.Name = "lblAutoStart";
+        this.lblAutoStart.Size = new System.Drawing.Size(80, 13);
+        this.lblAutoStart.TabIndex = 13;
+        this.lblAutoStart.Text = "Start on Boot";
+        // checkAutoStart
+        this.checkAutoStart.AutoSize = true;
+        this.checkAutoStart.Location = new System.Drawing.Point(3, 5);
+        this.checkAutoStart.Name = "checkAutoStart";
+        this.checkAutoStart.Size = new System.Drawing.Size(15, 14);
+        this.checkAutoStart.TabIndex = 14;
+        this.toolTip.SetToolTip(this.checkAutoStart, "Add SteamEdit to Windows startup registry");
+        this.checkAutoStart.UseVisualStyleBackColor = true;
+        this.checkAutoStart.CheckedChanged += new System.EventHandler(checkAutoStart_CheckedChanged);
+        // checkAutoStartAutoFix
+        this.checkAutoStartAutoFix.AutoSize = true;
+        this.checkAutoStartAutoFix.Enabled = false;
+        this.checkAutoStartAutoFix.Location = new System.Drawing.Point(24, 5);
+        this.checkAutoStartAutoFix.Name = "checkAutoStartAutoFix";
+        this.checkAutoStartAutoFix.Size = new System.Drawing.Size(67, 17);
+        this.checkAutoStartAutoFix.TabIndex = 15;
+        this.checkAutoStartAutoFix.Text = "autofix";
+        this.toolTip.SetToolTip(this.checkAutoStartAutoFix, "Auto-apply pending changes on startup (autofix)");
+        this.checkAutoStartAutoFix.UseVisualStyleBackColor = true;
+        // checkAutoStartForceStart
+        this.checkAutoStartForceStart.AutoSize = true;
+        this.checkAutoStartForceStart.Enabled = false;
+        this.checkAutoStartForceStart.Location = new System.Drawing.Point(96, 5);
+        this.checkAutoStartForceStart.Name = "checkAutoStartForceStart";
+        this.checkAutoStartForceStart.Size = new System.Drawing.Size(78, 17);
+        this.checkAutoStartForceStart.TabIndex = 16;
+        this.checkAutoStartForceStart.Text = "forcestart";
+        this.toolTip.SetToolTip(this.checkAutoStartForceStart, "Also restart Steam after applying changes (forcestart). Requires autofix.");
+        this.checkAutoStartForceStart.UseVisualStyleBackColor = true;
+        this.checkAutoStartForceStart.CheckedChanged += new System.EventHandler(checkAutoStartForceStart_CheckedChanged);
+        // panelAutoStartSub
+        this.panelAutoStartSub.Controls.Add(this.checkAutoStart);
+        this.panelAutoStartSub.Controls.Add(this.checkAutoStartAutoFix);
+        this.panelAutoStartSub.Controls.Add(this.checkAutoStartForceStart);
+        this.panelAutoStartSub.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.panelAutoStartSub.Margin = new System.Windows.Forms.Padding(0);
+        this.panelAutoStartSub.Name = "panelAutoStartSub";
+        this.panelAutoStartSub.Size = new System.Drawing.Size(230, 27);
+        this.panelAutoStartSub.TabIndex = 17;
+        // tableLayoutPanel
+        tableLayoutPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        tableLayoutPanel.ColumnCount = 2;
+        tableLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 44f));
+        tableLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 56f));
+        tableLayoutPanel.Controls.Add(this.label1, 0, 0);
+        tableLayoutPanel.Controls.Add(this.checkEnableCompleted, 1, 0);
+        tableLayoutPanel.Controls.Add(this.label2, 0, 1);
+        tableLayoutPanel.Controls.Add(this.checkEnabledHidden, 1, 1);
+        tableLayoutPanel.Controls.Add(this.label5, 0, 2);
+        tableLayoutPanel.Controls.Add(this.checkReplaceLocalizedNames, 1, 2);
+        tableLayoutPanel.Controls.Add(this.lblLanguage, 0, 3);
+        tableLayoutPanel.Controls.Add(this.comboLanguage, 1, 3);
+        tableLayoutPanel.Controls.Add(this.label4, 0, 4);
+        tableLayoutPanel.Controls.Add(this.textPassThroughArgs, 1, 4);
+        tableLayoutPanel.Controls.Add(this.label6, 0, 5);
+        tableLayoutPanel.Controls.Add(panel, 1, 5);
+        tableLayoutPanel.Controls.Add(this.lblAutoStart, 0, 6);
+        tableLayoutPanel.Controls.Add(this.panelAutoStartSub, 1, 6);
+        tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
+        tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
+        tableLayoutPanel.Name = "tableLayoutPanel1";
+        tableLayoutPanel.RowCount = 7;
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.Size = new System.Drawing.Size(395, 265);
+        tableLayoutPanel.TabIndex = 7;
+        // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button3.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button3.Location = new System.Drawing.Point(106, 226);
+        button3.Location = new System.Drawing.Point(106, 280);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
         button3.TabIndex = 8;
         button3.Text = "Cancel";
         button3.UseVisualStyleBackColor = true;
         button3.Click += new System.EventHandler(btnCancel_Click);
+        // Form
         base.AcceptButton = button;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
         base.CancelButton = button3;
-        base.ClientSize = new System.Drawing.Size(413, 260);
+        base.ClientSize = new System.Drawing.Size(413, 316);
         base.ControlBox = false;
         base.Controls.Add(button3);
         base.Controls.Add(tableLayoutPanel);
@@ -360,6 +513,8 @@ internal class SettingsDlg : Form
         tableLayoutPanel.PerformLayout();
         panel.ResumeLayout(false);
         panel.PerformLayout();
+        this.panelAutoStartSub.ResumeLayout(false);
+        this.panelAutoStartSub.PerformLayout();
         base.ResumeLayout(false);
     }
 }
