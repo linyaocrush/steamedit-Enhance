@@ -52,12 +52,12 @@ public class About : Form
 
 	private void linkWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
 	{
-		Process.Start(Resources.WebsiteUrl);
+		Process.Start(new ProcessStartInfo(Resources.WebsiteUrl) { UseShellExecute = true });
 	}
 
 	private void linkEmail_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
 	{
-		Process.Start("mailto:tim@tg-software.com?subject=[SteamEdit]");
+		Process.Start(new ProcessStartInfo("mailto:tim@tg-software.com?subject=[SteamEdit]") { UseShellExecute = true });
 	}
 
 	private void linkReleaseNotes_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -71,6 +71,7 @@ public class About : Form
 
 	protected override void Dispose(bool disposing)
 	{
+		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

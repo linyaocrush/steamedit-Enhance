@@ -26,7 +26,9 @@ internal static class I18n
 
     public static void SetLanguage(string cultureName)
     {
-        CurrentCulture = new CultureInfo(cultureName);
+        var newCulture = new CultureInfo(cultureName);
+        if (CurrentCulture.Name == newCulture.Name) return;
+        CurrentCulture = newCulture;
         CultureInfo.CurrentUICulture = CurrentCulture;
         Settings.Default.Language = cultureName;
         Settings.Default.Save();

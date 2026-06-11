@@ -32,8 +32,6 @@ internal class SettingsDlg : Form
 
     private Label label2;
 
-    private Label label3;
-
     private Label label4;
 
     private Label label5;
@@ -130,7 +128,6 @@ internal class SettingsDlg : Form
         label1.Text = Strings.Settings_EnableCompleted;
         label2.Text = Strings.Settings_EnableHidden;
         lblLanguage.Text = Strings.Settings_Language;
-        label3.Text = Strings.Settings_ReplaceLocalizedNames;
         label4.Text = Strings.Settings_PassThroughArgs;
         label5.Text = Strings.Settings_ReplaceLocalizedNames;
         label6.Text = Strings.Settings_AppInfoPath;
@@ -179,7 +176,6 @@ internal class SettingsDlg : Form
         System.Windows.Forms.Button button = new System.Windows.Forms.Button();
         this.label1 = new System.Windows.Forms.Label();
         this.label2 = new System.Windows.Forms.Label();
-        this.label3 = new System.Windows.Forms.Label();
         this.label4 = new System.Windows.Forms.Label();
         System.Windows.Forms.TableLayoutPanel tableLayoutPanel = new System.Windows.Forms.TableLayoutPanel();
         this.label5 = new System.Windows.Forms.Label();
@@ -228,13 +224,6 @@ internal class SettingsDlg : Form
         this.comboLanguage.Size = new System.Drawing.Size(121, 21);
         this.comboLanguage.TabIndex = 11;
         this.comboLanguage.SelectedIndexChanged += new System.EventHandler(comboLanguage_SelectedIndexChanged);
-        this.label3.AutoSize = true;
-        this.label3.Location = new System.Drawing.Point(6, 84);
-        this.label3.Margin = new System.Windows.Forms.Padding(6);
-        this.label3.Name = "label3";
-        this.label3.Size = new System.Drawing.Size(145, 13);
-        this.label3.TabIndex = 3;
-        this.label3.Text = "Replace All Localized Names";
         this.label4.AutoSize = true;
         this.label4.Location = new System.Drawing.Point(6, 110);
         this.label4.Margin = new System.Windows.Forms.Padding(6);

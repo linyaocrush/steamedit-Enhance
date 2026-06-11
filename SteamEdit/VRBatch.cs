@@ -26,14 +26,15 @@ public class VRBatch : Form
 
 	public ValueTag Value => (ValueTag)listValue.SelectedIndex;
 
+	private static readonly string[] VRRawValues = { "default", "remove" };
+
 	public VRBatch()
 	{
 		InitializeComponent();
 		I18n.LanguageChanged += OnLanguageChanged;
 		ApplyLanguage();
-		listValue.Items.Add("default");
-		listValue.Items.Add("remove");
-		listValue.SelectedItem = "default";
+		foreach (var val in VRRawValues) listValue.Items.Add(val);
+		listValue.SelectedIndex = 0;
 	}
 
 	private void OnLanguageChanged(object sender, EventArgs e)
@@ -48,10 +49,21 @@ public class VRBatch : Form
 		label1.Text = Strings.VRBatch_LabelSetAll;
 		btnOkay.Text = Strings.VRBatch_BtnOkay;
 		btnCancel.Text = Strings.VRBatch_BtnCancel;
+		listValue.Format -= VrCombo_Format;
+		listValue.Format += VrCombo_Format;
+		listValue.Refresh();
+	}
+
+	private void VrCombo_Format(object sender, ListControlConvertEventArgs e)
+	{
+		string raw = e.ListItem as string;
+		if (raw == "default") e.Value = Strings.MainWindow_VR_Default;
+		else if (raw == "remove") e.Value = Strings.MainWindow_VR_Removed;
 	}
 
 	protected override void Dispose(bool disposing)
 	{
+		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

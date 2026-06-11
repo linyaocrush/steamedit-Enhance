@@ -45,7 +45,7 @@ internal static class Program
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.FileName = text;
-            openFileDialog.Title = "Select Steam's appinfo.vdf file";
+            openFileDialog.Title = Strings.Msg_SelectAppInfoTitle;
             openFileDialog.ValidateNames = true;
             openFileDialog.CheckFileExists = true;
             openFileDialog.ReadOnlyChecked = true;
@@ -62,12 +62,12 @@ internal static class Program
         }
         catch (UnknownAppInfoVersionException ex2)
         {
-            MessageBoxWithDetails.Show("Unknown version while trying to load appinfo.vdf. Either we're trying to load the wrong file, or maybe Steam has updated something, and a fix is needed for SteamEdit", "SteamEdit: Critical Error", $"AppInfo Path: {ex2.AppInfoPath}\r\nDetected Version: {ex2.AppInfoVersion:X8}");
+            MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ex2.AppInfoPath}\r\nDetected Version: {ex2.AppInfoVersion:X8}");
             return false;
         }
         catch (AppInfoLoadException ex3)
         {
-            MessageBoxWithDetails.Show("Failed to load appinfo.vdf. Possibly corrupted. Please locate your appinfo.vdf file.", "SteamEdit: Critical Error", ex3.ToString());
+            MessageBoxWithDetails.Show(Strings.Msg_LoadFailed, Strings.Msg_CriticalError, ex3.ToString());
             return InitializeSteamData(ref dataInit, tryCurrentPath: false, silent);
         }
         if (text != Settings.Default.AppInfoPath)
@@ -128,11 +128,11 @@ internal static class Program
 
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        MessageBoxWithDetails.Show("Unhandled exception. Not sure what went wrong, but you might be able to continue working.", "SteamEdit: Unhandled exception", e.ExceptionObject.ToString());
+        MessageBoxWithDetails.Show(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, e.ExceptionObject.ToString());
     }
 
     private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
     {
-        MessageBoxWithDetails.Show("Unhandled exception. Not sure what went wrong, but you might be able to continue working.", "SteamEdit: Unhandled exception", e.Exception.ToString());
+        MessageBoxWithDetails.Show(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, e.Exception.ToString());
     }
 }

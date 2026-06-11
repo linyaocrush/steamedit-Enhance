@@ -106,6 +106,7 @@ internal class SelectAppLaunch : Form
 
 	protected override void Dispose(bool disposing)
 	{
+		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

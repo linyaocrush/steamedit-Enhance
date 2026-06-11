@@ -50,10 +50,25 @@ public class ControllerBatch : Form
 		if (btnOkay != null) btnOkay.Text = Strings.ControllerBatch_BtnOkay;
 		var btnCancel = Controls.Find("btnCancel", true).FirstOrDefault() as Button;
 		if (btnCancel != null) btnCancel.Text = Strings.ControllerBatch_BtnCancel;
+		listFrom.Format -= ControllerCombo_Format;
+		listFrom.Format += ControllerCombo_Format;
+		listTo.Format -= ControllerCombo_Format;
+		listTo.Format += ControllerCombo_Format;
+		listFrom.Refresh();
+		listTo.Refresh();
+	}
+
+	private void ControllerCombo_Format(object sender, ListControlConvertEventArgs e)
+	{
+		string raw = e.ListItem as string;
+		if (raw == "none") e.Value = Strings.MainWindow_Controller_None;
+		else if (raw == "partial") e.Value = Strings.MainWindow_Controller_Partial;
+		else if (raw == "full") e.Value = Strings.MainWindow_Controller_Full;
 	}
 
 	protected override void Dispose(bool disposing)
 	{
+		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();
