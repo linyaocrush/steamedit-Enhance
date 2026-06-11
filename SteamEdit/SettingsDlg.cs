@@ -50,7 +50,7 @@ internal class SettingsDlg : Form
 
     private CheckBox checkAutoStartForceStart;
 
-    private Panel panelAutoStartSub;
+    private FlowLayoutPanel panelAutoStartSub;
 
     private bool _loading;
     private bool _snapshotAutoStart;
@@ -197,8 +197,8 @@ internal class SettingsDlg : Form
             {
                 string exePath = Application.ExecutablePath;
                 string args = "";
-                if (autoFix) args += " autofix";
-                if (forceStart) args += " forcestart";
+                if (autoFix) args += " -autofix";
+                if (forceStart) args += " -forcestart";
                 key.SetValue(RunValueName, $"\"{exePath}\"{args}");
             }
             else
@@ -293,7 +293,7 @@ internal class SettingsDlg : Form
         this.checkAutoStart = new System.Windows.Forms.CheckBox();
         this.checkAutoStartAutoFix = new System.Windows.Forms.CheckBox();
         this.checkAutoStartForceStart = new System.Windows.Forms.CheckBox();
-        this.panelAutoStartSub = new System.Windows.Forms.Panel();
+        this.panelAutoStartSub = new System.Windows.Forms.FlowLayoutPanel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
         panel.SuspendLayout();
@@ -437,9 +437,8 @@ internal class SettingsDlg : Form
         this.lblAutoStart.Text = "Start on Boot";
         // checkAutoStart
         this.checkAutoStart.AutoSize = true;
-        this.checkAutoStart.Location = new System.Drawing.Point(3, 5);
+        this.checkAutoStart.Margin = new System.Windows.Forms.Padding(3, 5, 8, 3);
         this.checkAutoStart.Name = "checkAutoStart";
-        this.checkAutoStart.Size = new System.Drawing.Size(15, 14);
         this.checkAutoStart.TabIndex = 14;
         this.toolTip.SetToolTip(this.checkAutoStart, "Add SteamEdit to Windows startup registry");
         this.checkAutoStart.UseVisualStyleBackColor = true;
@@ -447,9 +446,8 @@ internal class SettingsDlg : Form
         // checkAutoStartAutoFix
         this.checkAutoStartAutoFix.AutoSize = true;
         this.checkAutoStartAutoFix.Enabled = false;
-        this.checkAutoStartAutoFix.Location = new System.Drawing.Point(24, 5);
+        this.checkAutoStartAutoFix.Margin = new System.Windows.Forms.Padding(3, 5, 8, 3);
         this.checkAutoStartAutoFix.Name = "checkAutoStartAutoFix";
-        this.checkAutoStartAutoFix.Size = new System.Drawing.Size(67, 17);
         this.checkAutoStartAutoFix.TabIndex = 15;
         this.checkAutoStartAutoFix.Text = "autofix";
         this.toolTip.SetToolTip(this.checkAutoStartAutoFix, "Auto-apply pending changes on startup (autofix)");
@@ -458,9 +456,8 @@ internal class SettingsDlg : Form
         // checkAutoStartForceStart
         this.checkAutoStartForceStart.AutoSize = true;
         this.checkAutoStartForceStart.Enabled = false;
-        this.checkAutoStartForceStart.Location = new System.Drawing.Point(96, 5);
+        this.checkAutoStartForceStart.Margin = new System.Windows.Forms.Padding(3, 5, 3, 3);
         this.checkAutoStartForceStart.Name = "checkAutoStartForceStart";
-        this.checkAutoStartForceStart.Size = new System.Drawing.Size(78, 17);
         this.checkAutoStartForceStart.TabIndex = 16;
         this.checkAutoStartForceStart.Text = "forcestart";
         this.toolTip.SetToolTip(this.checkAutoStartForceStart, "Also restart Steam after applying changes (forcestart). Requires autofix.");
@@ -471,6 +468,9 @@ internal class SettingsDlg : Form
         this.panelAutoStartSub.Controls.Add(this.checkAutoStartAutoFix);
         this.panelAutoStartSub.Controls.Add(this.checkAutoStartForceStart);
         this.panelAutoStartSub.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.panelAutoStartSub.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
+        this.panelAutoStartSub.AutoSize = true;
+        this.panelAutoStartSub.WrapContents = false;
         this.panelAutoStartSub.Margin = new System.Windows.Forms.Padding(0);
         this.panelAutoStartSub.Name = "panelAutoStartSub";
         this.panelAutoStartSub.Size = new System.Drawing.Size(230, 27);
