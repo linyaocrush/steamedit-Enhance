@@ -364,6 +364,9 @@ internal class SettingsDlg : Form
         this.textAiApiKey = new System.Windows.Forms.TextBox();
         this.lblAiTargetLanguage = new System.Windows.Forms.Label();
         this.comboAiTargetLanguage = new System.Windows.Forms.ComboBox();
+        this.lblAiModel = new System.Windows.Forms.Label();
+        this.comboAiModel = new System.Windows.Forms.ComboBox();
+        this.btnFetchModels = new System.Windows.Forms.Button();
         System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
