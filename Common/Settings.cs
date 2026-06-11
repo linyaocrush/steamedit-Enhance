@@ -276,6 +276,19 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue("gpt-4o-mini")]
+	public string AiModel
+	{
+		get
+		{
+			return (string)_values["AiModel"];
+		}
+		set
+		{
+			_values["AiModel"] = value;
+		}
+	}
+
 	[DefaultValue("zh-CN")]
 	public string AiTargetLanguage
 	{

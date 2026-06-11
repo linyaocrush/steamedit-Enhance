@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -11,18 +12,53 @@ internal static class AiTranslator
 {
 	private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
+	public static async Task<List<string>> FetchModelsAsync(CancellationToken cancellationToken = default)
+	{
+		string apiUrl = Settings.Default.AiApiUrl.TrimEnd('/');
+		string apiKey = Settings.Default.AiApiKey;
+
+		// Strip /chat/completions to get base URL, then call /models
+		string baseUrl = apiUrl;
+		if (baseUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
+			baseUrl = baseUrl[..^"/chat/completions".Length];
+
+		string modelsUrl = baseUrl + "/models";
+
+		using var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
+		if (!string.IsNullOrWhiteSpace(apiKey))
+			request.Headers.Add("Authorization", $"Bearer {apiKey}");
+
+		using var response = await _httpClient.SendAsync(request, cancellationToken);
+		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+		if (!response.IsSuccessStatusCode)
+			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+
+		var models = new List<string>();
+		using var doc = JsonDocument.Parse(responseBody);
+		foreach (var item in doc.RootElement.GetProperty("data").EnumerateArray())
+		{
+			string id = item.GetProperty("id").GetString();
+			if (!string.IsNullOrEmpty(id))
+				models.Add(id);
+		}
+		models.Sort(StringComparer.OrdinalIgnoreCase);
+		return models;
+	}
+
 	public static async Task<string> TranslateAsync(string gameName, string targetLanguage, CancellationToken cancellationToken = default)
 	{
 		string apiUrl = Settings.Default.AiApiUrl.TrimEnd('/');
 		string apiKey = Settings.Default.AiApiKey;
 
 		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
-		{
 			apiUrl += "/chat/completions";
-		}
 
 		if (string.IsNullOrWhiteSpace(apiUrl))
 			throw new InvalidOperationException("AI API URL is not configured.");
+
+		string model = Settings.Default.AiModel;
+		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
 
 		string langDisplay = targetLanguage switch
 		{
@@ -43,7 +79,7 @@ Rules:
 
 		string requestBody = JsonSerializer.Serialize(new
 		{
-			model = "gpt-4o-mini",
+			model,
 			messages = new[]
 			{
 				new { role = "system", content = systemPrompt },
@@ -61,9 +97,7 @@ Rules:
 		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
 		if (!response.IsSuccessStatusCode)
-		{
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
-		}
 
 		using var doc = JsonDocument.Parse(responseBody);
 		string result = doc.RootElement

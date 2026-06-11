@@ -64,6 +64,12 @@ internal class SettingsDlg : Form
 
     private ComboBox comboAiTargetLanguage;
 
+    private Label lblAiModel;
+
+    private ComboBox comboAiModel;
+
+    private Button btnFetchModels;
+
     private bool _loading;
     private bool _snapshotAutoStart;
     private bool _snapshotAutoFix;
@@ -110,6 +116,10 @@ internal class SettingsDlg : Form
         string aiLang = Settings.Default.AiTargetLanguage;
         comboAiTargetLanguage.SelectedIndex = aiLang == "en" ? 1 : 0;
 
+        string aiModel = Settings.Default.AiModel;
+        comboAiModel.Items.Add(aiModel);
+        comboAiModel.SelectedIndex = 0;
+
         ApplyLanguage();
     }
 
@@ -128,6 +138,7 @@ internal class SettingsDlg : Form
             Settings.Default.AiApiUrl = textAiApiUrl.Text;
             Settings.Default.AiApiKey = textAiApiKey.Text;
             Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : "zh-CN";
+            Settings.Default.AiModel = comboAiModel.Text;
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
         }
@@ -158,6 +169,32 @@ internal class SettingsDlg : Form
         if (openFileDialog.ShowDialog(this) == DialogResult.OK)
         {
             textAppInfoPath.Text = openFileDialog.FileName;
+        }
+    }
+
+    private async void btnFetchModels_Click(object sender, EventArgs e)
+    {
+        btnFetchModels.Enabled = false;
+        btnFetchModels.Text = "...";
+        try
+        {
+            var models = await AiTranslator.FetchModelsAsync();
+            string current = comboAiModel.Text;
+            comboAiModel.Items.Clear();
+            foreach (var m in models) comboAiModel.Items.Add(m);
+            if (comboAiModel.Items.Contains(current))
+                comboAiModel.SelectedItem = current;
+            else if (comboAiModel.Items.Count > 0)
+                comboAiModel.SelectedIndex = 0;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnFetchModels.Text = Strings.Settings_AiFetchModels;
+            btnFetchModels.Enabled = true;
         }
     }
 
@@ -261,6 +298,8 @@ internal class SettingsDlg : Form
         lblAiTargetLanguage.Text = Strings.Settings_AiTargetLanguage;
         comboAiTargetLanguage.Items[0] = Strings.AiLang_zhCN;
         comboAiTargetLanguage.Items[1] = Strings.AiLang_en;
+        lblAiModel.Text = Strings.Settings_AiModel;
+        btnFetchModels.Text = Strings.Settings_AiFetchModels;
         toolTip.SetToolTip(checkReplaceLocalizedNames, Strings.Tooltip_ReplaceLocalizedNames);
         toolTip.SetToolTip(checkEnabledHidden, Strings.Tooltip_EnableHidden);
         toolTip.SetToolTip(checkEnableCompleted, Strings.Tooltip_EnableCompleted);
@@ -325,15 +364,17 @@ internal class SettingsDlg : Form
         this.textAiApiKey = new System.Windows.Forms.TextBox();
         this.lblAiTargetLanguage = new System.Windows.Forms.Label();
         this.comboAiTargetLanguage = new System.Windows.Forms.ComboBox();
+        System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
         panel.SuspendLayout();
         this.panelAutoStartSub.SuspendLayout();
+        panelModel.SuspendLayout();
         base.SuspendLayout();
         // btnOK
         button.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 395);
+        button.Location = new System.Drawing.Point(12, 422);
         button.Name = "btnOK";
         button.Size = new System.Drawing.Size(88, 30);
         button.TabIndex = 3;
@@ -517,6 +558,36 @@ internal class SettingsDlg : Form
         this.comboAiTargetLanguage.Name = "comboAiTargetLanguage";
         this.comboAiTargetLanguage.Size = new System.Drawing.Size(121, 21);
         this.comboAiTargetLanguage.TabIndex = 23;
+        // lblAiModel
+        this.lblAiModel.AutoSize = true;
+        this.lblAiModel.Margin = new System.Windows.Forms.Padding(6);
+        this.lblAiModel.Name = "lblAiModel";
+        this.lblAiModel.TabIndex = 24;
+        this.lblAiModel.Text = "AI Model";
+        // comboAiModel
+        this.comboAiModel.FormattingEnabled = true;
+        this.comboAiModel.Name = "comboAiModel";
+        this.comboAiModel.Size = new System.Drawing.Size(160, 21);
+        this.comboAiModel.TabIndex = 25;
+        this.comboAiModel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        // btnFetchModels
+        this.btnFetchModels.Name = "btnFetchModels";
+        this.btnFetchModels.Size = new System.Drawing.Size(60, 23);
+        this.btnFetchModels.TabIndex = 26;
+        this.btnFetchModels.Text = "Fetch";
+        this.btnFetchModels.UseVisualStyleBackColor = true;
+        this.btnFetchModels.Click += new System.EventHandler(btnFetchModels_Click);
+        this.comboAiModel.Location = new System.Drawing.Point(0, 3);
+        this.comboAiModel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.btnFetchModels.Location = new System.Drawing.Point(163, 2);
+        this.btnFetchModels.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+        // panelModel (ComboBox + Button)
+        panelModel.Controls.Add(this.comboAiModel);
+        panelModel.Controls.Add(this.btnFetchModels);
+        panelModel.Dock = System.Windows.Forms.DockStyle.Fill;
+        panelModel.Margin = new System.Windows.Forms.Padding(0);
+        panelModel.Name = "panelModel";
+        panelModel.TabIndex = 27;
         // tableLayoutPanel
         tableLayoutPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         tableLayoutPanel.ColumnCount = 2;
@@ -542,10 +613,12 @@ internal class SettingsDlg : Form
         tableLayoutPanel.Controls.Add(this.textAiApiKey, 1, 8);
         tableLayoutPanel.Controls.Add(this.lblAiTargetLanguage, 0, 9);
         tableLayoutPanel.Controls.Add(this.comboAiTargetLanguage, 1, 9);
+        tableLayoutPanel.Controls.Add(this.lblAiModel, 0, 10);
+        tableLayoutPanel.Controls.Add(panelModel, 1, 10);
         tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
         tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
         tableLayoutPanel.Name = "tableLayoutPanel1";
-        tableLayoutPanel.RowCount = 10;
+        tableLayoutPanel.RowCount = 11;
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -556,12 +629,13 @@ internal class SettingsDlg : Form
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.Size = new System.Drawing.Size(395, 380);
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableLayoutPanel.Size = new System.Drawing.Size(395, 407);
         tableLayoutPanel.TabIndex = 7;
         // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-        button3.Location = new System.Drawing.Point(106, 395);
+        button3.Location = new System.Drawing.Point(106, 422);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
         button3.TabIndex = 8;
@@ -572,7 +646,7 @@ internal class SettingsDlg : Form
         base.AcceptButton = button;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
         base.CancelButton = button3;
-        base.ClientSize = new System.Drawing.Size(413, 431);
+        base.ClientSize = new System.Drawing.Size(413, 458);
         base.ControlBox = false;
         base.Controls.Add(button3);
         base.Controls.Add(tableLayoutPanel);
@@ -595,6 +669,8 @@ internal class SettingsDlg : Form
         panel.PerformLayout();
         this.panelAutoStartSub.ResumeLayout(false);
         this.panelAutoStartSub.PerformLayout();
+        panelModel.ResumeLayout(false);
+        panelModel.PerformLayout();
         base.ResumeLayout(false);
     }
 }
