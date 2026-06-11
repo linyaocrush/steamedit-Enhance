@@ -10,19 +10,15 @@ internal static class PropertyTableIO
 {
 	internal static string ReadZString(BinaryReader reader)
 	{
-		byte[] buffer;
-		int count;
-		using (MemoryStream memoryStream = new MemoryStream())
+		byte[] buf = new byte[256];
+		int len = 0;
+		byte value;
+		while ((value = reader.ReadByte()) != 0)
 		{
-			byte value;
-			while ((value = reader.ReadByte()) != 0)
-			{
-				memoryStream.WriteByte(value);
-			}
-			buffer = memoryStream.GetBuffer();
-			count = (int)memoryStream.Length;
+			if (len == buf.Length) Array.Resize(ref buf, buf.Length * 2);
+			buf[len++] = value;
 		}
-		return Encoding.UTF8.GetString(buffer, 0, count);
+		return Encoding.UTF8.GetString(buf, 0, len);
 	}
 
 	internal static void WriteZString(BinaryWriter writer, string str)
@@ -34,19 +30,15 @@ internal static class PropertyTableIO
 
 	private static string ReadString_0x00000000(BinaryReader reader)
 	{
-		byte[] buffer;
-		int count;
-		using (MemoryStream memoryStream = new MemoryStream())
+		byte[] buf = new byte[256];
+		int len = 0;
+		byte value;
+		while ((value = reader.ReadByte()) != 0)
 		{
-			byte value;
-			while ((value = reader.ReadByte()) != 0)
-			{
-				memoryStream.WriteByte(value);
-			}
-			buffer = memoryStream.GetBuffer();
-			count = (int)memoryStream.Length;
+			if (len == buf.Length) Array.Resize(ref buf, buf.Length * 2);
+			buf[len++] = value;
 		}
-		return Encoding.UTF8.GetString(buffer, 0, count);
+		return Encoding.UTF8.GetString(buf, 0, len);
 	}
 
 	private static string ReadWideString_0x00000000(BinaryReader reader)

@@ -7,6 +7,7 @@ namespace Common;
 
 internal static class AppHelper
 {
+	private static string _cachedAppDirectory;
 	public static bool HasArgument(string tag, string[] commandLineArgs)
 	{
 		for (int i = 1; i < commandLineArgs.Length; i++)
@@ -66,7 +67,7 @@ internal static class AppHelper
 
 	public static string GetAppDirectory()
 	{
-		return Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+		return _cachedAppDirectory ??= Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 	}
 
 	public static string MakePathRelative(string src, string relToFolder)

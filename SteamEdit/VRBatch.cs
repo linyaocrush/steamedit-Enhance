@@ -26,7 +26,7 @@ public class VRBatch : Form
 
 	public ValueTag Value => (ValueTag)listValue.SelectedIndex;
 
-	private static readonly string[] VRRawValues = { "default", "remove" };
+	private static readonly string[] VRRawValues = { "default", "removed" };
 
 	public VRBatch()
 	{
@@ -58,7 +58,7 @@ public class VRBatch : Form
 	{
 		string raw = e.ListItem as string;
 		if (raw == "default") e.Value = Strings.MainWindow_VR_Default;
-		else if (raw == "remove") e.Value = Strings.MainWindow_VR_Removed;
+		else if (raw == "removed") e.Value = Strings.MainWindow_VR_Removed;
 	}
 
 	protected override void Dispose(bool disposing)

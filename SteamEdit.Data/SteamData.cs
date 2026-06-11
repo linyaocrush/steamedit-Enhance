@@ -178,7 +178,8 @@ internal static class SteamData
 			{
 				array[i].Kill();
 			}
-			new WaitingDialog(SteamEdit.Strings.SteamData_WaitingForClose).ShowAndWait(() => Process.GetProcessesByName("steam").Length != 0);
+			using (var dlg = new WaitingDialog(SteamEdit.Strings.SteamData_WaitingForClose))
+				dlg.ShowAndWait(() => Process.GetProcessesByName("steam").Length != 0);
 			flag = true;
 		}
 		Save();

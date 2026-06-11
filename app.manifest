@@ -5,7 +5,7 @@
           xmlns:asmv2="urn:schemas-microsoft-com:asm.v2"
           xmlns:asmv3="urn:schemas-microsoft-com:asm.v3"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <assemblyIdentity version="1.0.0.0" name="MyApplication.app" />
+  <assemblyIdentity version="1.0.0.0" name="SteamEdit" />
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
@@ -51,7 +51,10 @@
   </dependency>-->
   <asmv3:application>
     <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
-      <dpiAware>False</dpiAware>
+      <dpiAware>True</dpiAware>
+    </asmv3:windowsSettings>
+    <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">
+      <dpiAwareness>PerMonitorV2</dpiAwareness>
     </asmv3:windowsSettings>
   </asmv3:application>
 </assembly>

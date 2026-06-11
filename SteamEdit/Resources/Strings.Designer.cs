@@ -126,6 +126,7 @@ namespace SteamEdit {
         internal static string MessageBoxWithDetails_BtnCopyClipboard => ResourceManager.GetString("MessageBoxWithDetails_BtnCopyClipboard", resourceCulture);
         internal static string WaitingDialog_Title => ResourceManager.GetString("WaitingDialog_Title", resourceCulture);
         internal static string WaitingDialog_Waiting => ResourceManager.GetString("WaitingDialog_Waiting", resourceCulture);
+        internal static string WaitingDialog_Cancel => ResourceManager.GetString("WaitingDialog_Cancel", resourceCulture);
         internal static string About_Title => ResourceManager.GetString("About_Title", resourceCulture);
         internal static string About_LabelWebsite => ResourceManager.GetString("About_LabelWebsite", resourceCulture);
         internal static string About_LabelAuthor => ResourceManager.GetString("About_LabelAuthor", resourceCulture);

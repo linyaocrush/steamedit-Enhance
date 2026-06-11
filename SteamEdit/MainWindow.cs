@@ -75,6 +75,10 @@ internal class MainWindow : Form
 
 	private Button btnVRBatch;
 
+	private Button btnSettings;
+
+	private Button btnHelp;
+
 	private ComboBox listVR;
 
 	private ContextMenuStrip filterSelectorMenu;
@@ -285,9 +289,11 @@ internal class MainWindow : Form
 	private void SortEntries()
 	{
 		IAppInfoEntry selectedItem = (IAppInfoEntry)appSelection.SelectedItem;
+		var keys = new Dictionary<IAppInfoEntry, string>(_entries.Count);
+		foreach (var e in _entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
 		_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
 		{
-			int num = StringTitleComparer.CompareStrings(a.SortAs, b.SortAs);
+			int num = StringComparer.CurrentCulture.Compare(keys[a], keys[b]);
 			if (num == 0)
 			{
 				num = a.ID - b.ID;
@@ -506,7 +512,8 @@ internal class MainWindow : Form
 		{
 			return;
 		}
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry appInfoEntry = appSelection.SelectedItem as IAppInfoEntry;
+		if (appInfoEntry == null) return;
 		if (textGameName.Text != appInfoEntry.Name)
 		{
 			appInfoEntry.Name = textGameName.Text;
@@ -529,7 +536,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+			IAppInfoEntry appInfoEntry = appSelection.SelectedItem as IAppInfoEntry;
+			if (appInfoEntry == null) return;
 			if (textSortAs.Text != appInfoEntry.SortAs)
 			{
 				appInfoEntry.SortAs = textSortAs.Text;
@@ -546,7 +554,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			((IAppInfoEntry)appSelection.SelectedItem).IsHidden = checkHidden.Checked;
+			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			entry.IsHidden = checkHidden.Checked;
 			appSelection.Invalidate();
 		}
 	}
@@ -698,6 +707,10 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
 		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
 		toolTips.SetToolTip(btnSaveApplyRestart, Strings.Tooltip_SaveApplyRestart);
+		toolTips.SetToolTip(btnSettings, Strings.Tooltip_Settings);
+		toolTips.SetToolTip(btnHelp, Strings.Tooltip_About);
+		toolTips.SetToolTip(btnControllerBatch, Strings.Tooltip_BatchController);
+		toolTips.SetToolTip(btnVRBatch, Strings.Tooltip_BatchVR);
 
 		// Refresh status bar
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, SteamData.AppInfoData.Entries.Count());
@@ -727,7 +740,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			((IAppInfoEntry)appSelection.SelectedItem).IsCompleted = checkCompleted.Checked;
+			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			entry.IsCompleted = checkCompleted.Checked;
 			appSelection.Invalidate();
 		}
 	}
@@ -836,9 +850,10 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
+			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
 			int idx = listControllerSupport.SelectedIndex;
 			string rawValue = (idx >= 0 && idx < ControllerRawValues.Length) ? ControllerRawValues[idx] : "none";
-			((IAppInfoEntry)appSelection.SelectedItem).SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
+			entry.SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
 		}
 	}
 
@@ -896,7 +911,7 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			IAppInfoEntry entry = (IAppInfoEntry)appSelection.SelectedItem;
+			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
 			SetEntryVR(entry, listVR.SelectedIndex != 0);
 		}
 	}
@@ -1056,7 +1071,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			((IAppInfoEntry)appSelection.SelectedItem).Type = (AppInfoEntryType)listEntryType.SelectedItem;
+			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			entry.Type = (AppInfoEntryType)listEntryType.SelectedItem;
 			RefreshGameList();
 		}
 	}
@@ -1064,7 +1080,8 @@ internal class MainWindow : Form
 	private void textGameName_ClearXClicked(object sender, HandledEventArgs e)
 	{
 		e.Handled = true;
-		((IAppInfoEntry)appSelection.SelectedItem).RevertModifiedProperty("appinfo", "common", "name");
+		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		entry.RevertModifiedProperty("appinfo", "common", "name");
 		_refreshingGamesListAfterEdit = true;
 		RefreshGameList();
 		_refreshingGamesListAfterEdit = false;
@@ -1074,7 +1091,7 @@ internal class MainWindow : Form
 	private void textSortAs_ClearXClicked(object sender, HandledEventArgs e)
 	{
 		e.Handled = true;
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		if (appSelection.SelectedItem is not IAppInfoEntry appInfoEntry) return;
 		appInfoEntry.RevertModifiedProperty("appinfo", "common", "sortas");
 		_refreshingGamesListAfterEdit = true;
 		ResortEntry(appInfoEntry);
@@ -1138,8 +1155,8 @@ internal class MainWindow : Form
 		System.Windows.Forms.FlowLayoutPanel flowLayoutPanel = new System.Windows.Forms.FlowLayoutPanel();
 		System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
 		this.btnSaveApplyRestart = new System.Windows.Forms.Button();
-		System.Windows.Forms.Button button4 = new System.Windows.Forms.Button();
-		System.Windows.Forms.Button button5 = new System.Windows.Forms.Button();
+		this.btnSettings = new System.Windows.Forms.Button();
+		this.btnHelp = new System.Windows.Forms.Button();
 		this.lblVRCategory = new System.Windows.Forms.Label();
 		System.Windows.Forms.StatusStrip statusStrip = new System.Windows.Forms.StatusStrip();
 		flowLayoutPanel.SuspendLayout();
@@ -1234,22 +1251,22 @@ internal class MainWindow : Form
 		this.toolTips.SetToolTip(this.btnSaveApplyRestart, "Save edits, apply to Steam, and restart Steam.");
 		this.btnSaveApplyRestart.UseVisualStyleBackColor = true;
 		this.btnSaveApplyRestart.Click += new System.EventHandler(OnBtnSaveApplyRestart_Click);
-		button4.Image = SteamEdit.Properties.Resources.base_cog_32;
-		button4.Location = new System.Drawing.Point(3, 3);
-		button4.Name = "btnSettings";
-		button4.Size = new System.Drawing.Size(35, 34);
-		button4.TabIndex = 0;
-		this.toolTips.SetToolTip(button4, "Settings");
-		button4.UseVisualStyleBackColor = true;
-		button4.Click += new System.EventHandler(OnBtnSettings_Click);
-		button5.Location = new System.Drawing.Point(44, 3);
-		button5.Name = "btnHelp";
-		button5.Size = new System.Drawing.Size(34, 34);
-		button5.TabIndex = 1;
-		button5.Text = "?";
-		this.toolTips.SetToolTip(button5, "About");
-		button5.UseVisualStyleBackColor = true;
-		button5.Click += new System.EventHandler(OnHelp_Click);
+		this.btnSettings.Image = SteamEdit.Properties.Resources.base_cog_32;
+		this.btnSettings.Location = new System.Drawing.Point(3, 3);
+		this.btnSettings.Name = "btnSettings";
+		this.btnSettings.Size = new System.Drawing.Size(35, 34);
+		this.btnSettings.TabIndex = 0;
+		this.toolTips.SetToolTip(this.btnSettings, "Settings");
+		this.btnSettings.UseVisualStyleBackColor = true;
+		this.btnSettings.Click += new System.EventHandler(OnBtnSettings_Click);
+		this.btnHelp.Location = new System.Drawing.Point(44, 3);
+		this.btnHelp.Name = "btnHelp";
+		this.btnHelp.Size = new System.Drawing.Size(34, 34);
+		this.btnHelp.TabIndex = 1;
+		this.btnHelp.Text = "?";
+		this.toolTips.SetToolTip(this.btnHelp, "About");
+		this.btnHelp.UseVisualStyleBackColor = true;
+		this.btnHelp.Click += new System.EventHandler(OnHelp_Click);
 		this.lblVRCategory.AutoSize = true;
 		this.lblVRCategory.BackColor = System.Drawing.Color.Transparent;
 		this.lblVRCategory.Location = new System.Drawing.Point(79, 126);
@@ -1418,8 +1435,8 @@ internal class MainWindow : Form
 		this.textSortAs.TextChanged += new System.EventHandler(OnTextSortAs_TextChanged);
 		this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayoutPanel3.AutoSize = true;
-		this.flowLayoutPanel3.Controls.Add(button5);
-		this.flowLayoutPanel3.Controls.Add(button4);
+		this.flowLayoutPanel3.Controls.Add(this.btnHelp);
+		this.flowLayoutPanel3.Controls.Add(this.btnSettings);
 		this.flowLayoutPanel3.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
 		this.flowLayoutPanel3.Location = new System.Drawing.Point(609, 0);
 		this.flowLayoutPanel3.Name = "flowLayoutPanel3";

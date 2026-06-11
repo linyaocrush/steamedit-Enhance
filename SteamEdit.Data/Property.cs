@@ -51,6 +51,7 @@ internal class Property
 		set
 		{
 			_value = null;
+			if (value == null) return;
 			if (ValueType.IsAssignableFrom(value.GetType()))
 			{
 				_value = value;
@@ -145,6 +146,6 @@ internal class Property
 
 	public override int GetHashCode()
 	{
-		return GetType().GetHashCode() ^ Name.GetHashCode() ^ _propType.GetHashCode() ^ _value.GetHashCode();
+		return GetType().GetHashCode() ^ Name.GetHashCode() ^ _propType.GetHashCode() ^ (_value?.GetHashCode() ?? 0);
 	}
 }

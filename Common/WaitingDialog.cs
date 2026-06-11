@@ -12,12 +12,15 @@ internal class WaitingDialog : Form
 	public delegate bool WaitWhileDelegate();
 
 	private bool _isWaiting;
+	private bool _cancelled;
 
 	private IContainer components;
 
 	private Label message;
 
 	private ProgressBar progressBar1;
+
+	private Button btnCancel;
 
 	public string Message
 	{
@@ -30,6 +33,10 @@ internal class WaitingDialog : Form
 			message.Text = value;
 		}
 	}
+
+	public bool WasCancelled => _cancelled;
+
+	private static readonly TimeSpan CancelTimeout = TimeSpan.FromSeconds(30);
 
 	public WaitingDialog()
 		: this(Strings.WaitingDialog_Waiting)
@@ -53,32 +60,46 @@ internal class WaitingDialog : Form
 	private void ApplyLanguage()
 	{
 		Text = Strings.WaitingDialog_Title;
+		btnCancel.Text = Strings.WaitingDialog_Cancel;
 	}
 
-	public void ShowAndWait(IWin32Window parent, WaitWhileDelegate waitWhile)
+	public bool ShowAndWait(IWin32Window parent, WaitWhileDelegate waitWhile)
 	{
+		_cancelled = false;
 		Show(parent);
 		_isWaiting = true;
+		DateTime deadline = DateTime.UtcNow + CancelTimeout;
 		while (waitWhile())
 		{
 			Application.DoEvents();
 			Thread.Sleep(10);
+			if (_cancelled || DateTime.UtcNow >= deadline)
+			{
+				_cancelled = true;
+				break;
+			}
 		}
 		_isWaiting = false;
 		Close();
+		return !_cancelled;
 	}
 
-	public void ShowAndWait(WaitWhileDelegate waitWhile)
+	public bool ShowAndWait(WaitWhileDelegate waitWhile)
 	{
-		ShowAndWait(null, waitWhile);
+		return ShowAndWait(null, waitWhile);
 	}
 
 	private void WaitForUpdateThread_FormClosing(object sender, FormClosingEventArgs e)
 	{
-		if (_isWaiting)
+		if (_isWaiting && !_cancelled)
 		{
 			e.Cancel = true;
 		}
+	}
+
+	private void OnCancelClick(object sender, EventArgs e)
+	{
+		_cancelled = true;
 	}
 
 	protected override void Dispose(bool disposing)
@@ -95,6 +116,7 @@ internal class WaitingDialog : Form
 	{
 		this.message = new System.Windows.Forms.Label();
 		this.progressBar1 = new System.Windows.Forms.ProgressBar();
+		this.btnCancel = new System.Windows.Forms.Button();
 		base.SuspendLayout();
 		this.message.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.message.Font = new System.Drawing.Font("Microsoft Sans Serif", 10f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
@@ -112,9 +134,18 @@ internal class WaitingDialog : Form
 		this.progressBar1.Step = 1;
 		this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
 		this.progressBar1.TabIndex = 1;
+		this.btnCancel.Anchor = System.Windows.Forms.AnchorStyles.Top;
+		this.btnCancel.Location = new System.Drawing.Point(157, 82);
+		this.btnCancel.Name = "btnCancel";
+		this.btnCancel.Size = new System.Drawing.Size(75, 25);
+		this.btnCancel.TabIndex = 2;
+		this.btnCancel.Text = "Cancel";
+		this.btnCancel.UseVisualStyleBackColor = true;
+		this.btnCancel.Click += new System.EventHandler(OnCancelClick);
 		base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-		base.ClientSize = new System.Drawing.Size(383, 78);
+		base.ClientSize = new System.Drawing.Size(383, 112);
 		base.ControlBox = false;
+		base.Controls.Add(this.btnCancel);
 		base.Controls.Add(this.progressBar1);
 		base.Controls.Add(this.message);
 		base.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;

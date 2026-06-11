@@ -307,6 +307,9 @@
   <data name="WaitingDialog_Waiting" xml:space="preserve">
     <value>[等待中...]</value>
   </data>
+  <data name="WaitingDialog_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
 
   <!-- About -->
   <data name="About_Title" xml:space="preserve">

@@ -14,81 +14,9 @@ internal static class Program
 {
     private static MainWindow MainWindow_;
 
-    private static bool ResolveAndLoadAsync(SteamDataInitProps dataInit)
+    private static string ResolveAppInfoPath(bool trySavedPath, bool allowManual)
     {
-        string appInfoPath = ResolveAppInfoPath();
-        if (appInfoPath == null) return false;
-
-        dataInit.AppInfoPath = appInfoPath;
-        Exception loadError = null;
-
-        using (var loading = new WaitingDialog(Strings.WaitingDialog_Waiting))
-        {
-            var task = Task.Run(() =>
-            {
-                try { SteamData.Initialize(ref dataInit); }
-                catch (Exception ex) { loadError = ex; }
-            });
-            loading.ShowAndWait(() => !task.IsCompleted);
-        }
-
-        if (loadError is UnknownAppInfoVersionException ux)
-        {
-            MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ux.AppInfoPath}\r\nDetected Version: {ux.AppInfoVersion:X8}");
-            return false;
-        }
-        if (loadError is AppInfoLoadException al)
-        {
-            MessageBoxWithDetails.Show(Strings.Msg_LoadFailed, Strings.Msg_CriticalError, al.ToString());
-            return ResolveAndLoadAsyncFallback(dataInit);
-        }
-        if (loadError != null) throw loadError;
-
-        if (appInfoPath != Settings.Default.AppInfoPath)
-        {
-            Settings.Default.AppInfoPath = appInfoPath;
-            Settings.Default.Save();
-        }
-        return true;
-    }
-
-    private static bool ResolveAndLoadAsyncFallback(SteamDataInitProps dataInit)
-    {
-        string appInfoPath = ResolveAppInfoPathManual();
-        if (appInfoPath == null) return false;
-        dataInit.AppInfoPath = appInfoPath;
-        Exception loadError = null;
-
-        using (var loading = new WaitingDialog(Strings.WaitingDialog_Waiting))
-        {
-            var task = Task.Run(() =>
-            {
-                try { SteamData.Initialize(ref dataInit); }
-                catch (Exception ex) { loadError = ex; }
-            });
-            loading.ShowAndWait(() => !task.IsCompleted);
-        }
-
-        if (loadError is UnknownAppInfoVersionException ux)
-        {
-            MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ux.AppInfoPath}\r\nDetected Version: {ux.AppInfoVersion:X8}");
-            return false;
-        }
-        if (loadError is AppInfoLoadException al)
-        {
-            MessageBoxWithDetails.Show(Strings.Msg_LoadFailed, Strings.Msg_CriticalError, al.ToString());
-            return ResolveAndLoadAsyncFallback(dataInit);
-        }
-        if (loadError != null) throw loadError;
-
-        Settings.Default.AppInfoPath = appInfoPath;
-        Settings.Default.Save();
-        return true;
-    }
-
-    private static string ResolveAppInfoPath()
-    {
-        string path = Settings.Default.AppInfoPath;
+        string path = trySavedPath ? Settings.Default.AppInfoPath : "";
         if (path.Length == 0)
         {
             Log.WriteLine("Missing AppInfoPath. Looking for default location.");
@@ -116,14 +44,15 @@ internal static class Program
         }
         if (!File.Exists(path))
         {
-            return ResolveAppInfoPathManual(path);
+            if (!allowManual) return null;
+            return ShowPathDialog(path);
         }
         return path;
     }
 
-    private static string ResolveAppInfoPathManual(string initialPath = "")
+    private static string ShowPathDialog(string initialPath = "")
     {
-        OpenFileDialog openFileDialog = new OpenFileDialog();
+        using OpenFileDialog openFileDialog = new OpenFileDialog();
         openFileDialog.FileName = initialPath;
         openFileDialog.Title = Strings.Msg_SelectAppInfoTitle;
         openFileDialog.ValidateNames = true;
@@ -136,66 +65,86 @@ internal static class Program
         return openFileDialog.FileName;
     }
 
-    private static bool InitializeSteamData(ref SteamDataInitProps dataInit, bool tryCurrentPath, bool silent)
+    private static bool LoadSteamData(ref SteamDataInitProps dataInit, string appInfoPath)
     {
-        string text = (tryCurrentPath ? Settings.Default.AppInfoPath : "");
-        if (text.Length == 0)
+        dataInit.AppInfoPath = appInfoPath;
+        var initCopy = dataInit;
+        Exception loadError = null;
+
+        using (var loading = new WaitingDialog(Strings.WaitingDialog_Waiting))
         {
-            Log.WriteLine("Missing AppInfoPath. Looking for default location.");
-            using RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("Software\\Valve\\Steam");
-            if (registryKey != null)
+            var task = Task.Run(() =>
             {
-                try
-                {
-                    string fullPath = Path.GetFullPath((string)registryKey.GetValue("SteamPath"));
-                    Log.WriteLine("  Got steam path from registry: {0}", fullPath);
-                    text = Path.GetFullPath(Path.Combine(fullPath, "appcache", "appinfo.vdf"));
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteLine("  Error reading SteamPath from registry:\n{0}", ex);
-                    text = "";
-                }
-            }
-        }
-        if (text.Length == 0)
-        {
-            string text2 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam");
-            Log.WriteLine("  Using default steam path: {0}", text2);
-            text = Path.GetFullPath(Path.Combine(text2, "appcache", "appinfo.vdf"));
-        }
-        if (!silent && (!tryCurrentPath || text.Length == 0))
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.FileName = text;
-            openFileDialog.Title = Strings.Msg_SelectAppInfoTitle;
-            openFileDialog.ValidateNames = true;
-            openFileDialog.CheckFileExists = true;
-            openFileDialog.ReadOnlyChecked = true;
-            if (openFileDialog.ShowDialog() == DialogResult.Cancel)
+                try { SteamData.Initialize(ref initCopy); }
+                catch (Exception ex) { loadError = ex; }
+            });
+            if (!loading.ShowAndWait(() => !task.IsCompleted))
             {
+                task.Wait(TimeSpan.FromSeconds(5));
                 return false;
             }
-            text = openFileDialog.FileName;
         }
-        dataInit.AppInfoPath = text;
-        try
+
+        if (loadError is UnknownAppInfoVersionException ux)
         {
-            SteamData.Initialize(ref dataInit);
-        }
-        catch (UnknownAppInfoVersionException ex2)
-        {
-            MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ex2.AppInfoPath}\r\nDetected Version: {ex2.AppInfoVersion:X8}");
+            MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ux.AppInfoPath}\r\nDetected Version: {ux.AppInfoVersion:X8}");
             return false;
         }
-        catch (AppInfoLoadException ex3)
+        if (loadError is AppInfoLoadException al)
         {
-            MessageBoxWithDetails.Show(Strings.Msg_LoadFailed, Strings.Msg_CriticalError, ex3.ToString());
+            MessageBoxWithDetails.Show(Strings.Msg_LoadFailed, Strings.Msg_CriticalError, al.ToString());
+            return false;
+        }
+        if (loadError != null) throw loadError;
+        return true;
+    }
+
+    private static bool ResolveAndLoadAsync(SteamDataInitProps dataInit)
+    {
+        string appInfoPath = ResolveAppInfoPath(trySavedPath: true, allowManual: true);
+        if (appInfoPath == null) return false;
+
+        if (!LoadSteamData(ref dataInit, appInfoPath))
+        {
+            return ResolveAndLoadAsyncFallback(dataInit);
+        }
+
+        if (appInfoPath != Settings.Default.AppInfoPath)
+        {
+            Settings.Default.AppInfoPath = appInfoPath;
+            Settings.Default.Save();
+        }
+        return true;
+    }
+
+    private static bool ResolveAndLoadAsyncFallback(SteamDataInitProps dataInit)
+    {
+        string appInfoPath = ShowPathDialog();
+        if (appInfoPath == null) return false;
+
+        if (!LoadSteamData(ref dataInit, appInfoPath))
+        {
+            return ResolveAndLoadAsyncFallback(dataInit);
+        }
+
+        Settings.Default.AppInfoPath = appInfoPath;
+        Settings.Default.Save();
+        return true;
+    }
+
+    private static bool InitializeSteamData(ref SteamDataInitProps dataInit, bool tryCurrentPath, bool silent)
+    {
+        string appInfoPath = ResolveAppInfoPath(trySavedPath: tryCurrentPath, allowManual: !silent);
+        if (appInfoPath == null) return false;
+
+        if (!LoadSteamData(ref dataInit, appInfoPath))
+        {
             return InitializeSteamData(ref dataInit, tryCurrentPath: false, silent);
         }
-        if (text != Settings.Default.AppInfoPath)
+
+        if (appInfoPath != Settings.Default.AppInfoPath)
         {
-            Settings.Default.AppInfoPath = text;
+            Settings.Default.AppInfoPath = appInfoPath;
             Settings.Default.Save();
         }
         return true;
