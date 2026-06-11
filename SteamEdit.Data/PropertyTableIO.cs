@@ -113,7 +113,6 @@ internal static class PropertyTableIO
 		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
 		{
 			string name = ReadString_0x00000000(reader);
-			object obj = null;
 			propertyTable.AddPropertyValue(value: propertyType switch
 			{
 				PropertyType.Table => ReadPropertyTable_0x00000000(reader), 
@@ -179,7 +178,6 @@ internal static class PropertyTableIO
 		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
 		{
 			string name = ReadWideString_0x07564429(reader, stringTable);
-			object obj = null;
 			propertyTable.AddPropertyValue(value: propertyType switch
 			{
 				PropertyType.Table => ReadPropertyTable_0x07564429(reader, stringTable), 
@@ -245,10 +243,9 @@ internal static class PropertyTableIO
 		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
 		{
 			string name = ReadString_0x00000000(reader);
-			object obj = null;
 			propertyTable.AddPropertyValue(value: propertyType switch
 			{
-				PropertyType.Table => ReadPropertyTable_Mods(reader), 
+				PropertyType.Table => ReadPropertyTable_Mods(reader),
 				PropertyType.String => ReadString_0x00000000(reader), 
 				PropertyType.WString => ReadWideString_0x00000000(reader), 
 				PropertyType.Int32 => reader.ReadInt32(), 
