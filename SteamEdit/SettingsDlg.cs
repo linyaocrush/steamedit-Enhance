@@ -52,6 +52,11 @@ internal class SettingsDlg : Form
 
     private Panel panelAutoStartSub;
 
+    private bool _loading;
+    private bool _snapshotAutoStart;
+    private bool _snapshotAutoFix;
+    private bool _snapshotForceStart;
+
     public SettingsDlg()
     {
         InitializeComponent();
@@ -59,6 +64,7 @@ internal class SettingsDlg : Form
 
     private void Settings_Load(object sender, EventArgs e)
     {
+        _loading = true;
         checkEnableCompleted.Checked = Settings.Default.EnableCompleted;
         checkEnabledHidden.Checked = Settings.Default.EnableHidden;
         checkReplaceLocalizedNames.Checked = Settings.Default.ReplaceLocalizedNames;
@@ -67,6 +73,10 @@ internal class SettingsDlg : Form
         checkAutoStart.Checked = Settings.Default.AutoStart;
         checkAutoStartAutoFix.Checked = Settings.Default.AutoStartAutoFix;
         checkAutoStartForceStart.Checked = Settings.Default.AutoStartForceStart;
+        _snapshotAutoStart = Settings.Default.AutoStart;
+        _snapshotAutoFix = Settings.Default.AutoStartAutoFix;
+        _snapshotForceStart = Settings.Default.AutoStartForceStart;
+        _loading = false;
         UpdateAutoStartSubEnabled();
 
         string savedLang = Settings.Default.Language;
@@ -98,8 +108,12 @@ internal class SettingsDlg : Form
             Settings.Default.AutoStart = checkAutoStart.Checked;
             Settings.Default.AutoStartAutoFix = checkAutoStartAutoFix.Checked;
             Settings.Default.AutoStartForceStart = checkAutoStartForceStart.Checked;
+            ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
-            ApplyAutoStartRegistry();
+        }
+        else
+        {
+            ApplyAutoStartRegistry(_snapshotAutoStart, _snapshotAutoFix, _snapshotForceStart);
         }
     }
 
@@ -135,15 +149,29 @@ internal class SettingsDlg : Form
 
     private void checkAutoStart_CheckedChanged(object sender, EventArgs e)
     {
+        if (_loading) return;
         UpdateAutoStartSubEnabled();
+        ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
+    }
+
+    private void checkAutoStartAutoFix_CheckedChanged(object sender, EventArgs e)
+    {
+        if (_loading) return;
+        if (!checkAutoStartAutoFix.Checked)
+        {
+            checkAutoStartForceStart.Checked = false;
+        }
+        ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
     }
 
     private void checkAutoStartForceStart_CheckedChanged(object sender, EventArgs e)
     {
+        if (_loading) return;
         if (checkAutoStartForceStart.Checked)
         {
             checkAutoStartAutoFix.Checked = true;
         }
+        ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
     }
 
     private void UpdateAutoStartSubEnabled()
@@ -158,19 +186,19 @@ internal class SettingsDlg : Form
         }
     }
 
-    private static void ApplyAutoStartRegistry()
+    private static void ApplyAutoStartRegistry(bool autoStart, bool autoFix, bool forceStart)
     {
         try
         {
             using RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
             if (key == null) return;
 
-            if (Settings.Default.AutoStart)
+            if (autoStart)
             {
-                string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+                string exePath = Application.ExecutablePath;
                 string args = "";
-                if (Settings.Default.AutoStartAutoFix) args += " autofix";
-                if (Settings.Default.AutoStartForceStart) args += " forcestart";
+                if (autoFix) args += " autofix";
+                if (forceStart) args += " forcestart";
                 key.SetValue(RunValueName, $"\"{exePath}\"{args}");
             }
             else
@@ -426,6 +454,7 @@ internal class SettingsDlg : Form
         this.checkAutoStartAutoFix.Text = "autofix";
         this.toolTip.SetToolTip(this.checkAutoStartAutoFix, "Auto-apply pending changes on startup (autofix)");
         this.checkAutoStartAutoFix.UseVisualStyleBackColor = true;
+        this.checkAutoStartAutoFix.CheckedChanged += new System.EventHandler(checkAutoStartAutoFix_CheckedChanged);
         // checkAutoStartForceStart
         this.checkAutoStartForceStart.AutoSize = true;
         this.checkAutoStartForceStart.Enabled = false;
@@ -480,7 +509,7 @@ internal class SettingsDlg : Form
         tableLayoutPanel.TabIndex = 7;
         // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-        button3.DialogResult = System.Windows.Forms.DialogResult.OK;
+        button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
         button3.Location = new System.Drawing.Point(106, 280);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
