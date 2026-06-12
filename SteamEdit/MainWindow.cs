@@ -855,10 +855,13 @@ internal class MainWindow : Form
 
 			if (!string.IsNullOrWhiteSpace(translated))
 			{
-				_isSettingUpEntry = true;
-				textGameName.Text = translated;
-				_isSettingUpEntry = false;
-				Log.WriteLine("AI Translate: Set textGameName.Text to \"{0}\"", translated);
+				BeginInvoke(() =>
+				{
+					_isSettingUpEntry = true;
+					textGameName.Text = translated;
+					_isSettingUpEntry = false;
+					Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
+				});
 			}
 			else
 			{
