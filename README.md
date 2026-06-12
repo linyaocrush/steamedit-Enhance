@@ -32,7 +32,9 @@ SteamEdit 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo
 
 | 功能 | 说明 |
 |:---|:---|
-| **AI 翻译** | 集成 OpenAI 兼容 API，一键翻译游戏名称。支持自定义 API 地址、密钥、模型选择，可获取模型列表 |
+| **AI 翻译** | 集成 OpenAI 兼容 API，一键翻译游戏名称。支持自定义 API 地址、密钥、模型选择，可获取模型列表。翻译时自动参考已有修改记录作为术语表，保持翻译风格一致 |
+| **术语表缓存** | 已修改的游戏名称自动缓存为 `glossary.json`，启动时增量同步，翻译时直接读取，无需每次重建 |
+| **网页搜索** | 一键在浏览器中搜索游戏名 + 翻译名，支持 Google/Bing/Baidu/DuckDuckGo 搜索引擎选择 |
 | **中英双语界面** | 支持 English 和简体中文，设置中即时切换，无需重启 |
 | **开机自启动** | 可设置 Windows 启动时自动运行，支持附加 `-autofix`（自动应用更改）和 `-forcestart`（重启 Steam）参数 |
 | **DPI 感知** | 启用 PerMonitorV2 高 DPI 支持，4K/高分屏不再模糊 |
@@ -73,8 +75,9 @@ SteamEdit 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo
 ## 环境要求
 
 - Windows 10 / 11（x64）
-- .NET 10.0 Desktop Runtime（仅开发构建时需要 SDK）
 - Steam 客户端已安装
+
+> **自包含版**无需安装 .NET 运行时；**框架依赖版**需要 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)。
 
 ---
 
@@ -88,14 +91,17 @@ cd steamedit
 # 开发构建
 dotnet build SteamEdit.csproj
 
-# 发布单文件 EXE（约 110MB，自包含运行时）
+# 发布自包含单文件 EXE（约 110MB，无需安装运行时）
 dotnet publish SteamEdit.csproj -c Release
+
+# 发布框架依赖版（约 567KB，需要 .NET 10 Runtime）
+dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
 
 # 运行
 dotnet run --project SteamEdit.csproj
 ```
 
-发布产物位于 `bin/Release/net10.0-windows/win-x64/publish/` 目录，仅包含 `SteamEdit.exe`。
+发布产物位于 `bin/Release/net10.0-windows/win-x64/publish/` 目录。
 
 ---
 
@@ -120,8 +126,13 @@ dotnet run --project SteamEdit.csproj
 2. 点击 **获取模型列表** 选择模型，或手动输入模型名称
 3. 选择目标翻译语言（简体中文 / English）
 4. 在主界面选择游戏，点击 **AI 翻译** 按钮即可自动翻译并填入名称
+5. 术语表自动缓存到 `glossary.json`，翻译风格会参考你之前的修改记录
 
 支持所有兼容 OpenAI Chat Completions API 的服务（OpenAI、Claude API 中转、本地 Ollama 等）。
+
+### 网页搜索
+
+选择游戏后点击 **网页搜索** 按钮，自动在浏览器中搜索 `游戏名 + 翻译语言名`。可在设置中切换搜索引擎（Google / Bing / Baidu / DuckDuckGo）。
 
 ### 命令行模式
 
@@ -183,6 +194,7 @@ steamedit/
 │   ├── Settings.cs               # 用户设置（XML 序列化）
 │   ├── Log.cs                    # 缓冲日志
 │   ├── AiTranslator.cs           # AI 翻译（OpenAI 兼容 API）
+│   ├── TranslationGlossary.cs    # 术语表缓存（glossary.json）
 │   └── AppHelper.cs              # 路径与参数工具
 └── SteamEdit.csproj              # 项目文件
 ```
@@ -197,7 +209,7 @@ steamedit/
 | 语言 | C# 13+ |
 | UI 框架 | Windows Forms |
 | 目标平台 | win-x64 |
-| 发布方式 | 单文件自包含 EXE |
+| 发布方式 | 单文件 EXE（自包含或框架依赖） |
 
 ---
 
