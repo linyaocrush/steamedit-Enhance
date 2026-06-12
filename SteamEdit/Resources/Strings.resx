@@ -57,7 +57,7 @@
     <value>Save &amp; Apply</value>
   </data>
   <data name="MainWindow_BtnSaveApplyRestart" xml:space="preserve">
-    <value>Save &amp; Apply &amp; Restart</value>
+    <value>Save, Apply &amp; Restart</value>
   </data>
   <data name="MainWindow_BtnEditLaunch" xml:space="preserve">
     <value>Edit Launch</value>
@@ -69,7 +69,7 @@
     <value>AI Translate</value>
   </data>
   <data name="MainWindow_BtnSearch" xml:space="preserve">
-    <value>Search</value>
+    <value>Web Search</value>
   </data>
   <data name="Tooltip_Search" xml:space="preserve">
     <value>Search game name + translated name in browser</value>
