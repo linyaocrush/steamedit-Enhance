@@ -114,22 +114,43 @@ The following is a glossary of game names the user has already translated. Follo
 		using var response = await _httpClient.SendAsync(request, cancellationToken);
 		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
+		Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
+
 		if (!response.IsSuccessStatusCode)
 		{
-			Log.WriteLine("AI: Translation failed: {0} {1}", (int)response.StatusCode, responseBody);
+			Log.WriteLine("AI: Translation failed: {0}", responseBody);
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
 		}
 
-		using var doc = JsonDocument.Parse(responseBody);
-		string result = doc.RootElement
-			.GetProperty("choices")[0]
-			.GetProperty("message")
-			.GetProperty("content")
-			.GetString()
-			?.Trim()
-			?.Trim('"', '\'', '\n', '\r')
-			?? "";
+		Log.WriteLine("AI: Response body: {0}", responseBody.Length > 500 ? responseBody[..500] : responseBody);
 
+		using var doc = JsonDocument.Parse(responseBody);
+		string result = null;
+
+		try
+		{
+			var choices = doc.RootElement.GetProperty("choices");
+			if (choices.GetArrayLength() > 0)
+			{
+				var choice = choices[0];
+				// Try OpenAI format: choices[0].message.content
+				if (choice.TryGetProperty("message", out var message))
+				{
+					result = message.GetProperty("content").GetString();
+				}
+				// Some APIs use choices[0].text (legacy completions format)
+				else if (choice.TryGetProperty("text", out var text))
+				{
+					result = text.GetString();
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
+		}
+
+		result = result?.Trim()?.Trim('"', '\'', '\n', '\r') ?? "";
 		Log.WriteLine("AI: Result: \"{0}\"", result);
 		return result;
 	}
