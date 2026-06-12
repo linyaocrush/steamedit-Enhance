@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -200,11 +201,51 @@ internal static class Program
             Application.SetCompatibleTextRenderingDefault(defaultValue: false);
             if (ResolveAndLoadAsync(dataInit))
             {
+                TranslationGlossary.Initialize(dataInit.DataDirectory);
+                SyncGlossaryFromEntries();
                 MainWindow_ = new MainWindow();
                 Application.Run(MainWindow_);
                 SteamData.Shutdown();
                 Log.Flush();
             }
+        }
+    }
+
+    private static void SyncGlossaryFromEntries()
+    {
+        try
+        {
+            var adapters = SteamData.AppInfoData.Entries
+                .Where(e => e.IsModified && e.Modification.Changes.HasProperty("appinfo", "common", "name"))
+                .Select(e => new GlossaryAdapter(e))
+                .ToList();
+            TranslationGlossary.SyncFromMods(adapters);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteLine("Glossary sync failed: {0}", ex.Message);
+        }
+    }
+
+    private class GlossaryAdapter : IAppInfoEntryAdapter
+    {
+        private readonly SteamEdit.Data.IAppInfoEntry _entry;
+        public int ID => _entry.ID;
+        public string TranslatedName => _entry.Name;
+        public string OriginalName { get; }
+
+        public GlossaryAdapter(SteamEdit.Data.IAppInfoEntry entry)
+        {
+            _entry = entry;
+            OriginalName = GetOriginalName(entry);
+        }
+
+        private static string GetOriginalName(SteamEdit.Data.IAppInfoEntry entry)
+        {
+            if (entry.Modification?.OriginalData == null) return null;
+            using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
+            var props = SteamEdit.Data.PropertyTableIO.ReadPropertyTable_Mods(reader);
+            return props.GetPropertyValue<string>(null, "appinfo", "common", "name");
         }
     }
 

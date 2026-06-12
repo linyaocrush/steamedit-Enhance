@@ -521,7 +521,9 @@ internal class MainWindow : Form
 		if (appInfoEntry == null) return;
 		if (textGameName.Text != appInfoEntry.Name)
 		{
+			string previousName = appInfoEntry.Name;
 			appInfoEntry.Name = textGameName.Text;
+			UpdateGlossaryForEntry(appInfoEntry, previousName);
 			if (!appInfoEntry.HasSortAs)
 			{
 				_refreshingGamesListAfterEdit = true;
@@ -809,31 +811,29 @@ internal class MainWindow : Form
 		}
 	}
 
-	private string BuildTranslationGlossary()
+	private void UpdateGlossaryForEntry(IAppInfoEntry entry, string previousName)
 	{
-		var sb = new StringBuilder();
-		int count = 0;
-		foreach (var entry in SteamData.AppInfoData.Entries.Where(e => e.IsModified))
+		try
 		{
-			if (!entry.Modification.Changes.HasProperty("appinfo", "common", "name"))
-				continue;
-
-			string modifiedName = entry.Name;
-			if (string.IsNullOrWhiteSpace(modifiedName)) continue;
-
+			// Get original (unmodified) name from OriginalData or base_name
 			string originalName = null;
-			if (entry.Modification.OriginalData != null)
+			if (entry.Modification?.OriginalData != null)
 			{
 				using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
-				PropertyTable originalProps = PropertyTableIO.ReadPropertyTable_Mods(reader);
-				originalName = originalProps.GetPropertyValue<string>(null, "appinfo", "common", "name");
+				var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
+				originalName = props.GetPropertyValue<string>(null, "appinfo", "common", "name");
 			}
+			if (string.IsNullOrWhiteSpace(originalName))
+				originalName = entry.GetPropertyValue<string>(null, "appinfo", "steam_edit", "base_name");
+			if (string.IsNullOrWhiteSpace(originalName))
+				originalName = previousName;
 
-			if (string.IsNullOrWhiteSpace(originalName) || originalName == modifiedName) continue;
-			sb.AppendLine($"{originalName} -> {modifiedName}");
-			if (++count >= 100) break;
+			TranslationGlossary.UpdateEntry(entry.ID, originalName, entry.Name);
 		}
-		return count > 0 ? sb.ToString() : null;
+		catch (Exception ex)
+		{
+			Log.WriteLine("Glossary update failed for {0:X8}: {1}", entry.ID, ex.Message);
+		}
 	}
 
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)
@@ -849,7 +849,7 @@ internal class MainWindow : Form
 		try
 		{
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
-			string glossary = await Task.Run(BuildTranslationGlossary);
+			string glossary = TranslationGlossary.ToPromptString();
 			string translated = await AiTranslator.TranslateAsync(originalName, targetLang, glossary);
 			Log.WriteLine("AI Translate: Got result \"{0}\"", translated);
 
