@@ -46,7 +46,7 @@ internal static class AiTranslator
 		return models;
 	}
 
-	public static async Task<string> TranslateAsync(string gameName, string targetLanguage, CancellationToken cancellationToken = default)
+	public static async Task<string> TranslateAsync(string gameName, string targetLanguage, string glossary = null, CancellationToken cancellationToken = default)
 	{
 		string apiUrl = Settings.Default.AiApiUrl.TrimEnd('/');
 		string apiKey = Settings.Default.AiApiKey;
@@ -76,6 +76,14 @@ Rules:
 - Keep brand names, acronyms, and proper nouns unchanged (e.g., GTA, FIFA, Dark Souls, Resident Evil)
 - If the name contains both a brand and a subtitle, translate ONLY the subtitle
 - Keep numbers and punctuation as-is";
+
+		if (!string.IsNullOrWhiteSpace(glossary))
+		{
+			systemPrompt += $@"
+
+The following is a glossary of game names the user has already translated. Follow their translation style and terminology strictly:
+{glossary}";
+		}
 
 		string requestBody = JsonSerializer.Serialize(new
 		{

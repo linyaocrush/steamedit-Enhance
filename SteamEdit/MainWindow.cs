@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -808,6 +809,33 @@ internal class MainWindow : Form
 		}
 	}
 
+	private string BuildTranslationGlossary()
+	{
+		var sb = new StringBuilder();
+		int count = 0;
+		foreach (var entry in SteamData.AppInfoData.Entries.Where(e => e.IsModified))
+		{
+			if (!entry.Modification.Changes.HasProperty("appinfo", "common", "name"))
+				continue;
+
+			string modifiedName = entry.Name;
+			if (string.IsNullOrWhiteSpace(modifiedName)) continue;
+
+			string originalName = null;
+			if (entry.Modification.OriginalData != null)
+			{
+				using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
+				PropertyTable originalProps = PropertyTableIO.ReadPropertyTable_Mods(reader);
+				originalName = originalProps.GetPropertyValue<string>(null, "appinfo", "common", "name");
+			}
+
+			if (string.IsNullOrWhiteSpace(originalName) || originalName == modifiedName) continue;
+			sb.AppendLine($"{originalName} -> {modifiedName}");
+			if (++count >= 100) break;
+		}
+		return count > 0 ? sb.ToString() : null;
+	}
+
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)
 	{
 		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
@@ -815,12 +843,13 @@ internal class MainWindow : Form
 		if (string.IsNullOrWhiteSpace(originalName)) return;
 
 		string targetLang = Settings.Default.AiTargetLanguage;
+		string glossary = BuildTranslationGlossary();
 		btnTranslate.Enabled = false;
 		btnTranslate.Text = Strings.Msg_Translating;
 
 		try
 		{
-			string translated = await AiTranslator.TranslateAsync(originalName, targetLang);
+			string translated = await AiTranslator.TranslateAsync(originalName, targetLang, glossary);
 			if (!string.IsNullOrWhiteSpace(translated) && translated != originalName)
 			{
 				textGameName.Text = translated;
