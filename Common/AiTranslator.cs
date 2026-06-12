@@ -101,7 +101,7 @@ The following is a glossary of game names the user has already translated. Follo
 				new { role = "system", content = systemPrompt },
 				new { role = "user", content = gameName }
 			},
-			max_tokens = 200,
+			max_tokens = 4096,
 			temperature = 0.1
 		});
 
