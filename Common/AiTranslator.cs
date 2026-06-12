@@ -10,12 +10,11 @@ namespace Common;
 
 internal static class AiTranslator
 {
-	private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+	private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
 
-	public static async Task<List<string>> FetchModelsAsync(CancellationToken cancellationToken = default)
+	public static async Task<List<string>> FetchModelsAsync(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
 	{
-		string apiUrl = Settings.Default.AiApiUrl.TrimEnd('/');
-		string apiKey = Settings.Default.AiApiKey;
+		apiUrl = apiUrl.TrimEnd('/');
 
 		// Strip /chat/completions to get base URL, then call /models
 		string baseUrl = apiUrl;
@@ -34,17 +33,27 @@ internal static class AiTranslator
 
 		if (!response.IsSuccessStatusCode)
 		{
-			Log.WriteLine("AI: Models fetch failed: {0} {1}", (int)response.StatusCode, responseBody);
+			Log.WriteLine("AI: Models fetch failed: {0}", (int)response.StatusCode);
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
 		}
 
 		var models = new List<string>();
 		using var doc = JsonDocument.Parse(responseBody);
-		foreach (var item in doc.RootElement.GetProperty("data").EnumerateArray())
+		if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
 		{
-			string id = item.GetProperty("id").GetString();
-			if (!string.IsNullOrEmpty(id))
-				models.Add(id);
+			foreach (var item in data.EnumerateArray())
+			{
+				if (item.TryGetProperty("id", out var idProp))
+				{
+					string id = idProp.GetString();
+					if (!string.IsNullOrEmpty(id))
+						models.Add(id);
+				}
+			}
+		}
+		else
+		{
+			Log.WriteLine("AI: Unexpected models response format");
 		}
 		models.Sort(StringComparer.OrdinalIgnoreCase);
 		Log.WriteLine("AI: Got {0} models", models.Count);
@@ -53,14 +62,14 @@ internal static class AiTranslator
 
 	public static async Task<string> TranslateAsync(string gameName, string targetLanguage, string glossary = null, CancellationToken cancellationToken = default)
 	{
-		string apiUrl = Settings.Default.AiApiUrl.TrimEnd('/');
+		string apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
 		string apiKey = Settings.Default.AiApiKey;
-
-		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
-			apiUrl += "/chat/completions";
 
 		if (string.IsNullOrWhiteSpace(apiUrl))
 			throw new InvalidOperationException("AI API URL is not configured.");
+
+		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
+			apiUrl += "/chat/completions";
 
 		string model = Settings.Default.AiModel;
 		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
@@ -108,7 +117,8 @@ The following is a glossary of game names the user has already translated. Follo
 		Log.WriteLine("AI: Requesting {0}", apiUrl);
 
 		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
-		request.Headers.Add("Authorization", $"Bearer {apiKey}");
+		if (!string.IsNullOrWhiteSpace(apiKey))
+			request.Headers.Add("Authorization", $"Bearer {apiKey}");
 		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
 		using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -118,11 +128,9 @@ The following is a glossary of game names the user has already translated. Follo
 
 		if (!response.IsSuccessStatusCode)
 		{
-			Log.WriteLine("AI: Translation failed: {0}", responseBody);
+			Log.WriteLine("AI: Translation failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
 		}
-
-		Log.WriteLine("AI: Response body: {0}", responseBody.Length > 500 ? responseBody[..500] : responseBody);
 
 		using var doc = JsonDocument.Parse(responseBody);
 		string result = null;
@@ -150,7 +158,7 @@ The following is a glossary of game names the user has already translated. Follo
 			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
 		}
 
-		result = result?.Trim()?.Trim('"', '\'', '\n', '\r') ?? "";
+		result = result?.Trim().Trim('"', '\'', '\n', '\r') ?? "";
 		Log.WriteLine("AI: Result: \"{0}\"", result);
 		return result;
 	}

@@ -843,27 +843,27 @@ internal class MainWindow : Form
 		if (string.IsNullOrWhiteSpace(originalName)) return;
 
 		string targetLang = Settings.Default.AiTargetLanguage;
-		string glossary = BuildTranslationGlossary();
 		btnTranslate.Enabled = false;
 		btnTranslate.Text = Strings.Msg_Translating;
 
 		try
 		{
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
+			string glossary = await Task.Run(BuildTranslationGlossary);
 			string translated = await AiTranslator.TranslateAsync(originalName, targetLang, glossary);
 			Log.WriteLine("AI Translate: Got result \"{0}\"", translated);
 
-			if (!string.IsNullOrWhiteSpace(translated))
+			if (!string.IsNullOrWhiteSpace(translated) && IsHandleCreated && !IsDisposed)
 			{
 				BeginInvoke(() =>
 				{
 					_isSettingUpEntry = true;
-					textGameName.Text = translated;
-					_isSettingUpEntry = false;
+					try { textGameName.Text = translated; }
+					finally { _isSettingUpEntry = false; }
 					Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
 				});
 			}
-			else
+			else if (string.IsNullOrWhiteSpace(translated))
 			{
 				Log.WriteLine("AI Translate: Result was empty, not updating");
 			}
@@ -871,7 +871,8 @@ internal class MainWindow : Form
 		catch (Exception ex)
 		{
 			Log.WriteLine("AI Translate: Exception: {0}", ex);
-			MessageBox.Show(this, string.Format(Strings.Msg_TranslateFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+			if (IsHandleCreated && !IsDisposed)
+				MessageBox.Show(this, string.Format(Strings.Msg_TranslateFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
 		}
 		finally
 		{

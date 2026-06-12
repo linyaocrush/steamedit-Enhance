@@ -178,7 +178,7 @@ internal class SettingsDlg : Form
         btnFetchModels.Text = "...";
         try
         {
-            var models = await AiTranslator.FetchModelsAsync();
+            var models = await AiTranslator.FetchModelsAsync(textAiApiUrl.Text, textAiApiKey.Text);
             string current = comboAiModel.Text;
             comboAiModel.Items.Clear();
             foreach (var m in models) comboAiModel.Items.Add(m);
