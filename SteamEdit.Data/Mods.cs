@@ -125,9 +125,9 @@ internal class Mods
 	{
 		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
 		binaryWriter.Write(6u);
-		int value = _appInfo.Entries.Count((IAppInfoEntry e) => e.IsModified);
-		binaryWriter.Write(value);
-		foreach (IAppInfoEntry item in _appInfo.Entries.Where((IAppInfoEntry e) => e.IsModified))
+		var modifiedEntries = _appInfo.Entries.Where(e => e.IsModified).ToList();
+		binaryWriter.Write(modifiedEntries.Count);
+		foreach (IAppInfoEntry item in modifiedEntries)
 		{
 			binaryWriter.Write(item.Modification.ID);
 			PropertyTableIO.WritePropertyTable_Mods(binaryWriter, item.Modification.Changes);

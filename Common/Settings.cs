@@ -338,9 +338,10 @@ internal class Settings
 		xmlDocument.Load(reader);
 		XmlElement documentElement = xmlDocument.DocumentElement;
 		array = properties;
+		var readXmlMethod = GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic);
 		foreach (PropertyInfo propertyInfo2 in array)
 		{
-			GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(propertyInfo2.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo2.Name });
+			readXmlMethod.MakeGenericMethod(propertyInfo2.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo2.Name });
 		}
 	}
 
@@ -358,7 +359,7 @@ internal class Settings
 		foreach (PropertyInfo propertyInfo in properties)
 		{
 			xmlWriter.WriteStartElement(propertyInfo.Name);
-			xmlWriter.WriteValue(propertyInfo.GetValue(this, null).ToString());
+			xmlWriter.WriteValue(propertyInfo.GetValue(this, null)?.ToString() ?? "");
 			xmlWriter.WriteEndElement();
 		}
 		xmlWriter.WriteEndElement();

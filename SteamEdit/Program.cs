@@ -101,40 +101,6 @@ internal static class Program
         return true;
     }
 
-    private static bool ResolveAndLoadAsync(SteamDataInitProps dataInit)
-    {
-        string appInfoPath = ResolveAppInfoPath(trySavedPath: true, allowManual: true);
-        if (appInfoPath == null) return false;
-
-        if (!LoadSteamData(ref dataInit, appInfoPath))
-        {
-            return ResolveAndLoadAsyncFallback(dataInit);
-        }
-
-        if (appInfoPath != Settings.Default.AppInfoPath)
-        {
-            Settings.Default.AppInfoPath = appInfoPath;
-            Settings.Default.Save();
-        }
-        return true;
-    }
-
-    private static bool ResolveAndLoadAsyncFallback(SteamDataInitProps dataInit)
-    {
-        while (true)
-        {
-            string appInfoPath = ShowPathDialog();
-            if (appInfoPath == null) return false;
-
-            if (LoadSteamData(ref dataInit, appInfoPath))
-            {
-                Settings.Default.AppInfoPath = appInfoPath;
-                Settings.Default.Save();
-                return true;
-            }
-        }
-    }
-
     private static bool InitializeSteamData(ref SteamDataInitProps dataInit, bool tryCurrentPath, bool silent)
     {
         bool firstAttempt = true;
@@ -171,12 +137,13 @@ internal static class Program
             EnableCompleted = Settings.Default.EnableCompleted,
             EnableHidden = Settings.Default.EnableHidden
         };
-        bool flag = AppHelper.HasArgument("autofix", Environment.GetCommandLineArgs());
+        string[] cmdArgs = Environment.GetCommandLineArgs();
+        bool flag = AppHelper.HasArgument("autofix", cmdArgs);
         if (flag)
         {
             if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: true))
             {
-                bool flag2 = AppHelper.HasArgument("forcestart", Environment.GetCommandLineArgs());
+                bool flag2 = AppHelper.HasArgument("forcestart", cmdArgs);
                 if (SteamData.NeedsApply)
                 {
                     Log.WriteLine("Changes detected, applying!");
@@ -199,7 +166,7 @@ internal static class Program
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(defaultValue: false);
-            if (ResolveAndLoadAsync(dataInit))
+            if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: false))
             {
                 TranslationGlossary.Initialize(dataInit.DataDirectory);
                 SyncGlossaryFromEntries();

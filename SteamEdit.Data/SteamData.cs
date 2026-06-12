@@ -195,8 +195,9 @@ internal static class SteamData
 	{
 		if (focusIfRunning || Process.GetProcessesByName("steam").Length == 0)
 		{
-			string text = AppHelper.GetPassthroughArguments(Environment.GetCommandLineArgs());
-			if (AppHelper.HasArgument("silent", Environment.GetCommandLineArgs()))
+			string[] args = Environment.GetCommandLineArgs();
+			string text = AppHelper.GetPassthroughArguments(args);
+			if (AppHelper.HasArgument("silent", args))
 			{
 				text += "-silent ";
 			}

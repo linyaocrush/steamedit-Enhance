@@ -23,6 +23,7 @@ internal class MainWindow : Form
 	private string _originalNumShownLabelText;
 
 	private List<IAppInfoEntry> _entries;
+	private int _totalEntryCount;
 
 	private static readonly string[] ControllerRawValues = { "none", "partial", "full" };
 
@@ -457,7 +458,8 @@ internal class MainWindow : Form
 			appSelection.SelectedIndex = ((appSelection.Items.Count <= 0) ? (-1) : 0);
 		}
 		Setup();
-		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, source.Count());
+		_totalEntryCount = source.Count();
+		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
 	}
 
 	private void OnAppSelection_SelectedIndexChanged(object sender, EventArgs e)
@@ -616,6 +618,8 @@ internal class MainWindow : Form
 	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
 	{
 		I18n.LanguageChanged -= OnLanguageChanged;
+		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
+		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
 		Settings.Default.Save();
 		if (SteamData.NeedsSave)
 		{
@@ -727,7 +731,7 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnVRBatch, Strings.Tooltip_BatchVR);
 
 		// Refresh status bar
-		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, SteamData.AppInfoData.Entries.Count());
+		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, _totalEntryCount);
 
 		Setup();
 	}
@@ -932,6 +936,7 @@ internal class MainWindow : Form
 		catch (Exception ex)
 		{
 			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
+			return;
 		}
 		try
 		{
@@ -1148,7 +1153,6 @@ internal class MainWindow : Form
 	private void panel1_Paint(object sender, PaintEventArgs e)
 	{
 		float dpiX = e.Graphics.DpiX;
-		_ = e.Graphics.DpiY;
 		float num = dpiX / 72f;
 		Image logo = Resources.logo1;
 		Size size = new Size((int)(150f * num), (int)(150f * num));

@@ -38,14 +38,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
 		{
 			Property property = propertyTable[item];
-			if (property != null)
-			{
-				propertyTable = property.GetValue<PropertyTable>();
-			}
-			if (property == null || propertyTable == null)
-			{
-				return null;
-			}
+			if (property == null) return null;
+			propertyTable = property.GetValue<PropertyTable>();
+			if (propertyTable == null) return null;
 		}
 		return propertyTable[PropertyPath.Last()];
 	}
@@ -155,7 +150,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			_properties.Add(property);
 			_propertyMap[name] = property;
 		}
-		bool result = property.PropertyType != type || !property.Value.Equals(value);
+		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
 		property.Value = value;
 		return result;
@@ -243,10 +238,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public bool Equals(PropertyTable other)
 	{
-		if (other != null && Count == other.Count)
-		{
-			return _properties.All((Property prop) => other._properties.Any((Property otherProp) => prop.Equals(otherProp)));
-		}
+		if (other == null || Count != other.Count) return false;
+		return _properties.All(prop => other._propertyMap.TryGetValue(prop.Name, out var otherProp) && prop.Equals(otherProp));
 		return false;
 	}
 
