@@ -68,6 +68,12 @@
   <data name="MainWindow_BtnTranslate" xml:space="preserve">
     <value>AI Translate</value>
   </data>
+  <data name="MainWindow_BtnSearch" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Tooltip_Search" xml:space="preserve">
+    <value>Search game name + translated name in browser</value>
+  </data>
   <data name="MainWindow_LabelName" xml:space="preserve">
     <value>Name:</value>
   </data>

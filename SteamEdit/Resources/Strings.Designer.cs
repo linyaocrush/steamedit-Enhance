@@ -53,6 +53,8 @@ namespace SteamEdit {
         internal static string MainWindow_BtnEditLaunch => ResourceManager.GetString("MainWindow_BtnEditLaunch", resourceCulture);
         internal static string MainWindow_BtnRevert => ResourceManager.GetString("MainWindow_BtnRevert", resourceCulture);
         internal static string MainWindow_BtnTranslate => ResourceManager.GetString("MainWindow_BtnTranslate", resourceCulture);
+        internal static string MainWindow_BtnSearch => ResourceManager.GetString("MainWindow_BtnSearch", resourceCulture);
+        internal static string Tooltip_Search => ResourceManager.GetString("Tooltip_Search", resourceCulture);
         internal static string MainWindow_LabelName => ResourceManager.GetString("MainWindow_LabelName", resourceCulture);
         internal static string MainWindow_LabelSortAs => ResourceManager.GetString("MainWindow_LabelSortAs", resourceCulture);
         internal static string MainWindow_LabelControllerSupport => ResourceManager.GetString("MainWindow_LabelControllerSupport", resourceCulture);

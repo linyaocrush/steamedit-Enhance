@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
@@ -82,6 +83,8 @@ internal class MainWindow : Form
 	private Button btnHelp;
 
 	private Button btnTranslate;
+
+	private Button btnSearch;
 
 	private ComboBox listVR;
 
@@ -712,7 +715,9 @@ internal class MainWindow : Form
 		btnSaveApply.Text = Strings.MainWindow_BtnSaveApply;
 		btnSaveApplyRestart.Text = Strings.MainWindow_BtnSaveApplyRestart;
 		btnTranslate.Text = Strings.MainWindow_BtnTranslate;
+		btnSearch.Text = Strings.MainWindow_BtnSearch;
 		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
+		toolTips.SetToolTip(btnSearch, Strings.Tooltip_Search);
 		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
 		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
 		toolTips.SetToolTip(btnSaveApplyRestart, Strings.Tooltip_SaveApplyRestart);
@@ -834,6 +839,24 @@ internal class MainWindow : Form
 		{
 			Log.WriteLine("Glossary update failed for {0:X8}: {1}", entry.ID, ex.Message);
 		}
+	}
+
+	private void OnBtnSearch_Click(object sender, EventArgs e)
+	{
+		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		string gameName = entry.Name;
+		if (string.IsNullOrWhiteSpace(gameName)) return;
+
+		string lang = Settings.Default.AiTargetLanguage switch
+		{
+			"zh-CN" => "中文名",
+			"en" => "English name",
+			_ => "translated name"
+		};
+		string query = Uri.EscapeDataString($"{gameName} {lang}");
+		string url = $"https://www.google.com/search?q={query}";
+		Log.WriteLine("Search: Opening {0}", url);
+		Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 	}
 
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)
@@ -1209,6 +1232,7 @@ internal class MainWindow : Form
 		this.btnEditLaunch = new System.Windows.Forms.Button();
 		this.btnRevert = new System.Windows.Forms.Button();
 		this.btnTranslate = new System.Windows.Forms.Button();
+		this.btnSearch = new System.Windows.Forms.Button();
 		this.lblNumAppsShown = new System.Windows.Forms.ToolStripStatusLabel();
 		this.checkCompleted = new System.Windows.Forms.CheckBox();
 		this.checkHidden = new System.Windows.Forms.CheckBox();
@@ -1292,6 +1316,7 @@ internal class MainWindow : Form
 		flowLayoutPanel.Controls.Add(this.btnEditLaunch);
 		flowLayoutPanel.Controls.Add(this.btnRevert);
 		flowLayoutPanel.Controls.Add(this.btnTranslate);
+		flowLayoutPanel.Controls.Add(this.btnSearch);
 		flowLayoutPanel.Location = new System.Drawing.Point(14, 151);
 		flowLayoutPanel.Margin = new System.Windows.Forms.Padding(2);
 		flowLayoutPanel.Name = "flowLayoutPanel2";
@@ -1318,6 +1343,12 @@ internal class MainWindow : Form
 		this.btnTranslate.Text = "AI Translate";
 		this.btnTranslate.UseVisualStyleBackColor = true;
 		this.btnTranslate.Click += new System.EventHandler(OnBtnTranslate_Click);
+		this.btnSearch.Name = "btnSearch";
+		this.btnSearch.Size = new System.Drawing.Size(75, 34);
+		this.btnSearch.TabIndex = 3;
+		this.btnSearch.Text = "Search";
+		this.btnSearch.UseVisualStyleBackColor = true;
+		this.btnSearch.Click += new System.EventHandler(OnBtnSearch_Click);
 		flowLayoutPanel2.AutoSize = true;
 		flowLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 		flowLayoutPanel2.Controls.Add(this.btnSave);

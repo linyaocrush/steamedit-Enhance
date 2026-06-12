@@ -68,6 +68,12 @@
   <data name="MainWindow_BtnTranslate" xml:space="preserve">
     <value>AI 翻译</value>
   </data>
+  <data name="MainWindow_BtnSearch" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Tooltip_Search" xml:space="preserve">
+    <value>在浏览器中搜索游戏名 + 翻译名</value>
+  </data>
   <data name="MainWindow_LabelName" xml:space="preserve">
     <value>名称：</value>
   </data>
