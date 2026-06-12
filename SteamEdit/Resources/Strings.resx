@@ -213,6 +213,9 @@
   <data name="Settings_AiFetchModels" xml:space="preserve">
     <value>Fetch Models</value>
   </data>
+  <data name="Settings_SearchEngine" xml:space="preserve">
+    <value>Search Engine</value>
+  </data>
   <data name="Tooltip_AiApiUrl" xml:space="preserve">
     <value>OpenAI-compatible API endpoint (e.g. https://api.openai.com/v1/chat/completions)</value>
   </data>

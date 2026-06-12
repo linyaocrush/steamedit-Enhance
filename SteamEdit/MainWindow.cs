@@ -854,7 +854,14 @@ internal class MainWindow : Form
 			_ => "translated name"
 		};
 		string query = Uri.EscapeDataString($"{gameName} {lang}");
-		string url = $"https://www.google.com/search?q={query}";
+		string baseUrl = Settings.Default.SearchEngine switch
+		{
+			"Bing" => "https://www.bing.com/search?q=",
+			"Baidu" => "https://www.baidu.com/s?wd=",
+			"DuckDuckGo" => "https://duckduckgo.com/?q=",
+			_ => "https://www.google.com/search?q="
+		};
+		string url = baseUrl + query;
 		Log.WriteLine("Search: Opening {0}", url);
 		Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 	}

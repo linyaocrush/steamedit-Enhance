@@ -213,6 +213,9 @@
   <data name="Settings_AiFetchModels" xml:space="preserve">
     <value>获取模型列表</value>
   </data>
+  <data name="Settings_SearchEngine" xml:space="preserve">
+    <value>搜索引擎</value>
+  </data>
   <data name="Tooltip_AiApiUrl" xml:space="preserve">
     <value>兼容 OpenAI 的 API 接口地址（如 https://api.openai.com/v1/chat/completions）</value>
   </data>

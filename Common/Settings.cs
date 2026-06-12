@@ -289,6 +289,19 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue("Google")]
+	public string SearchEngine
+	{
+		get
+		{
+			return (string)_values["SearchEngine"];
+		}
+		set
+		{
+			_values["SearchEngine"] = value;
+		}
+	}
+
 	[DefaultValue("zh-CN")]
 	public string AiTargetLanguage
 	{

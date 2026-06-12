@@ -70,6 +70,10 @@ internal class SettingsDlg : Form
 
     private Button btnFetchModels;
 
+    private Label lblSearchEngine;
+
+    private ComboBox comboSearchEngine;
+
     private bool _loading;
     private bool _snapshotAutoStart;
     private bool _snapshotAutoFix;
@@ -120,6 +124,10 @@ internal class SettingsDlg : Form
         comboAiModel.Items.Add(aiModel);
         comboAiModel.SelectedIndex = 0;
 
+        string searchEngine = Settings.Default.SearchEngine;
+        int seIdx = comboSearchEngine.Items.IndexOf(searchEngine);
+        comboSearchEngine.SelectedIndex = seIdx >= 0 ? seIdx : 0;
+
         ApplyLanguage();
     }
 
@@ -139,6 +147,7 @@ internal class SettingsDlg : Form
             Settings.Default.AiApiKey = textAiApiKey.Text;
             Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : "zh-CN";
             Settings.Default.AiModel = comboAiModel.Text;
+            Settings.Default.SearchEngine = comboSearchEngine.Text;
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
         }
@@ -300,6 +309,7 @@ internal class SettingsDlg : Form
         comboAiTargetLanguage.Items[1] = Strings.AiLang_en;
         lblAiModel.Text = Strings.Settings_AiModel;
         btnFetchModels.Text = Strings.Settings_AiFetchModels;
+        lblSearchEngine.Text = Strings.Settings_SearchEngine;
         toolTip.SetToolTip(checkReplaceLocalizedNames, Strings.Tooltip_ReplaceLocalizedNames);
         toolTip.SetToolTip(checkEnabledHidden, Strings.Tooltip_EnableHidden);
         toolTip.SetToolTip(checkEnableCompleted, Strings.Tooltip_EnableCompleted);
@@ -377,7 +387,7 @@ internal class SettingsDlg : Form
         // btnOK
         button.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 422);
+        button.Location = new System.Drawing.Point(12, 445);
         button.Name = "btnOK";
         button.Size = new System.Drawing.Size(88, 30);
         button.TabIndex = 3;
@@ -591,6 +601,19 @@ internal class SettingsDlg : Form
         panelModel.Margin = new System.Windows.Forms.Padding(0);
         panelModel.Name = "panelModel";
         panelModel.TabIndex = 27;
+        // lblSearchEngine
+        this.lblSearchEngine.AutoSize = true;
+        this.lblSearchEngine.Margin = new System.Windows.Forms.Padding(6);
+        this.lblSearchEngine.Name = "lblSearchEngine";
+        this.lblSearchEngine.TabIndex = 28;
+        this.lblSearchEngine.Text = "Search Engine";
+        // comboSearchEngine
+        this.comboSearchEngine.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+        this.comboSearchEngine.FormattingEnabled = true;
+        this.comboSearchEngine.Items.AddRange(new object[] { "Google", "Bing", "Baidu", "DuckDuckGo" });
+        this.comboSearchEngine.Name = "comboSearchEngine";
+        this.comboSearchEngine.Size = new System.Drawing.Size(121, 21);
+        this.comboSearchEngine.TabIndex = 29;
         // tableLayoutPanel
         tableLayoutPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         tableLayoutPanel.ColumnCount = 2;
@@ -618,10 +641,12 @@ internal class SettingsDlg : Form
         tableLayoutPanel.Controls.Add(this.comboAiTargetLanguage, 1, 9);
         tableLayoutPanel.Controls.Add(this.lblAiModel, 0, 10);
         tableLayoutPanel.Controls.Add(panelModel, 1, 10);
+        tableLayoutPanel.Controls.Add(this.lblSearchEngine, 0, 11);
+        tableLayoutPanel.Controls.Add(this.comboSearchEngine, 1, 11);
         tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
         tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
         tableLayoutPanel.Name = "tableLayoutPanel1";
-        tableLayoutPanel.RowCount = 11;
+        tableLayoutPanel.RowCount = 12;
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -633,12 +658,13 @@ internal class SettingsDlg : Form
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
-        tableLayoutPanel.Size = new System.Drawing.Size(395, 407);
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        tableLayoutPanel.Size = new System.Drawing.Size(395, 430);
         tableLayoutPanel.TabIndex = 7;
         // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-        button3.Location = new System.Drawing.Point(106, 422);
+        button3.Location = new System.Drawing.Point(106, 445);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
         button3.TabIndex = 8;
@@ -649,7 +675,7 @@ internal class SettingsDlg : Form
         base.AcceptButton = button;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
         base.CancelButton = button3;
-        base.ClientSize = new System.Drawing.Size(413, 458);
+        base.ClientSize = new System.Drawing.Size(413, 481);
         base.ControlBox = false;
         base.Controls.Add(button3);
         base.Controls.Add(tableLayoutPanel);
