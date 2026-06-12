@@ -377,6 +377,8 @@ internal class SettingsDlg : Form
         this.lblAiModel = new System.Windows.Forms.Label();
         this.comboAiModel = new System.Windows.Forms.ComboBox();
         this.btnFetchModels = new System.Windows.Forms.Button();
+        this.lblSearchEngine = new System.Windows.Forms.Label();
+        this.comboSearchEngine = new System.Windows.Forms.ComboBox();
         System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
