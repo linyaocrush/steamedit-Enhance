@@ -23,6 +23,7 @@ internal static class AiTranslator
 			baseUrl = baseUrl[..^"/chat/completions".Length];
 
 		string modelsUrl = baseUrl + "/models";
+		Log.WriteLine("AI: Fetching models from {0}", modelsUrl);
 
 		using var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
 		if (!string.IsNullOrWhiteSpace(apiKey))
@@ -32,7 +33,10 @@ internal static class AiTranslator
 		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
 		if (!response.IsSuccessStatusCode)
+		{
+			Log.WriteLine("AI: Models fetch failed: {0} {1}", (int)response.StatusCode, responseBody);
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+		}
 
 		var models = new List<string>();
 		using var doc = JsonDocument.Parse(responseBody);
@@ -43,6 +47,7 @@ internal static class AiTranslator
 				models.Add(id);
 		}
 		models.Sort(StringComparer.OrdinalIgnoreCase);
+		Log.WriteLine("AI: Got {0} models", models.Count);
 		return models;
 	}
 
@@ -59,6 +64,8 @@ internal static class AiTranslator
 
 		string model = Settings.Default.AiModel;
 		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
+
+		Log.WriteLine("AI: Translating \"{0}\" -> {1} (model={2})", gameName, targetLanguage, model);
 
 		string langDisplay = targetLanguage switch
 		{
@@ -83,6 +90,7 @@ Rules:
 
 The following is a glossary of game names the user has already translated. Follow their translation style and terminology strictly:
 {glossary}";
+			Log.WriteLine("AI: Using glossary with {0} chars", glossary.Length);
 		}
 
 		string requestBody = JsonSerializer.Serialize(new
@@ -97,6 +105,8 @@ The following is a glossary of game names the user has already translated. Follo
 			temperature = 0.1
 		});
 
+		Log.WriteLine("AI: Requesting {0}", apiUrl);
+
 		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
 		request.Headers.Add("Authorization", $"Bearer {apiKey}");
 		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
@@ -105,7 +115,10 @@ The following is a glossary of game names the user has already translated. Follo
 		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
 		if (!response.IsSuccessStatusCode)
+		{
+			Log.WriteLine("AI: Translation failed: {0} {1}", (int)response.StatusCode, responseBody);
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+		}
 
 		using var doc = JsonDocument.Parse(responseBody);
 		string result = doc.RootElement
@@ -117,6 +130,7 @@ The following is a glossary of game names the user has already translated. Follo
 			?.Trim('"', '\'', '\n', '\r')
 			?? "";
 
+		Log.WriteLine("AI: Result: \"{0}\"", result);
 		return result;
 	}
 }

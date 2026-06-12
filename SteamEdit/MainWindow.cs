@@ -849,14 +849,25 @@ internal class MainWindow : Form
 
 		try
 		{
+			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
 			string translated = await AiTranslator.TranslateAsync(originalName, targetLang, glossary);
-			if (!string.IsNullOrWhiteSpace(translated) && translated != originalName)
+			Log.WriteLine("AI Translate: Got result \"{0}\"", translated);
+
+			if (!string.IsNullOrWhiteSpace(translated))
 			{
+				_isSettingUpEntry = true;
 				textGameName.Text = translated;
+				_isSettingUpEntry = false;
+				Log.WriteLine("AI Translate: Set textGameName.Text to \"{0}\"", translated);
+			}
+			else
+			{
+				Log.WriteLine("AI Translate: Result was empty, not updating");
 			}
 		}
 		catch (Exception ex)
 		{
+			Log.WriteLine("AI Translate: Exception: {0}", ex);
 			MessageBox.Show(this, string.Format(Strings.Msg_TranslateFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
 		}
 		finally
