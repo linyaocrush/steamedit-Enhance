@@ -131,6 +131,22 @@ internal static class TranslationGlossary
 		}
 	}
 
+	public static string FindTranslatedByOriginalName(string originalName)
+	{
+		if (string.IsNullOrWhiteSpace(originalName)) return null;
+		lock (_lock)
+		{
+			foreach (var kv in _data.Entries)
+			{
+				if (string.Equals(kv.Value.Original, originalName, StringComparison.OrdinalIgnoreCase))
+				{
+					return kv.Value.Translated;
+				}
+			}
+		}
+		return null;
+	}
+
 	private static void Save()
 	{
 		try
