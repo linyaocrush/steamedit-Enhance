@@ -181,7 +181,11 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public void RemoveProperty(string name)
 	{
-		_properties.RemoveAll((Property prop) => prop.Name == name);
+		for (int i = _properties.Count - 1; i >= 0; i--)
+		{
+			if (_properties[i].Name == name)
+				_properties.RemoveAt(i);
+		}
 		_propertyMap.Remove(name);
 	}
 

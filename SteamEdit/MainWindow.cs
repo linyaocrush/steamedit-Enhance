@@ -312,15 +312,12 @@ internal class MainWindow : Form
 		});
 		appSelection.BeginUpdate();
 		appSelection.Items.Clear();
-		ListBox.ObjectCollection items = appSelection.Items;
-		object[] items2 = _entries.ToArray();
-		items.AddRange(items2);
+		foreach (var entry in _entries)
+			appSelection.Items.Add(entry);
 		appSelection.EndUpdate();
 		appSelection.SelectedItem = selectedItem;
-		if (appSelection.SelectedItem == null)
-		{
-			appSelection.Text = "";
-		}
+		if (appSelection.SelectedIndex < 0 && appSelection.Items.Count > 0)
+			appSelection.SelectedIndex = 0;
 	}
 
 	private void ResortEntry(IAppInfoEntry entry)
@@ -443,14 +440,9 @@ internal class MainWindow : Form
 		_entries = result;
 		btnControllerBatch.Enabled = _entries.Count > 0;
 		SortEntries();
-		if (selectedItem != null && appSelection.Items.Contains(selectedItem))
-		{
-			appSelection.SelectedItem = selectedItem;
-		}
-		else
-		{
-			appSelection.SelectedIndex = ((appSelection.Items.Count <= 0) ? (-1) : 0);
-		}
+		appSelection.SelectedItem = selectedItem;
+		if (appSelection.SelectedIndex < 0 && appSelection.Items.Count > 0)
+			appSelection.SelectedIndex = 0;
 		Setup();
 		_totalEntryCount = totalCount;
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
