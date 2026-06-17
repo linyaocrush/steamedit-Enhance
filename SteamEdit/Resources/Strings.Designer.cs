@@ -180,5 +180,18 @@ namespace SteamEdit {
         internal static string Enum_Config => ResourceManager.GetString("Enum_Config", resourceCulture);
         internal static string Enum_Beta => ResourceManager.GetString("Enum_Beta", resourceCulture);
         internal static string Enum_Unknown => ResourceManager.GetString("Enum_Unknown", resourceCulture);
+
+        internal static string BatchTranslate_Title => ResourceManager.GetString("BatchTranslate_Title", resourceCulture);
+        internal static string BatchTranslate_Progress => ResourceManager.GetString("BatchTranslate_Progress", resourceCulture);
+        internal static string BatchTranslate_Current => ResourceManager.GetString("BatchTranslate_Current", resourceCulture);
+        internal static string BatchTranslate_Stats => ResourceManager.GetString("BatchTranslate_Stats", resourceCulture);
+        internal static string BatchTranslate_Pause => ResourceManager.GetString("BatchTranslate_Pause", resourceCulture);
+        internal static string BatchTranslate_Resume => ResourceManager.GetString("BatchTranslate_Resume", resourceCulture);
+        internal static string BatchTranslate_Cancel => ResourceManager.GetString("BatchTranslate_Cancel", resourceCulture);
+        internal static string BatchTranslate_Close => ResourceManager.GetString("BatchTranslate_Close", resourceCulture);
+        internal static string MainWindow_BatchTranslate => ResourceManager.GetString("MainWindow_BatchTranslate", resourceCulture);
+        internal static string Tooltip_BatchTranslate => ResourceManager.GetString("Tooltip_BatchTranslate", resourceCulture);
+        internal static string Msg_AiNotConfigured => ResourceManager.GetString("Msg_AiNotConfigured", resourceCulture);
+        internal static string Msg_NoTranslatableGames => ResourceManager.GetString("Msg_NoTranslatableGames", resourceCulture);
     }
 }
