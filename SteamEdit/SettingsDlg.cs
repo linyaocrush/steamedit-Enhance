@@ -74,6 +74,13 @@ internal class SettingsDlg : Form
 
     private ComboBox comboSearchEngine;
 
+    private Label lblCustomSystemPrompt;
+    private TextBox textCustomSystemPrompt;
+    private Button btnResetPrompt;
+    private Label lblCustomUserMessage;
+    private TextBox textCustomUserMessage;
+    private Button btnResetUserMessage;
+
     private bool _loading;
     private bool _snapshotAutoStart;
     private bool _snapshotAutoFix;
@@ -100,6 +107,8 @@ internal class SettingsDlg : Form
         _snapshotForceStart = Settings.Default.AutoStartForceStart;
         textAiApiUrl.Text = Settings.Default.AiApiUrl;
         textAiApiKey.Text = Settings.Default.AiApiKey;
+        textCustomSystemPrompt.Text = Settings.Default.AiCustomSystemPrompt;
+        textCustomUserMessage.Text = Settings.Default.AiCustomUserMessage;
         _loading = false;
         UpdateAutoStartSubEnabled();
 
@@ -147,6 +156,8 @@ internal class SettingsDlg : Form
             Settings.Default.AiApiKey = textAiApiKey.Text;
             Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : "zh-CN";
             Settings.Default.AiModel = comboAiModel.Text;
+            Settings.Default.AiCustomSystemPrompt = textCustomSystemPrompt.Text;
+            Settings.Default.AiCustomUserMessage = textCustomUserMessage.Text;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
@@ -205,6 +216,16 @@ internal class SettingsDlg : Form
             btnFetchModels.Text = Strings.Settings_AiFetchModels;
             btnFetchModels.Enabled = true;
         }
+    }
+
+    private void btnResetPrompt_Click(object sender, EventArgs e)
+    {
+        textCustomSystemPrompt.Text = "";
+    }
+
+    private void btnResetUserMessage_Click(object sender, EventArgs e)
+    {
+        textCustomUserMessage.Text = "";
     }
 
     private void comboLanguage_SelectedIndexChanged(object sender, EventArgs e)
@@ -310,6 +331,12 @@ internal class SettingsDlg : Form
         lblAiModel.Text = Strings.Settings_AiModel;
         btnFetchModels.Text = Strings.Settings_AiFetchModels;
         lblSearchEngine.Text = Strings.Settings_SearchEngine;
+        lblCustomSystemPrompt.Text = Strings.Settings_CustomSystemPrompt;
+        lblCustomUserMessage.Text = Strings.Settings_CustomUserMessage;
+        btnResetPrompt.Text = Strings.Settings_ResetPrompt;
+        btnResetUserMessage.Text = Strings.Settings_ResetPrompt;
+        toolTip.SetToolTip(textCustomSystemPrompt, Strings.Tooltip_CustomSystemPrompt);
+        toolTip.SetToolTip(textCustomUserMessage, Strings.Tooltip_CustomUserMessage);
         toolTip.SetToolTip(checkReplaceLocalizedNames, Strings.Tooltip_ReplaceLocalizedNames);
         toolTip.SetToolTip(checkEnabledHidden, Strings.Tooltip_EnableHidden);
         toolTip.SetToolTip(checkEnableCompleted, Strings.Tooltip_EnableCompleted);
@@ -379,17 +406,27 @@ internal class SettingsDlg : Form
         this.btnFetchModels = new System.Windows.Forms.Button();
         this.lblSearchEngine = new System.Windows.Forms.Label();
         this.comboSearchEngine = new System.Windows.Forms.ComboBox();
+        this.lblCustomSystemPrompt = new System.Windows.Forms.Label();
+        this.textCustomSystemPrompt = new System.Windows.Forms.TextBox();
+        this.btnResetPrompt = new System.Windows.Forms.Button();
+        this.lblCustomUserMessage = new System.Windows.Forms.Label();
+        this.textCustomUserMessage = new System.Windows.Forms.TextBox();
+        this.btnResetUserMessage = new System.Windows.Forms.Button();
+        System.Windows.Forms.Panel panelPrompt = new System.Windows.Forms.Panel();
+        System.Windows.Forms.Panel panelUserMsg = new System.Windows.Forms.Panel();
         System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
         panel.SuspendLayout();
         this.panelAutoStartSub.SuspendLayout();
         panelModel.SuspendLayout();
+        panelPrompt.SuspendLayout();
+        panelUserMsg.SuspendLayout();
         base.SuspendLayout();
         // btnOK
         button.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 445);
+        button.Location = new System.Drawing.Point(12, 645);
         button.Name = "btnOK";
         button.Size = new System.Drawing.Size(88, 30);
         button.TabIndex = 3;
@@ -603,6 +640,66 @@ internal class SettingsDlg : Form
         panelModel.Margin = new System.Windows.Forms.Padding(0);
         panelModel.Name = "panelModel";
         panelModel.TabIndex = 27;
+        // lblCustomSystemPrompt
+        this.lblCustomSystemPrompt.AutoSize = true;
+        this.lblCustomSystemPrompt.Margin = new System.Windows.Forms.Padding(6);
+        this.lblCustomSystemPrompt.Name = "lblCustomSystemPrompt";
+        this.lblCustomSystemPrompt.TabIndex = 30;
+        this.lblCustomSystemPrompt.Text = "Custom System Prompt";
+        // textCustomSystemPrompt
+        this.textCustomSystemPrompt.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.textCustomSystemPrompt.Multiline = true;
+        this.textCustomSystemPrompt.Name = "textCustomSystemPrompt";
+        this.textCustomSystemPrompt.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+        this.textCustomSystemPrompt.Size = new System.Drawing.Size(224, 80);
+        this.textCustomSystemPrompt.TabIndex = 31;
+        // btnResetPrompt
+        this.btnResetPrompt.Name = "btnResetPrompt";
+        this.btnResetPrompt.Size = new System.Drawing.Size(80, 23);
+        this.btnResetPrompt.TabIndex = 32;
+        this.btnResetPrompt.Text = "Reset";
+        this.btnResetPrompt.UseVisualStyleBackColor = true;
+        this.btnResetPrompt.Click += new System.EventHandler(btnResetPrompt_Click);
+        // panelPrompt
+        panelPrompt.Controls.Add(this.textCustomSystemPrompt);
+        panelPrompt.Controls.Add(this.btnResetPrompt);
+        panelPrompt.Dock = System.Windows.Forms.DockStyle.Fill;
+        panelPrompt.Margin = new System.Windows.Forms.Padding(0);
+        panelPrompt.Name = "panelPrompt";
+        panelPrompt.TabIndex = 33;
+        this.textCustomSystemPrompt.Location = new System.Drawing.Point(0, 0);
+        this.btnResetPrompt.Location = new System.Drawing.Point(0, 83);
+        this.btnResetPrompt.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
+        // lblCustomUserMessage
+        this.lblCustomUserMessage.AutoSize = true;
+        this.lblCustomUserMessage.Margin = new System.Windows.Forms.Padding(6);
+        this.lblCustomUserMessage.Name = "lblCustomUserMessage";
+        this.lblCustomUserMessage.TabIndex = 34;
+        this.lblCustomUserMessage.Text = "Custom User Message";
+        // textCustomUserMessage
+        this.textCustomUserMessage.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.textCustomUserMessage.Multiline = true;
+        this.textCustomUserMessage.Name = "textCustomUserMessage";
+        this.textCustomUserMessage.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+        this.textCustomUserMessage.Size = new System.Drawing.Size(224, 50);
+        this.textCustomUserMessage.TabIndex = 35;
+        // btnResetUserMessage
+        this.btnResetUserMessage.Name = "btnResetUserMessage";
+        this.btnResetUserMessage.Size = new System.Drawing.Size(80, 23);
+        this.btnResetUserMessage.TabIndex = 36;
+        this.btnResetUserMessage.Text = "Reset";
+        this.btnResetUserMessage.UseVisualStyleBackColor = true;
+        this.btnResetUserMessage.Click += new System.EventHandler(btnResetUserMessage_Click);
+        // panelUserMsg
+        panelUserMsg.Controls.Add(this.textCustomUserMessage);
+        panelUserMsg.Controls.Add(this.btnResetUserMessage);
+        panelUserMsg.Dock = System.Windows.Forms.DockStyle.Fill;
+        panelUserMsg.Margin = new System.Windows.Forms.Padding(0);
+        panelUserMsg.Name = "panelUserMsg";
+        panelUserMsg.TabIndex = 37;
+        this.textCustomUserMessage.Location = new System.Drawing.Point(0, 0);
+        this.btnResetUserMessage.Location = new System.Drawing.Point(0, 53);
+        this.btnResetUserMessage.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
         // lblSearchEngine
         this.lblSearchEngine.AutoSize = true;
         this.lblSearchEngine.Margin = new System.Windows.Forms.Padding(6);
@@ -645,10 +742,14 @@ internal class SettingsDlg : Form
         tableLayoutPanel.Controls.Add(panelModel, 1, 10);
         tableLayoutPanel.Controls.Add(this.lblSearchEngine, 0, 11);
         tableLayoutPanel.Controls.Add(this.comboSearchEngine, 1, 11);
+        tableLayoutPanel.Controls.Add(this.lblCustomSystemPrompt, 0, 12);
+        tableLayoutPanel.Controls.Add(panelPrompt, 1, 12);
+        tableLayoutPanel.Controls.Add(this.lblCustomUserMessage, 0, 13);
+        tableLayoutPanel.Controls.Add(panelUserMsg, 1, 13);
         tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
         tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
         tableLayoutPanel.Name = "tableLayoutPanel1";
-        tableLayoutPanel.RowCount = 12;
+        tableLayoutPanel.RowCount = 14;
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -661,12 +762,14 @@ internal class SettingsDlg : Form
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-        tableLayoutPanel.Size = new System.Drawing.Size(395, 430);
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110f));
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80f));
+        tableLayoutPanel.Size = new System.Drawing.Size(395, 630);
         tableLayoutPanel.TabIndex = 7;
         // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-        button3.Location = new System.Drawing.Point(106, 445);
+        button3.Location = new System.Drawing.Point(106, 645);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
         button3.TabIndex = 8;
@@ -677,7 +780,7 @@ internal class SettingsDlg : Form
         base.AcceptButton = button;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
         base.CancelButton = button3;
-        base.ClientSize = new System.Drawing.Size(413, 481);
+        base.ClientSize = new System.Drawing.Size(413, 680);
         base.ControlBox = false;
         base.Controls.Add(button3);
         base.Controls.Add(tableLayoutPanel);
@@ -701,6 +804,10 @@ internal class SettingsDlg : Form
         this.panelAutoStartSub.PerformLayout();
         panelModel.ResumeLayout(false);
         panelModel.PerformLayout();
+        panelPrompt.ResumeLayout(false);
+        panelPrompt.PerformLayout();
+        panelUserMsg.ResumeLayout(false);
+        panelUserMsg.PerformLayout();
         base.ResumeLayout(false);
     }
 }

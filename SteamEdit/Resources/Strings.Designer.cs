@@ -101,6 +101,11 @@ namespace SteamEdit {
         internal static string Settings_AiModel => ResourceManager.GetString("Settings_AiModel", resourceCulture);
         internal static string Settings_AiFetchModels => ResourceManager.GetString("Settings_AiFetchModels", resourceCulture);
         internal static string Settings_SearchEngine => ResourceManager.GetString("Settings_SearchEngine", resourceCulture);
+        internal static string Settings_CustomSystemPrompt => ResourceManager.GetString("Settings_CustomSystemPrompt", resourceCulture);
+        internal static string Settings_CustomUserMessage => ResourceManager.GetString("Settings_CustomUserMessage", resourceCulture);
+        internal static string Settings_ResetPrompt => ResourceManager.GetString("Settings_ResetPrompt", resourceCulture);
+        internal static string Tooltip_CustomSystemPrompt => ResourceManager.GetString("Tooltip_CustomSystemPrompt", resourceCulture);
+        internal static string Tooltip_CustomUserMessage => ResourceManager.GetString("Tooltip_CustomUserMessage", resourceCulture);
         internal static string Tooltip_AiApiUrl => ResourceManager.GetString("Tooltip_AiApiUrl", resourceCulture);
         internal static string Tooltip_AiApiKey => ResourceManager.GetString("Tooltip_AiApiKey", resourceCulture);
         internal static string Tooltip_Translate => ResourceManager.GetString("Tooltip_Translate", resourceCulture);
