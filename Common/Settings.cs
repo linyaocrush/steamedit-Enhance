@@ -354,6 +354,32 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue("Name")]
+	public string SortField
+	{
+		get
+		{
+			return (string)_values["SortField"];
+		}
+		set
+		{
+			_values["SortField"] = value;
+		}
+	}
+
+	[DefaultValue(false)]
+	public bool SortDescending
+	{
+		get
+		{
+			return (bool)_values["SortDescending"];
+		}
+		set
+		{
+			_values["SortDescending"] = value;
+		}
+	}
+
 	private Settings()
 	{
 		_values = new Dictionary<string, object>();
