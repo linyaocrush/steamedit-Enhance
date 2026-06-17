@@ -462,4 +462,59 @@
   <data name="Enum_Unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
+
+  <!-- Batch Translate -->
+  <data name="BatchTranslate_Title" xml:space="preserve">
+    <value>Batch Translate</value>
+  </data>
+  <data name="BatchTranslate_Progress" xml:space="preserve">
+    <value>Progress: {0}/{1}</value>
+  </data>
+  <data name="BatchTranslate_Current" xml:space="preserve">
+    <value>Translating: {0}</value>
+  </data>
+  <data name="BatchTranslate_Stats" xml:space="preserve">
+    <value>✅ Success: {0}   ⏭ Skipped: {1}   ❌ Failed: {2}</value>
+  </data>
+  <data name="BatchTranslate_Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="BatchTranslate_Resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="BatchTranslate_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="BatchTranslate_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="MainWindow_BatchTranslate" xml:space="preserve">
+    <value>Translate All Filtered</value>
+  </data>
+  <data name="Tooltip_BatchTranslate" xml:space="preserve">
+    <value>Batch translate all filtered games</value>
+  </data>
+  <data name="Msg_AiNotConfigured" xml:space="preserve">
+    <value>Please configure AI API URL and API Key in Settings first.</value>
+  </data>
+  <data name="Msg_NoTranslatableGames" xml:space="preserve">
+    <value>No translatable games found in the current filter.</value>
+  </data>
+
+  <!-- Custom Prompt Settings -->
+  <data name="Settings_CustomSystemPrompt" xml:space="preserve">
+    <value>Custom System Prompt</value>
+  </data>
+  <data name="Settings_CustomUserMessage" xml:space="preserve">
+    <value>Custom User Message</value>
+  </data>
+  <data name="Settings_ResetPrompt" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Tooltip_CustomSystemPrompt" xml:space="preserve">
+    <value>Customize the system prompt sent to AI. Variables: {target_lang} {glossary} {context}</value>
+  </data>
+  <data name="Tooltip_CustomUserMessage" xml:space="preserve">
+    <value>Customize the user message sent to AI. Variables: {game_name} {target_lang} {context}</value>
+  </data>
 </root>

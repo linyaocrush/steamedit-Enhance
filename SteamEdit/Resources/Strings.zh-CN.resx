@@ -462,4 +462,59 @@
   <data name="Enum_Unknown" xml:space="preserve">
     <value>未知</value>
   </data>
+
+  <!-- Batch Translate -->
+  <data name="BatchTranslate_Title" xml:space="preserve">
+    <value>批量翻译</value>
+  </data>
+  <data name="BatchTranslate_Progress" xml:space="preserve">
+    <value>进度：{0}/{1}</value>
+  </data>
+  <data name="BatchTranslate_Current" xml:space="preserve">
+    <value>正在翻译：{0}</value>
+  </data>
+  <data name="BatchTranslate_Stats" xml:space="preserve">
+    <value>✅ 成功: {0}   ⏭ 跳过: {1}   ❌ 失败: {2}</value>
+  </data>
+  <data name="BatchTranslate_Pause" xml:space="preserve">
+    <value>暂停</value>
+  </data>
+  <data name="BatchTranslate_Resume" xml:space="preserve">
+    <value>继续</value>
+  </data>
+  <data name="BatchTranslate_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="BatchTranslate_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="MainWindow_BatchTranslate" xml:space="preserve">
+    <value>翻译所有筛选结果</value>
+  </data>
+  <data name="Tooltip_BatchTranslate" xml:space="preserve">
+    <value>批量翻译所有筛选的游戏</value>
+  </data>
+  <data name="Msg_AiNotConfigured" xml:space="preserve">
+    <value>请先在设置中配置 AI API URL 和 API Key。</value>
+  </data>
+  <data name="Msg_NoTranslatableGames" xml:space="preserve">
+    <value>当前筛选结果中没有可翻译的游戏。</value>
+  </data>
+
+  <!-- Custom Prompt Settings -->
+  <data name="Settings_CustomSystemPrompt" xml:space="preserve">
+    <value>自定义系统提示词</value>
+  </data>
+  <data name="Settings_CustomUserMessage" xml:space="preserve">
+    <value>自定义用户消息</value>
+  </data>
+  <data name="Settings_ResetPrompt" xml:space="preserve">
+    <value>恢复默认</value>
+  </data>
+  <data name="Tooltip_CustomSystemPrompt" xml:space="preserve">
+    <value>自定义发送给 AI 的系统提示词。可用变量：{target_lang} {glossary} {context}</value>
+  </data>
+  <data name="Tooltip_CustomUserMessage" xml:space="preserve">
+    <value>自定义发送给 AI 的用户消息。可用变量：{game_name} {target_lang} {context}</value>
+  </data>
 </root>
