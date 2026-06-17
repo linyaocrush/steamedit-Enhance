@@ -95,6 +95,9 @@ internal class MainWindow : Form
 
 	private Button filterSelector;
 
+	private ContextMenuStrip sortSelectorMenu;
+	private Button sortSelector;
+
 	private SplitContainer splitContainer1;
 
 	private ListBox appSelection;
@@ -245,6 +248,20 @@ internal class MainWindow : Form
 		listControllerSupport.Items.Add("full");
 		listVR.Items.Add("default");
 		listVR.Items.Add("removed");
+		// Build sort menu
+		var sortByName = new ToolStripMenuItem(Strings.Sort_ByName) { Tag = "Name", CheckOnClick = true };
+		var sortById = new ToolStripMenuItem(Strings.Sort_ById) { Tag = "AppId", CheckOnClick = true };
+		sortByName.Click += OnSortField_Click;
+		sortById.Click += OnSortField_Click;
+		sortSelectorMenu.Items.Add(sortByName);
+		sortSelectorMenu.Items.Add(sortById);
+		sortSelectorMenu.Items.Add(new ToolStripSeparator());
+		var sortAsc = new ToolStripMenuItem(Strings.Sort_Ascending) { Tag = false, CheckOnClick = true };
+		var sortDesc = new ToolStripMenuItem(Strings.Sort_Descending) { Tag = true, CheckOnClick = true };
+		sortAsc.Click += OnSortDirection_Click;
+		sortDesc.Click += OnSortDirection_Click;
+		sortSelectorMenu.Items.Add(sortAsc);
+		sortSelectorMenu.Items.Add(sortDesc);
 		base.Icon = Resources.logo;
 		_defaultNameColor = textGameName.ForeColor;
 		_defaultSortAsColor = textSortAs.ForeColor;
@@ -299,17 +316,38 @@ internal class MainWindow : Form
 	private void SortEntries()
 	{
 		IAppInfoEntry selectedItem = appSelection.SelectedItem as IAppInfoEntry;
-		var keys = new Dictionary<IAppInfoEntry, string>(_entries.Count);
-		foreach (var e in _entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
-		_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
+		string sortField = Settings.Default.SortField;
+		bool descending = Settings.Default.SortDescending;
+
+		if (sortField == "AppId")
 		{
-			int num = StringComparer.CurrentCulture.Compare(keys[a], keys[b]);
-			if (num == 0)
+			_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
 			{
-				num = a.ID - b.ID;
-			}
-			return num;
-		});
+				int num = a.ID.CompareTo(b.ID);
+				if (descending) num = -num;
+				if (num == 0)
+				{
+					num = StringTitleComparer.CompareStrings(a.SortAs, b.SortAs);
+				}
+				return num;
+			});
+		}
+		else // "Name" or default
+		{
+			var keys = new Dictionary<IAppInfoEntry, string>(_entries.Count);
+			foreach (var e in _entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
+			_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
+			{
+				int num = StringComparer.CurrentCulture.Compare(keys[a], keys[b]);
+				if (descending) num = -num;
+				if (num == 0)
+				{
+					num = a.ID - b.ID;
+				}
+				return num;
+			});
+		}
+
 		appSelection.BeginUpdate();
 		appSelection.Items.Clear();
 		foreach (var entry in _entries)
@@ -718,6 +756,7 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnHelp, Strings.Tooltip_About);
 		toolTips.SetToolTip(btnControllerBatch, Strings.Tooltip_BatchController);
 		toolTips.SetToolTip(btnVRBatch, Strings.Tooltip_BatchVR);
+		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
 
 		// Refresh status bar
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, _totalEntryCount);
@@ -1141,6 +1180,56 @@ internal class MainWindow : Form
 		}
 	}
 
+	private void OnSortSelectorMenu_Click(object sender, EventArgs e)
+	{
+		if (!sortSelectorMenu.Visible)
+		{
+			string currentField = Settings.Default.SortField;
+			bool descending = Settings.Default.SortDescending;
+			foreach (ToolStripMenuItem item in sortSelectorMenu.Items)
+			{
+				if (item.Tag is string field)
+					item.Checked = field == currentField;
+				else if (item.Tag is bool isDesc)
+					item.Checked = isDesc == descending;
+			}
+			Point screenLocation = sortSelector.PointToScreen(new Point(sortSelector.Size.Width, 0));
+			sortSelectorMenu.Show(screenLocation);
+		}
+	}
+
+	private void OnSortSelectorMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e)
+	{
+		if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
+			e.Cancel = true;
+	}
+
+	private void OnSortField_Click(object sender, EventArgs e)
+	{
+		if (sender is not ToolStripMenuItem item || item.Tag is not string field) return;
+		Settings.Default.SortField = field;
+		Settings.Default.Save();
+		foreach (ToolStripMenuItem mi in sortSelectorMenu.Items)
+		{
+			if (mi.Tag is string && mi != item) mi.Checked = false;
+		}
+		item.Checked = true;
+		SortEntries();
+	}
+
+	private void OnSortDirection_Click(object sender, EventArgs e)
+	{
+		if (sender is not ToolStripMenuItem item || item.Tag is not bool descending) return;
+		Settings.Default.SortDescending = descending;
+		Settings.Default.Save();
+		foreach (ToolStripMenuItem mi in sortSelectorMenu.Items)
+		{
+			if (mi.Tag is bool && mi != item) mi.Checked = false;
+		}
+		item.Checked = true;
+		SortEntries();
+	}
+
 	private void OnAppFilterText_TextChanged(object sender, EventArgs e)
 	{
 		_filterDebounceTimer.Stop();
@@ -1533,6 +1622,24 @@ internal class MainWindow : Form
 		this.filterSelector.TabIndex = 0;
 		this.filterSelector.UseVisualStyleBackColor = true;
 		this.filterSelector.Click += new System.EventHandler(OnFilterSelectorMenu_Click);
+		// Sort selector
+		this.sortSelectorMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+		this.sortSelector = new System.Windows.Forms.Button();
+		this.sortSelectorMenu.Name = "sortSelectorMenu";
+		this.sortSelectorMenu.ShowCheckMargin = true;
+		this.sortSelectorMenu.Size = new System.Drawing.Size(83, 4);
+		this.sortSelectorMenu.Closing += new System.Windows.Forms.ToolStripDropDownClosingEventHandler(OnSortSelectorMenu_Closing);
+		this.sortSelector.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+		this.sortSelector.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+		this.sortSelector.Text = "↕";
+		this.sortSelector.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+		this.sortSelector.Location = new System.Drawing.Point(175, 0);
+		this.sortSelector.Margin = new System.Windows.Forms.Padding(0);
+		this.sortSelector.Name = "sortSelector";
+		this.sortSelector.Size = new System.Drawing.Size(26, 26);
+		this.sortSelector.TabIndex = 0;
+		this.sortSelector.UseVisualStyleBackColor = true;
+		this.sortSelector.Click += new System.EventHandler(OnSortSelectorMenu_Click);
 		this.splitContainer1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.splitContainer1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 		this.splitContainer1.Location = new System.Drawing.Point(0, 43);
@@ -1540,6 +1647,7 @@ internal class MainWindow : Form
 		this.splitContainer1.Panel1.Controls.Add(statusStrip);
 		this.splitContainer1.Panel1.Controls.Add(this.appSelection);
 		this.splitContainer1.Panel1.Controls.Add(this.appFilterText);
+		this.splitContainer1.Panel1.Controls.Add(this.sortSelector);
 		this.splitContainer1.Panel1.Controls.Add(this.filterSelector);
 		this.splitContainer1.Panel1MinSize = 50;
 		this.splitContainer1.Panel2.Controls.Add(this.panel1);
