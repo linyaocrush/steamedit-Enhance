@@ -15,7 +15,7 @@ internal static class Log
 	{
 		_syncObj = new object();
 		_path = Path.Combine(AppHelper.GetAppDirectory(), "log.txt");
-		_writer = new StreamWriter(_path, append: true) { AutoFlush = false };
+		_writer = new StreamWriter(_path, append: false) { AutoFlush = false };
 		WriteLines("---", DateTime.Now.ToLongDateString() + " - " + DateTime.Now.ToLongTimeString(), "STARTING UP: " + Environment.CommandLine);
 	}
 
