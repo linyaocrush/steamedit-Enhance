@@ -535,4 +535,58 @@
   <data name="Msg_AnalyzingRules" xml:space="preserve">
     <value>分析中...</value>
   </data>
+
+  <!-- Sort -->
+  <data name="Sort_Title" xml:space="preserve">
+    <value>排序</value>
+  </data>
+  <data name="Sort_ByName" xml:space="preserve">
+    <value>按名称</value>
+  </data>
+  <data name="Sort_ById" xml:space="preserve">
+    <value>按 App ID</value>
+  </data>
+  <data name="Sort_Ascending" xml:space="preserve">
+    <value>正序</value>
+  </data>
+  <data name="Sort_Descending" xml:space="preserve">
+    <value>倒序</value>
+  </data>
+  <!-- BatchReplace -->
+  <data name="BatchReplace_Title" xml:space="preserve">
+    <value>批量查找替换</value>
+  </data>
+  <data name="BatchReplace_Find" xml:space="preserve">
+    <value>查找：</value>
+  </data>
+  <data name="BatchReplace_Replace" xml:space="preserve">
+    <value>替换：</value>
+  </data>
+  <data name="BatchReplace_CaseSensitive" xml:space="preserve">
+    <value>区分大小写</value>
+  </data>
+  <data name="BatchReplace_Regex" xml:space="preserve">
+    <value>正则模式</value>
+  </data>
+  <data name="BatchReplace_MatchCount" xml:space="preserve">
+    <value>匹配：{0} 个游戏</value>
+  </data>
+  <data name="BatchReplace_BtnReplaceAll" xml:space="preserve">
+    <value>全部替换</value>
+  </data>
+  <data name="BatchReplace_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="BatchReplace_InvalidRegex" xml:space="preserve">
+    <value>无效的正则表达式：{0}</value>
+  </data>
+  <data name="BatchReplace_ConfirmReplace" xml:space="preserve">
+    <value>确认替换 {0} 个游戏中的 {1} 处？</value>
+  </data>
+  <data name="Tooltip_BatchReplace" xml:space="preserve">
+    <value>批量查找替换游戏名称</value>
+  </data>
+  <data name="MainWindow_BatchReplace" xml:space="preserve">
+    <value>查找替换</value>
+  </data>
 </root>

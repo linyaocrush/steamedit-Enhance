@@ -199,5 +199,25 @@ namespace SteamEdit {
         internal static string Settings_ClearRules => ResourceManager.GetString("Settings_ClearRules", resourceCulture);
         internal static string Msg_NoGlossaryData => ResourceManager.GetString("Msg_NoGlossaryData", resourceCulture);
         internal static string Msg_AnalyzingRules => ResourceManager.GetString("Msg_AnalyzingRules", resourceCulture);
+
+        internal static string Sort_Title => ResourceManager.GetString("Sort_Title", resourceCulture);
+        internal static string Sort_ByName => ResourceManager.GetString("Sort_ByName", resourceCulture);
+        internal static string Sort_ById => ResourceManager.GetString("Sort_ById", resourceCulture);
+        internal static string Sort_Ascending => ResourceManager.GetString("Sort_Ascending", resourceCulture);
+        internal static string Sort_Descending => ResourceManager.GetString("Sort_Descending", resourceCulture);
+
+        internal static string BatchReplace_Title => ResourceManager.GetString("BatchReplace_Title", resourceCulture);
+        internal static string BatchReplace_Find => ResourceManager.GetString("BatchReplace_Find", resourceCulture);
+        internal static string BatchReplace_Replace => ResourceManager.GetString("BatchReplace_Replace", resourceCulture);
+        internal static string BatchReplace_CaseSensitive => ResourceManager.GetString("BatchReplace_CaseSensitive", resourceCulture);
+        internal static string BatchReplace_Regex => ResourceManager.GetString("BatchReplace_Regex", resourceCulture);
+        internal static string BatchReplace_MatchCount => ResourceManager.GetString("BatchReplace_MatchCount", resourceCulture);
+        internal static string BatchReplace_BtnReplaceAll => ResourceManager.GetString("BatchReplace_BtnReplaceAll", resourceCulture);
+        internal static string BatchReplace_BtnCancel => ResourceManager.GetString("BatchReplace_BtnCancel", resourceCulture);
+        internal static string BatchReplace_InvalidRegex => ResourceManager.GetString("BatchReplace_InvalidRegex", resourceCulture);
+        internal static string BatchReplace_ConfirmReplace => ResourceManager.GetString("BatchReplace_ConfirmReplace", resourceCulture);
+
+        internal static string Tooltip_BatchReplace => ResourceManager.GetString("Tooltip_BatchReplace", resourceCulture);
+        internal static string MainWindow_BatchReplace => ResourceManager.GetString("MainWindow_BatchReplace", resourceCulture);
     }
 }

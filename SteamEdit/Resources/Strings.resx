@@ -535,4 +535,58 @@
   <data name="Msg_AnalyzingRules" xml:space="preserve">
     <value>Analyzing...</value>
   </data>
+
+  <!-- Sort -->
+  <data name="Sort_Title" xml:space="preserve">
+    <value>Sort</value>
+  </data>
+  <data name="Sort_ByName" xml:space="preserve">
+    <value>By Name</value>
+  </data>
+  <data name="Sort_ById" xml:space="preserve">
+    <value>By App ID</value>
+  </data>
+  <data name="Sort_Ascending" xml:space="preserve">
+    <value>Ascending</value>
+  </data>
+  <data name="Sort_Descending" xml:space="preserve">
+    <value>Descending</value>
+  </data>
+  <!-- BatchReplace -->
+  <data name="BatchReplace_Title" xml:space="preserve">
+    <value>Batch Find &amp; Replace</value>
+  </data>
+  <data name="BatchReplace_Find" xml:space="preserve">
+    <value>Find:</value>
+  </data>
+  <data name="BatchReplace_Replace" xml:space="preserve">
+    <value>Replace:</value>
+  </data>
+  <data name="BatchReplace_CaseSensitive" xml:space="preserve">
+    <value>Case Sensitive</value>
+  </data>
+  <data name="BatchReplace_Regex" xml:space="preserve">
+    <value>Regex Mode</value>
+  </data>
+  <data name="BatchReplace_MatchCount" xml:space="preserve">
+    <value>Matched: {0} games</value>
+  </data>
+  <data name="BatchReplace_BtnReplaceAll" xml:space="preserve">
+    <value>Replace All</value>
+  </data>
+  <data name="BatchReplace_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="BatchReplace_InvalidRegex" xml:space="preserve">
+    <value>Invalid regular expression: {0}</value>
+  </data>
+  <data name="BatchReplace_ConfirmReplace" xml:space="preserve">
+    <value>Replace {0} occurrences in {1} games?</value>
+  </data>
+  <data name="Tooltip_BatchReplace" xml:space="preserve">
+    <value>Batch find and replace game names</value>
+  </data>
+  <data name="MainWindow_BatchReplace" xml:space="preserve">
+    <value>Find &amp; Replace</value>
+  </data>
 </root>
