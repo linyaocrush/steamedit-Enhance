@@ -315,6 +315,32 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue("")]
+	public string AiCustomSystemPrompt
+	{
+		get
+		{
+			return (string)_values["AiCustomSystemPrompt"];
+		}
+		set
+		{
+			_values["AiCustomSystemPrompt"] = value;
+		}
+	}
+
+	[DefaultValue("")]
+	public string AiCustomUserMessage
+	{
+		get
+		{
+			return (string)_values["AiCustomUserMessage"];
+		}
+		set
+		{
+			_values["AiCustomUserMessage"] = value;
+		}
+	}
+
 	private Settings()
 	{
 		_values = new Dictionary<string, object>();
