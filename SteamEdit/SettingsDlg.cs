@@ -158,8 +158,8 @@ internal class SettingsDlg : Form
             Settings.Default.AiApiKey = textAiApiKey.Text;
             Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : "zh-CN";
             Settings.Default.AiModel = comboAiModel.Text;
-            Settings.Default.AiCustomSystemPrompt = textCustomSystemPrompt.Text;
-            Settings.Default.AiCustomUserMessage = textCustomUserMessage.Text;
+            Settings.Default.AiCustomSystemPrompt = textCustomSystemPrompt.Text == AiTranslator.DefaultSystemPrompt ? "" : textCustomSystemPrompt.Text;
+            Settings.Default.AiCustomUserMessage = textCustomUserMessage.Text == AiTranslator.DefaultUserMessage ? "" : textCustomUserMessage.Text;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();

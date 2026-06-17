@@ -849,21 +849,6 @@ internal class MainWindow : Form
 		}
 	}
 
-	private static string BuildContextForEntry(IAppInfoEntry entry)
-	{
-		var parts = new List<string>();
-		string developer = entry.GetPropertyValue<string>(null, "appinfo", "common", "developers");
-		if (!string.IsNullOrWhiteSpace(developer)) parts.Add("Developer: " + developer);
-
-		string publisher = entry.GetPropertyValue<string>(null, "appinfo", "common", "publishers");
-		if (!string.IsNullOrWhiteSpace(publisher)) parts.Add("Publisher: " + publisher);
-
-		string type = entry.GetPropertyValue<string>(null, "appinfo", "common", "type");
-		if (!string.IsNullOrWhiteSpace(type)) parts.Add("Type: " + type);
-
-		return parts.Count > 0 ? string.Join("\n", parts) : null;
-	}
-
 	private void OnBtnSearch_Click(object sender, EventArgs e)
 	{
 		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
@@ -903,7 +888,7 @@ internal class MainWindow : Form
 		{
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
 			string glossary = TranslationGlossary.ToPromptString();
-			string context = BuildContextForEntry(entry);
+			string context = AiTranslator.BuildContext(entry);
 			string translated = await AiTranslator.TranslateWithContextAsync(
 				originalName, targetLang, glossary, context,
 				Settings.Default.AiCustomSystemPrompt,

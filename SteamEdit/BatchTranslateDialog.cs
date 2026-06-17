@@ -105,7 +105,7 @@ internal class BatchTranslateDialog : Form
             }
 
             // Build context from VDF metadata
-            string context = BuildContext(entry);
+            string context = AiTranslator.BuildContext(entry);
 
             try
             {
@@ -173,21 +173,6 @@ internal class BatchTranslateDialog : Form
         }
     }
 
-    private static string BuildContext(IAppInfoEntry entry)
-    {
-        var parts = new List<string>();
-        string developer = entry.GetPropertyValue<string>(null, "appinfo", "common", "developers");
-        if (!string.IsNullOrWhiteSpace(developer)) parts.Add("Developer: " + developer);
-
-        string publisher = entry.GetPropertyValue<string>(null, "appinfo", "common", "publishers");
-        if (!string.IsNullOrWhiteSpace(publisher)) parts.Add("Publisher: " + publisher);
-
-        string type = entry.GetPropertyValue<string>(null, "appinfo", "common", "type");
-        if (!string.IsNullOrWhiteSpace(type)) parts.Add("Type: " + type);
-
-        return parts.Count > 0 ? string.Join("\n", parts) : null;
-    }
-
     private void btnPause_Click(object sender, EventArgs e)
     {
         if (_isPaused)
@@ -208,7 +193,7 @@ internal class BatchTranslateDialog : Form
     {
         if (_isPaused) _pauseEvent.Set();
         _cts?.Cancel();
-        DialogResult = DialogResult.OK;
+        DialogResult = DialogResult.Cancel;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
