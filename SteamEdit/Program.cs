@@ -159,7 +159,7 @@ internal static class Program
                     Log.WriteLine("No data changes, so nothing to do!");
                 }
                 SteamData.Shutdown();
-                Log.Flush();
+                Log.Close();
             }
         }
         else
@@ -173,7 +173,7 @@ internal static class Program
                 MainWindow_ = new MainWindow();
                 Application.Run(MainWindow_);
                 SteamData.Shutdown();
-                Log.Flush();
+                Log.Close();
             }
         }
     }
@@ -197,14 +197,26 @@ internal static class Program
     private class GlossaryAdapter : IAppInfoEntryAdapter
     {
         private readonly SteamEdit.Data.IAppInfoEntry _entry;
+        private string _originalName;
+        private bool _originalNameParsed;
         public int ID => _entry.ID;
         public string TranslatedName => _entry.Name;
-        public string OriginalName { get; }
+        public string OriginalName
+        {
+            get
+            {
+                if (!_originalNameParsed)
+                {
+                    _originalNameParsed = true;
+                    _originalName = GetOriginalName(_entry);
+                }
+                return _originalName;
+            }
+        }
 
         public GlossaryAdapter(SteamEdit.Data.IAppInfoEntry entry)
         {
             _entry = entry;
-            OriginalName = GetOriginalName(entry);
         }
 
         private static string GetOriginalName(SteamEdit.Data.IAppInfoEntry entry)

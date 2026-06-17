@@ -13,6 +13,7 @@ internal class WaitingDialog : Form
 
 	private bool _isWaiting;
 	private bool _cancelled;
+	private bool _pumpingMessages;
 
 	private IContainer components;
 
@@ -71,7 +72,14 @@ internal class WaitingDialog : Form
 		DateTime deadline = DateTime.UtcNow + CancelTimeout;
 		while (waitWhile())
 		{
-			Application.DoEvents();
+			// DoEvents is acceptable here: modal dialog with only a Cancel button,
+			// main form is blocked, re-entrancy risk is negligible.
+			if (!_pumpingMessages)
+			{
+				_pumpingMessages = true;
+				try { Application.DoEvents(); }
+				finally { _pumpingMessages = false; }
+			}
 			Thread.Sleep(10);
 			if (_cancelled || DateTime.UtcNow >= deadline)
 			{

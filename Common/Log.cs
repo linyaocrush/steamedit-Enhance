@@ -53,4 +53,14 @@ internal static class Log
 			_writer?.Flush();
 		}
 	}
+
+	public static void Close()
+	{
+		lock (_syncObj)
+		{
+			_writer?.Flush();
+			_writer?.Dispose();
+			_writer = null;
+		}
+	}
 }

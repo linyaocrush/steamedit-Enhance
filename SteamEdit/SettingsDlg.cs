@@ -691,7 +691,6 @@ internal class SettingsDlg : Form
         base.ShowInTaskbar = false;
         base.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
         this.Text = "Settings";
-        base.TopMost = true;
         base.FormClosing += new System.Windows.Forms.FormClosingEventHandler(SettingsDlg_FormClosing);
         base.Load += new System.EventHandler(Settings_Load);
         tableLayoutPanel.ResumeLayout(false);

@@ -219,22 +219,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	public void SetPropertyValue(PropertyType Type, object Value, params string[] PropertyPath)
 	{
-		PropertyTable propertyTable = _properties;
-		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
-		{
-			PropertyTable propertyTable2;
-			if (propertyTable.HasProperty(item))
-			{
-				propertyTable2 = propertyTable.GetPropertyValue<PropertyTable>(item);
-			}
-			else
-			{
-				propertyTable2 = new PropertyTable();
-				propertyTable.SetPropertyValue(item, PropertyType.Table, propertyTable2);
-			}
-			propertyTable = propertyTable2 ?? throw new InvalidOperationException("Couldn't get " + PropertyPath.Aggregate((string A, string B) => A + " \\ " + B) + " as a PropertyTable.");
-		}
-		propertyTable.SetPropertyValue(PropertyPath.Last(), Type, Value);
+		_properties.SetPropertyValue(Type, Value, PropertyPath);
 		if (ModificationsCreate().AddChange(Type, Value, PropertyPath))
 		{
 			RaiseModified();
