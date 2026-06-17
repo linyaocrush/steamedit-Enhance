@@ -109,7 +109,7 @@ internal class BatchTranslateDialog : Form
             try
             {
                 string translated = await AiTranslator.TranslateWithContextAsync(
-                    currentName, _targetLanguage, null, context,
+                    currentName, _targetLanguage, context,
                     customSystemPrompt, customUserMessage, _cts.Token);
 
                 if (!string.IsNullOrWhiteSpace(translated))

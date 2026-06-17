@@ -77,7 +77,6 @@ Rules:
 	public static async Task<string> TranslateWithContextAsync(
 		string gameName,
 		string targetLanguage,
-		string glossary = null,
 		string context = null,
 		string customSystemPrompt = null,
 		string customUserMessage = null,
@@ -109,7 +108,6 @@ Rules:
 
 		// Substitute variables in system prompt
 		systemPrompt = systemPrompt.Replace("{target_lang}", langDisplay);
-		systemPrompt = systemPrompt.Replace("{glossary}", ""); // legacy placeholder, no longer used
 		systemPrompt = systemPrompt.Replace("{context}",
 			!string.IsNullOrWhiteSpace(context) ? context : "");
 
@@ -195,19 +193,6 @@ Rules:
 
 		result = result?.Trim().Trim('"', '\'', '\n', '\r') ?? "";
 		Log.WriteLine("AI: Result: \"{0}\"", result);
-
-		// Check if result matches a glossary entry
-		string glossaryMatch = TranslationGlossary.FindTranslatedByOriginalName(gameName);
-		if (!string.IsNullOrWhiteSpace(glossaryMatch) &&
-			string.Equals(result, glossaryMatch, StringComparison.OrdinalIgnoreCase))
-		{
-			Log.WriteLine("AI: Glossary match confirmed for \"{0}\" -> \"{1}\"", gameName, result);
-		}
-		else if (!string.IsNullOrWhiteSpace(glossaryMatch))
-		{
-			Log.WriteLine("AI: Glossary has entry but AI returned different for \"{0}\": result=\"{1}\" glossary=\"{2}\"",
-				gameName, result, glossaryMatch);
-		}
 
 		return result;
 	}

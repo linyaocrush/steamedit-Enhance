@@ -889,7 +889,7 @@ internal class MainWindow : Form
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
 			string context = AiTranslator.BuildContext(entry);
 			string translated = await AiTranslator.TranslateWithContextAsync(
-				originalName, targetLang, null, context,
+				originalName, targetLang, context,
 				Settings.Default.AiCustomSystemPrompt,
 				Settings.Default.AiCustomUserMessage);
 			Log.WriteLine("AI Translate: Got result \"{0}\"", translated);
