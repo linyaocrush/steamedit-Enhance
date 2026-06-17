@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -69,10 +70,7 @@ Rules:
 - If the name is already in {target_lang}, output it unchanged
 - Keep brand names, acronyms, and proper nouns unchanged (e.g., GTA, FIFA, Dark Souls, Resident Evil)
 - If the name contains both a brand and a subtitle, translate ONLY the subtitle
-- Keep numbers and punctuation as-is
-
-The following is a glossary of game names the user has already translated. Follow their translation style and terminology strictly:
-{glossary}";
+- Keep numbers and punctuation as-is";
 
 	public const string DefaultUserMessage = "{game_name}";
 
@@ -111,10 +109,17 @@ The following is a glossary of game names the user has already translated. Follo
 
 		// Substitute variables in system prompt
 		systemPrompt = systemPrompt.Replace("{target_lang}", langDisplay);
-		systemPrompt = systemPrompt.Replace("{glossary}",
-			!string.IsNullOrWhiteSpace(glossary) ? glossary : "");
+		systemPrompt = systemPrompt.Replace("{glossary}", ""); // legacy placeholder, no longer used
 		systemPrompt = systemPrompt.Replace("{context}",
 			!string.IsNullOrWhiteSpace(context) ? context : "");
+
+		// Append AI-analyzed translation rules
+		string translationRules = Settings.Default.AiTranslationRules;
+		if (!string.IsNullOrWhiteSpace(translationRules))
+		{
+			systemPrompt += "\n\nBelow are AI-generated translation rules based on the user's past translations. Follow these rules strictly:\n\""
+				+ translationRules + "\"";
+		}
 
 		// Build user message
 		string userMessage = string.IsNullOrWhiteSpace(customUserMessage)
@@ -190,6 +195,20 @@ The following is a glossary of game names the user has already translated. Follo
 
 		result = result?.Trim().Trim('"', '\'', '\n', '\r') ?? "";
 		Log.WriteLine("AI: Result: \"{0}\"", result);
+
+		// Check if result matches a glossary entry
+		string glossaryMatch = TranslationGlossary.FindTranslatedByOriginalName(gameName);
+		if (!string.IsNullOrWhiteSpace(glossaryMatch) &&
+			string.Equals(result, glossaryMatch, StringComparison.OrdinalIgnoreCase))
+		{
+			Log.WriteLine("AI: Glossary match confirmed for \"{0}\" -> \"{1}\"", gameName, result);
+		}
+		else if (!string.IsNullOrWhiteSpace(glossaryMatch))
+		{
+			Log.WriteLine("AI: Glossary has entry but AI returned different for \"{0}\": result=\"{1}\" glossary=\"{2}\"",
+				gameName, result, glossaryMatch);
+		}
+
 		return result;
 	}
 
@@ -206,5 +225,88 @@ The following is a glossary of game names the user has already translated. Follo
 		if (!string.IsNullOrWhiteSpace(type)) parts.Add("Type: " + type);
 
 		return parts.Count > 0 ? string.Join("\n", parts) : null;
+	}
+
+	public static async Task<string> AnalyzeTranslationRulesAsync(
+		string glossaryJsonContent, CancellationToken cancellationToken = default)
+	{
+		string apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
+		string apiKey = Settings.Default.AiApiKey;
+
+		if (string.IsNullOrWhiteSpace(apiUrl))
+			throw new InvalidOperationException("AI API URL is not configured.");
+
+		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
+			apiUrl += "/chat/completions";
+
+		string model = Settings.Default.AiModel;
+		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
+
+		string analysisPrompt = @"You are a translation style analyst. Analyze the following game name translation pairs and summarize the translation rules/patterns the user follows.
+
+Output a concise list of rules in English. Focus on:
+- How brand names and proper nouns are handled
+- How subtitles are translated
+- Terminology consistency patterns
+- Any recurring translation conventions
+
+Do NOT list individual translations. Only output generalized rules. Keep the output under 500 words.
+
+Translation pairs:
+" + glossaryJsonContent;
+
+		Log.WriteLine("AI: Analyzing translation rules, model={0}", model);
+
+		string requestBody = JsonSerializer.Serialize(new
+		{
+			model,
+			messages = new[]
+			{
+				new { role = "system", content = "You are a translation style analyst. Output only the rules, no preamble or explanation." },
+				new { role = "user", content = analysisPrompt }
+			},
+			max_tokens = 4096,
+			temperature = 0.3
+		});
+
+		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
+		if (!string.IsNullOrWhiteSpace(apiKey))
+			request.Headers.Add("Authorization", $"Bearer {apiKey}");
+		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+		using var response = await _httpClient.SendAsync(request, cancellationToken);
+		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+		Log.WriteLine("AI: Analysis response {0}", (int)response.StatusCode);
+
+		if (!response.IsSuccessStatusCode)
+		{
+			Log.WriteLine("AI: Analysis failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
+			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+		}
+
+		using var doc = JsonDocument.Parse(responseBody);
+		string result = null;
+
+		try
+		{
+			var choices = doc.RootElement.GetProperty("choices");
+			if (choices.GetArrayLength() > 0)
+			{
+				var choice = choices[0];
+				if (choice.TryGetProperty("message", out var message))
+				{
+					result = message.GetProperty("content").GetString();
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("AI: Failed to parse analysis response: {0}", ex.Message);
+		}
+
+		result = result?.Trim() ?? "";
+		Log.WriteLine("AI: Translation rules analysis complete, length={0}", result.Length);
+		return result;
 	}
 }

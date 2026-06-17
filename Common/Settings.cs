@@ -341,6 +341,19 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue("")]
+	public string AiTranslationRules
+	{
+		get
+		{
+			return (string)_values["AiTranslationRules"];
+		}
+		set
+		{
+			_values["AiTranslationRules"] = value;
+		}
+	}
+
 	private Settings()
 	{
 		_values = new Dictionary<string, object>();

@@ -80,6 +80,10 @@ internal class SettingsDlg : Form
     private Label lblCustomUserMessage;
     private TextBox textCustomUserMessage;
     private Button btnResetUserMessage;
+    private Label lblTranslationRules;
+    private TextBox textTranslationRules;
+    private Button btnAnalyzeRules;
+    private Button btnClearRules;
 
     private bool _loading;
     private bool _snapshotAutoStart;
@@ -111,6 +115,7 @@ internal class SettingsDlg : Form
             ? AiTranslator.DefaultSystemPrompt : Settings.Default.AiCustomSystemPrompt;
         textCustomUserMessage.Text = string.IsNullOrWhiteSpace(Settings.Default.AiCustomUserMessage)
             ? AiTranslator.DefaultUserMessage : Settings.Default.AiCustomUserMessage;
+        textTranslationRules.Text = Settings.Default.AiTranslationRules;
         _loading = false;
         UpdateAutoStartSubEnabled();
 
@@ -160,6 +165,7 @@ internal class SettingsDlg : Form
             Settings.Default.AiModel = comboAiModel.Text;
             Settings.Default.AiCustomSystemPrompt = textCustomSystemPrompt.Text == AiTranslator.DefaultSystemPrompt ? "" : textCustomSystemPrompt.Text;
             Settings.Default.AiCustomUserMessage = textCustomUserMessage.Text == AiTranslator.DefaultUserMessage ? "" : textCustomUserMessage.Text;
+            Settings.Default.AiTranslationRules = textTranslationRules.Text;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
@@ -228,6 +234,58 @@ internal class SettingsDlg : Form
     private void btnResetUserMessage_Click(object sender, EventArgs e)
     {
         textCustomUserMessage.Text = AiTranslator.DefaultUserMessage;
+    }
+
+    private void btnClearRules_Click(object sender, EventArgs e)
+    {
+        textTranslationRules.Text = "";
+    }
+
+    private async void btnAnalyzeRules_Click(object sender, EventArgs e)
+    {
+        string glossaryPath = Path.Combine(AppHelper.GetAppDirectory(), "glossary.json");
+        if (!File.Exists(glossaryPath))
+        {
+            MessageBox.Show(this, Strings.Msg_NoGlossaryData, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        string glossaryContent;
+        try
+        {
+            glossaryContent = File.ReadAllText(glossaryPath, System.Text.Encoding.UTF8);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(glossaryContent) || glossaryContent.Length < 20)
+        {
+            MessageBox.Show(this, Strings.Msg_NoGlossaryData, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        btnAnalyzeRules.Enabled = false;
+        btnAnalyzeRules.Text = Strings.Msg_AnalyzingRules;
+        try
+        {
+            string rules = await AiTranslator.AnalyzeTranslationRulesAsync(glossaryContent);
+            if (!string.IsNullOrWhiteSpace(rules))
+            {
+                textTranslationRules.Text = rules;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnAnalyzeRules.Text = Strings.Settings_AnalyzeRules;
+            btnAnalyzeRules.Enabled = true;
+        }
     }
 
     private void comboLanguage_SelectedIndexChanged(object sender, EventArgs e)
@@ -335,10 +393,14 @@ internal class SettingsDlg : Form
         lblSearchEngine.Text = Strings.Settings_SearchEngine;
         lblCustomSystemPrompt.Text = Strings.Settings_CustomSystemPrompt;
         lblCustomUserMessage.Text = Strings.Settings_CustomUserMessage;
+        lblTranslationRules.Text = Strings.Settings_TranslationRules;
         btnResetPrompt.Text = Strings.Settings_ResetPrompt;
         btnResetUserMessage.Text = Strings.Settings_ResetPrompt;
+        btnAnalyzeRules.Text = Strings.Settings_AnalyzeRules;
+        btnClearRules.Text = Strings.Settings_ClearRules;
         toolTip.SetToolTip(textCustomSystemPrompt, Strings.Tooltip_CustomSystemPrompt);
         toolTip.SetToolTip(textCustomUserMessage, Strings.Tooltip_CustomUserMessage);
+        toolTip.SetToolTip(textTranslationRules, Strings.Tooltip_TranslationRules);
         toolTip.SetToolTip(checkReplaceLocalizedNames, Strings.Tooltip_ReplaceLocalizedNames);
         toolTip.SetToolTip(checkEnabledHidden, Strings.Tooltip_EnableHidden);
         toolTip.SetToolTip(checkEnableCompleted, Strings.Tooltip_EnableCompleted);
@@ -414,8 +476,13 @@ internal class SettingsDlg : Form
         this.lblCustomUserMessage = new System.Windows.Forms.Label();
         this.textCustomUserMessage = new System.Windows.Forms.TextBox();
         this.btnResetUserMessage = new System.Windows.Forms.Button();
+        this.lblTranslationRules = new System.Windows.Forms.Label();
+        this.textTranslationRules = new System.Windows.Forms.TextBox();
+        this.btnAnalyzeRules = new System.Windows.Forms.Button();
+        this.btnClearRules = new System.Windows.Forms.Button();
         System.Windows.Forms.Panel panelPrompt = new System.Windows.Forms.Panel();
         System.Windows.Forms.Panel panelUserMsg = new System.Windows.Forms.Panel();
+        System.Windows.Forms.Panel panelRules = new System.Windows.Forms.Panel();
         System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         tableLayoutPanel.SuspendLayout();
@@ -424,11 +491,12 @@ internal class SettingsDlg : Form
         panelModel.SuspendLayout();
         panelPrompt.SuspendLayout();
         panelUserMsg.SuspendLayout();
+        panelRules.SuspendLayout();
         base.SuspendLayout();
         // btnOK
         button.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 645);
+        button.Location = new System.Drawing.Point(12, 735);
         button.Name = "btnOK";
         button.Size = new System.Drawing.Size(88, 30);
         button.TabIndex = 3;
@@ -702,6 +770,46 @@ internal class SettingsDlg : Form
         this.textCustomUserMessage.Location = new System.Drawing.Point(0, 0);
         this.btnResetUserMessage.Location = new System.Drawing.Point(0, 53);
         this.btnResetUserMessage.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
+        // lblTranslationRules
+        this.lblTranslationRules.AutoSize = true;
+        this.lblTranslationRules.Margin = new System.Windows.Forms.Padding(6);
+        this.lblTranslationRules.Name = "lblTranslationRules";
+        this.lblTranslationRules.TabIndex = 38;
+        this.lblTranslationRules.Text = "Translation Rules (AI Summary)";
+        // textTranslationRules
+        this.textTranslationRules.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        this.textTranslationRules.Multiline = true;
+        this.textTranslationRules.Name = "textTranslationRules";
+        this.textTranslationRules.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+        this.textTranslationRules.Size = new System.Drawing.Size(224, 60);
+        this.textTranslationRules.TabIndex = 39;
+        // btnAnalyzeRules
+        this.btnAnalyzeRules.Name = "btnAnalyzeRules";
+        this.btnAnalyzeRules.Size = new System.Drawing.Size(80, 23);
+        this.btnAnalyzeRules.TabIndex = 40;
+        this.btnAnalyzeRules.Text = "AI Analyze";
+        this.btnAnalyzeRules.UseVisualStyleBackColor = true;
+        this.btnAnalyzeRules.Click += new System.EventHandler(btnAnalyzeRules_Click);
+        // btnClearRules
+        this.btnClearRules.Name = "btnClearRules";
+        this.btnClearRules.Size = new System.Drawing.Size(60, 23);
+        this.btnClearRules.TabIndex = 41;
+        this.btnClearRules.Text = "Clear";
+        this.btnClearRules.UseVisualStyleBackColor = true;
+        this.btnClearRules.Click += new System.EventHandler(btnClearRules_Click);
+        // panelRules
+        panelRules.Controls.Add(this.textTranslationRules);
+        panelRules.Controls.Add(this.btnAnalyzeRules);
+        panelRules.Controls.Add(this.btnClearRules);
+        panelRules.Dock = System.Windows.Forms.DockStyle.Fill;
+        panelRules.Margin = new System.Windows.Forms.Padding(0);
+        panelRules.Name = "panelRules";
+        panelRules.TabIndex = 42;
+        this.textTranslationRules.Location = new System.Drawing.Point(0, 0);
+        this.btnAnalyzeRules.Location = new System.Drawing.Point(0, 63);
+        this.btnAnalyzeRules.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
+        this.btnClearRules.Location = new System.Drawing.Point(83, 63);
+        this.btnClearRules.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
         // lblSearchEngine
         this.lblSearchEngine.AutoSize = true;
         this.lblSearchEngine.Margin = new System.Windows.Forms.Padding(6);
@@ -748,10 +856,12 @@ internal class SettingsDlg : Form
         tableLayoutPanel.Controls.Add(panelPrompt, 1, 12);
         tableLayoutPanel.Controls.Add(this.lblCustomUserMessage, 0, 13);
         tableLayoutPanel.Controls.Add(panelUserMsg, 1, 13);
+        tableLayoutPanel.Controls.Add(this.lblTranslationRules, 0, 14);
+        tableLayoutPanel.Controls.Add(panelRules, 1, 14);
         tableLayoutPanel.Location = new System.Drawing.Point(9, 9);
         tableLayoutPanel.Margin = new System.Windows.Forms.Padding(0);
         tableLayoutPanel.Name = "tableLayoutPanel1";
-        tableLayoutPanel.RowCount = 14;
+        tableLayoutPanel.RowCount = 15;
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -766,12 +876,13 @@ internal class SettingsDlg : Form
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110f));
         tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80f));
-        tableLayoutPanel.Size = new System.Drawing.Size(395, 630);
+        tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 90f));
+        tableLayoutPanel.Size = new System.Drawing.Size(395, 720);
         tableLayoutPanel.TabIndex = 7;
         // btnCancel
         button3.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-        button3.Location = new System.Drawing.Point(106, 645);
+        button3.Location = new System.Drawing.Point(106, 735);
         button3.Name = "btnCancel";
         button3.Size = new System.Drawing.Size(88, 30);
         button3.TabIndex = 8;
@@ -782,7 +893,7 @@ internal class SettingsDlg : Form
         base.AcceptButton = button;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
         base.CancelButton = button3;
-        base.ClientSize = new System.Drawing.Size(413, 680);
+        base.ClientSize = new System.Drawing.Size(413, 770);
         base.ControlBox = false;
         base.Controls.Add(button3);
         base.Controls.Add(tableLayoutPanel);
@@ -810,6 +921,8 @@ internal class SettingsDlg : Form
         panelPrompt.PerformLayout();
         panelUserMsg.ResumeLayout(false);
         panelUserMsg.PerformLayout();
+        panelRules.ResumeLayout(false);
+        panelRules.PerformLayout();
         base.ResumeLayout(false);
     }
 }

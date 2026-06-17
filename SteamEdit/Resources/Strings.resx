@@ -512,9 +512,27 @@
     <value>Reset</value>
   </data>
   <data name="Tooltip_CustomSystemPrompt" xml:space="preserve">
-    <value>Customize the system prompt sent to AI. Variables: {target_lang} {glossary} {context}</value>
+    <value>Customize the system prompt sent to AI. Variables: {target_lang} {context}</value>
   </data>
   <data name="Tooltip_CustomUserMessage" xml:space="preserve">
     <value>Customize the user message sent to AI. Variables: {game_name} {target_lang} {context}</value>
+  </data>
+  <data name="Settings_TranslationRules" xml:space="preserve">
+    <value>Translation Rules (AI Summary)</value>
+  </data>
+  <data name="Tooltip_TranslationRules" xml:space="preserve">
+    <value>AI-analyzed translation rules from your glossary. Appended to system prompt during translation.</value>
+  </data>
+  <data name="Settings_AnalyzeRules" xml:space="preserve">
+    <value>AI Analyze</value>
+  </data>
+  <data name="Settings_ClearRules" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Msg_NoGlossaryData" xml:space="preserve">
+    <value>Glossary is empty. Translate some games first to accumulate data for analysis.</value>
+  </data>
+  <data name="Msg_AnalyzingRules" xml:space="preserve">
+    <value>Analyzing...</value>
   </data>
 </root>

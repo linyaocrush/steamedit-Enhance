@@ -151,7 +151,11 @@ internal static class TranslationGlossary
 	{
 		try
 		{
-			var options = new JsonSerializerOptions { WriteIndented = true };
+			var options = new JsonSerializerOptions
+			{
+				WriteIndented = true,
+				Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+			};
 			string json = JsonSerializer.Serialize(_data, options);
 			File.WriteAllText(_filePath, json, Encoding.UTF8);
 			Log.WriteLine("Glossary: Saved {0} entries", _data.Entries.Count);

@@ -512,9 +512,27 @@
     <value>恢复默认</value>
   </data>
   <data name="Tooltip_CustomSystemPrompt" xml:space="preserve">
-    <value>自定义发送给 AI 的系统提示词。可用变量：{target_lang} {glossary} {context}</value>
+    <value>自定义发送给 AI 的系统提示词。可用变量：{target_lang} {context}</value>
   </data>
   <data name="Tooltip_CustomUserMessage" xml:space="preserve">
     <value>自定义发送给 AI 的用户消息。可用变量：{game_name} {target_lang} {context}</value>
+  </data>
+  <data name="Settings_TranslationRules" xml:space="preserve">
+    <value>翻译规则（AI 总结）</value>
+  </data>
+  <data name="Tooltip_TranslationRules" xml:space="preserve">
+    <value>AI 从你的术语表中分析出的翻译规则，翻译时自动附加到系统提示词后</value>
+  </data>
+  <data name="Settings_AnalyzeRules" xml:space="preserve">
+    <value>AI 分析</value>
+  </data>
+  <data name="Settings_ClearRules" xml:space="preserve">
+    <value>清空</value>
+  </data>
+  <data name="Msg_NoGlossaryData" xml:space="preserve">
+    <value>术语表为空，请先翻译一些游戏积累数据后再分析。</value>
+  </data>
+  <data name="Msg_AnalyzingRules" xml:space="preserve">
+    <value>分析中...</value>
   </data>
 </root>

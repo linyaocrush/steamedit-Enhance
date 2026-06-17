@@ -74,7 +74,6 @@ internal class BatchTranslateDialog : Form
     private async Task RunBatchAsync()
     {
         _cts = new CancellationTokenSource();
-        string glossary = TranslationGlossary.ToPromptString();
         string customSystemPrompt = Settings.Default.AiCustomSystemPrompt;
         string customUserMessage = Settings.Default.AiCustomUserMessage;
 
@@ -110,7 +109,7 @@ internal class BatchTranslateDialog : Form
             try
             {
                 string translated = await AiTranslator.TranslateWithContextAsync(
-                    currentName, _targetLanguage, glossary, context,
+                    currentName, _targetLanguage, null, context,
                     customSystemPrompt, customUserMessage, _cts.Token);
 
                 if (!string.IsNullOrWhiteSpace(translated))

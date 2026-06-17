@@ -887,10 +887,9 @@ internal class MainWindow : Form
 		try
 		{
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
-			string glossary = TranslationGlossary.ToPromptString();
 			string context = AiTranslator.BuildContext(entry);
 			string translated = await AiTranslator.TranslateWithContextAsync(
-				originalName, targetLang, glossary, context,
+				originalName, targetLang, null, context,
 				Settings.Default.AiCustomSystemPrompt,
 				Settings.Default.AiCustomUserMessage);
 			Log.WriteLine("AI Translate: Got result \"{0}\"", translated);
