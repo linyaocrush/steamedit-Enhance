@@ -410,45 +410,37 @@ internal class MainWindow : Form
 		ApplyLanguage();
 	}
 
-	private bool IsFuzzyMatch(string testString, string pattern)
+	private static bool IsFuzzyMatch(string testString, string[] patternParts)
 	{
-		testString = testString.ToLower();
-		pattern = pattern.ToLower();
-		string[] array = pattern.Split(' ', '\t', '\u00a0');
-		foreach (string patt in array)
+		string lower = testString.ToLower();
+		foreach (string patt in patternParts)
 		{
-			if (!IsMatch(testString, patt))
-			{
+			if (!lower.Contains(patt))
 				return false;
-			}
 		}
 		return true;
-		static bool IsMatch(string test, string value)
-		{
-			if (test.Contains(value))
-			{
-				return true;
-			}
-			return false;
-		}
 	}
 
 	private void RefreshGameList()
 	{
 		object selectedItem = appSelection.SelectedItem;
-		var source = SteamData.AppInfoData.Entries.Where((IAppInfoEntry ent) => ent.Name != null).ToList();
-		IEnumerable<IAppInfoEntry> source2 = source.Where((IAppInfoEntry ent) => (ent.Type & _currentFilters) != 0);
-		if (Settings.Default.FiltersShowEntries == ShowEntriesMode.OnlyModified)
-		{
-			source2 = source2.Where((IAppInfoEntry ent) => ent.IsModified);
-		}
-		else if (Settings.Default.FiltersShowEntries == ShowEntriesMode.OnlyUnmodified)
-		{
-			source2 = source2.Where((IAppInfoEntry ent) => !ent.IsModified);
-		}
+		var showMode = Settings.Default.FiltersShowEntries;
 		string fuzzyPattern = appFilterText.Text;
-		source2 = source2.Where((IAppInfoEntry ent) => IsFuzzyMatch(ent.Name, fuzzyPattern));
-		_entries = new List<IAppInfoEntry>(source2);
+		string[] patternParts = fuzzyPattern.ToLower().Split(' ', '\t', '\u00a0');
+
+		int totalCount = 0;
+		var result = new List<IAppInfoEntry>();
+		foreach (var ent in SteamData.AppInfoData.Entries)
+		{
+			if (ent.Name == null) continue;
+			totalCount++;
+			if ((ent.Type & _currentFilters) == 0) continue;
+			if (showMode == ShowEntriesMode.OnlyModified && !ent.IsModified) continue;
+			if (showMode == ShowEntriesMode.OnlyUnmodified && ent.IsModified) continue;
+			if (!IsFuzzyMatch(ent.Name, patternParts)) continue;
+			result.Add(ent);
+		}
+		_entries = result;
 		btnControllerBatch.Enabled = _entries.Count > 0;
 		SortEntries();
 		if (selectedItem != null && appSelection.Items.Contains(selectedItem))
@@ -460,7 +452,7 @@ internal class MainWindow : Form
 			appSelection.SelectedIndex = ((appSelection.Items.Count <= 0) ? (-1) : 0);
 		}
 		Setup();
-		_totalEntryCount = source.Count();
+		_totalEntryCount = totalCount;
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
 	}
 

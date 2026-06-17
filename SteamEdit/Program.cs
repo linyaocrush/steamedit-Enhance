@@ -169,7 +169,7 @@ internal static class Program
             if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: false))
             {
                 TranslationGlossary.Initialize(dataInit.DataDirectory);
-                SyncGlossaryFromEntries();
+                Task.Run(() => SyncGlossaryFromEntries());
                 MainWindow_ = new MainWindow();
                 Application.Run(MainWindow_);
                 SteamData.Shutdown();

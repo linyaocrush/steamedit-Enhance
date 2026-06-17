@@ -12,21 +12,18 @@ internal class AppInfo_0x07564429 : IAppInfo
 	private uint _unknownValueAtStart;
 
 	private List<AppInfoEntry_0x07564429> _entries = new List<AppInfoEntry_0x07564429>();
+	private List<IAppInfoEntry> _cachedEntries;
+	private Dictionary<uint, IAppInfoEntry> _entryLookup;
 
-	public IEnumerable<IAppInfoEntry> Entries => _entries.Cast<IAppInfoEntry>();
+	public IEnumerable<IAppInfoEntry> Entries => _cachedEntries ??= _entries.Cast<IAppInfoEntry>().ToList();
 
 	public event EventHandler Modified;
 
 	public IAppInfoEntry FindEntry(uint AppID)
 	{
-		foreach (AppInfoEntry_0x07564429 entry in _entries)
-		{
-			if (entry.ID == AppID)
-			{
-				return entry;
-			}
-		}
-		return null;
+		if (_entryLookup == null)
+			_entryLookup = _entries.ToDictionary(e => (uint)e.ID, e => (IAppInfoEntry)e);
+		return _entryLookup.TryGetValue(AppID, out var entry) ? entry : null;
 	}
 
 	public static IAppInfo Load(BinaryReader reader)
