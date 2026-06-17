@@ -107,8 +107,10 @@ internal class SettingsDlg : Form
         _snapshotForceStart = Settings.Default.AutoStartForceStart;
         textAiApiUrl.Text = Settings.Default.AiApiUrl;
         textAiApiKey.Text = Settings.Default.AiApiKey;
-        textCustomSystemPrompt.Text = Settings.Default.AiCustomSystemPrompt;
-        textCustomUserMessage.Text = Settings.Default.AiCustomUserMessage;
+        textCustomSystemPrompt.Text = string.IsNullOrWhiteSpace(Settings.Default.AiCustomSystemPrompt)
+            ? AiTranslator.DefaultSystemPrompt : Settings.Default.AiCustomSystemPrompt;
+        textCustomUserMessage.Text = string.IsNullOrWhiteSpace(Settings.Default.AiCustomUserMessage)
+            ? AiTranslator.DefaultUserMessage : Settings.Default.AiCustomUserMessage;
         _loading = false;
         UpdateAutoStartSubEnabled();
 
@@ -220,12 +222,12 @@ internal class SettingsDlg : Form
 
     private void btnResetPrompt_Click(object sender, EventArgs e)
     {
-        textCustomSystemPrompt.Text = "";
+        textCustomSystemPrompt.Text = AiTranslator.DefaultSystemPrompt;
     }
 
     private void btnResetUserMessage_Click(object sender, EventArgs e)
     {
-        textCustomUserMessage.Text = "";
+        textCustomUserMessage.Text = AiTranslator.DefaultUserMessage;
     }
 
     private void comboLanguage_SelectedIndexChanged(object sender, EventArgs e)
