@@ -1229,9 +1229,9 @@ internal class MainWindow : Form
 		if (sender is not ToolStripMenuItem item || item.Tag is not string field) return;
 		Settings.Default.SortField = field;
 		Settings.Default.Save();
-		foreach (ToolStripMenuItem mi in sortSelectorMenu.Items)
+		foreach (var obj in sortSelectorMenu.Items)
 		{
-			if (mi.Tag is string && mi != item) mi.Checked = false;
+			if (obj is ToolStripMenuItem mi && mi.Tag is string && mi != item) mi.Checked = false;
 		}
 		item.Checked = true;
 		SortEntries();
@@ -1242,9 +1242,9 @@ internal class MainWindow : Form
 		if (sender is not ToolStripMenuItem item || item.Tag is not bool descending) return;
 		Settings.Default.SortDescending = descending;
 		Settings.Default.Save();
-		foreach (ToolStripMenuItem mi in sortSelectorMenu.Items)
+		foreach (var obj in sortSelectorMenu.Items)
 		{
-			if (mi.Tag is bool && mi != item) mi.Checked = false;
+			if (obj is ToolStripMenuItem mi && mi.Tag is bool && mi != item) mi.Checked = false;
 		}
 		item.Checked = true;
 		SortEntries();
