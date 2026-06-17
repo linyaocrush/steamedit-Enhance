@@ -87,8 +87,7 @@ internal class MainWindow : Form
 
 	private Button btnSearch;
 
-	private Button btnTranslateMenu;
-	private ContextMenuStrip translateMenu;
+	private Button btnBatchTranslate;
 
 	private ComboBox listVR;
 
@@ -483,7 +482,7 @@ internal class MainWindow : Form
 		btnEditLaunch.Enabled = flag;
 		btnRevert.Enabled = flag;
 		btnTranslate.Enabled = flag && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
-		btnTranslateMenu.Enabled = flag && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
+		btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 		listControllerSupport.Enabled = flag;
 		listVR.Enabled = flag;
 		btnVRBatch.Enabled = flag;
@@ -725,9 +724,8 @@ internal class MainWindow : Form
 		btnTranslate.Text = Strings.MainWindow_BtnTranslate;
 		btnSearch.Text = Strings.MainWindow_BtnSearch;
 		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
-		toolTips.SetToolTip(btnTranslateMenu, Strings.Tooltip_BatchTranslate);
-		if (translateMenu.Items.Count > 0)
-			translateMenu.Items[0].Text = Strings.MainWindow_BatchTranslate;
+		btnBatchTranslate.Text = Strings.MainWindow_BatchTranslate;
+		toolTips.SetToolTip(btnBatchTranslate, Strings.Tooltip_BatchTranslate);
 		toolTips.SetToolTip(btnSearch, Strings.Tooltip_Search);
 		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
 		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
@@ -953,11 +951,6 @@ internal class MainWindow : Form
 			btnTranslate.Text = Strings.MainWindow_BtnTranslate;
 			btnTranslate.Enabled = true;
 		}
-	}
-
-	private void OnBtnTranslateMenu_Click(object sender, EventArgs e)
-	{
-		translateMenu.Show(btnTranslateMenu, new Point(0, btnTranslateMenu.Height));
 	}
 
 	private void OnBtnBatchTranslate_Click(object sender, EventArgs e)
@@ -1329,8 +1322,7 @@ internal class MainWindow : Form
 		this.btnRevert = new System.Windows.Forms.Button();
 		this.btnTranslate = new System.Windows.Forms.Button();
 		this.btnSearch = new System.Windows.Forms.Button();
-		this.btnTranslateMenu = new System.Windows.Forms.Button();
-		this.translateMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+		this.btnBatchTranslate = new System.Windows.Forms.Button();
 		this.lblNumAppsShown = new System.Windows.Forms.ToolStripStatusLabel();
 		this.checkCompleted = new System.Windows.Forms.CheckBox();
 		this.checkHidden = new System.Windows.Forms.CheckBox();
@@ -1414,7 +1406,6 @@ internal class MainWindow : Form
 		flowLayoutPanel.Controls.Add(this.btnEditLaunch);
 		flowLayoutPanel.Controls.Add(this.btnRevert);
 		flowLayoutPanel.Controls.Add(this.btnTranslate);
-		flowLayoutPanel.Controls.Add(this.btnTranslateMenu);
 		flowLayoutPanel.Controls.Add(this.btnSearch);
 		flowLayoutPanel.Location = new System.Drawing.Point(14, 151);
 		flowLayoutPanel.Margin = new System.Windows.Forms.Padding(2);
@@ -1442,22 +1433,14 @@ internal class MainWindow : Form
 		this.btnTranslate.Text = "AI Translate";
 		this.btnTranslate.UseVisualStyleBackColor = true;
 		this.btnTranslate.Click += new System.EventHandler(OnBtnTranslate_Click);
-		// translateMenu
-		this.translateMenu.Name = "translateMenu";
-		this.translateMenu.Size = new System.Drawing.Size(180, 26);
-		var batchTranslateItem = new ToolStripMenuItem();
-		batchTranslateItem.Name = "batchTranslateItem";
-		batchTranslateItem.Size = new System.Drawing.Size(179, 22);
-		batchTranslateItem.Text = "Translate All Filtered";
-		batchTranslateItem.Click += new System.EventHandler(OnBtnBatchTranslate_Click);
-		this.translateMenu.Items.Add(batchTranslateItem);
-		// btnTranslateMenu
-		this.btnTranslateMenu.Name = "btnTranslateMenu";
-		this.btnTranslateMenu.Size = new System.Drawing.Size(20, 34);
-		this.btnTranslateMenu.TabIndex = 10;
-		this.btnTranslateMenu.Text = "▼";
-		this.btnTranslateMenu.UseVisualStyleBackColor = true;
-		this.btnTranslateMenu.Click += new System.EventHandler(OnBtnTranslateMenu_Click);
+		// btnBatchTranslate
+		this.btnBatchTranslate.Name = "btnBatchTranslate";
+		this.btnBatchTranslate.Size = new System.Drawing.Size(130, 34);
+		this.btnBatchTranslate.TabIndex = 3;
+		this.btnBatchTranslate.Text = "Batch Translate";
+		this.toolTips.SetToolTip(this.btnBatchTranslate, "Batch translate all filtered games");
+		this.btnBatchTranslate.UseVisualStyleBackColor = true;
+		this.btnBatchTranslate.Click += new System.EventHandler(OnBtnBatchTranslate_Click);
 		this.btnSearch.Name = "btnSearch";
 		this.btnSearch.Size = new System.Drawing.Size(75, 34);
 		this.btnSearch.TabIndex = 3;
@@ -1469,6 +1452,7 @@ internal class MainWindow : Form
 		flowLayoutPanel2.Controls.Add(this.btnSave);
 		flowLayoutPanel2.Controls.Add(this.btnSaveApply);
 		flowLayoutPanel2.Controls.Add(this.btnSaveApplyRestart);
+		flowLayoutPanel2.Controls.Add(this.btnBatchTranslate);
 		flowLayoutPanel2.Location = new System.Drawing.Point(0, 0);
 		flowLayoutPanel2.Margin = new System.Windows.Forms.Padding(0);
 		flowLayoutPanel2.Name = "flowLayoutPanel1";
