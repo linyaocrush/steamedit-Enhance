@@ -73,6 +73,7 @@ internal class BatchReplaceDialog : Form
         this.lblMatchCount = new Label();
         this.lblFind = new Label();
         this.lblReplace = new Label();
+        this.components = new System.ComponentModel.Container();
         toolTips = new ToolTip(components);
         SuspendLayout();
 
