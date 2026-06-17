@@ -1205,12 +1205,13 @@ internal class MainWindow : Form
 		{
 			string currentField = Settings.Default.SortField;
 			bool descending = Settings.Default.SortDescending;
-			foreach (ToolStripMenuItem item in sortSelectorMenu.Items)
+			foreach (var item in sortSelectorMenu.Items)
 			{
-				if (item.Tag is string field)
-					item.Checked = field == currentField;
-				else if (item.Tag is bool isDesc)
-					item.Checked = isDesc == descending;
+				if (item is not ToolStripMenuItem menuItem) continue;
+				if (menuItem.Tag is string field)
+					menuItem.Checked = field == currentField;
+				else if (menuItem.Tag is bool isDesc)
+					menuItem.Checked = isDesc == descending;
 			}
 			Point screenLocation = sortSelector.PointToScreen(new Point(sortSelector.Size.Width, 0));
 			sortSelectorMenu.Show(screenLocation);
@@ -1704,7 +1705,7 @@ internal class MainWindow : Form
 		this.appFilterText.ClearXVisible = false;
 		this.appFilterText.Location = new System.Drawing.Point(3, 3);
 		this.appFilterText.Name = "appFilterText";
-		this.appFilterText.Size = new System.Drawing.Size(195, 20);
+		this.appFilterText.Size = new System.Drawing.Size(169, 20);
 		this.appFilterText.TabIndex = 1;
 		this.appFilterText.TextChanged += new System.EventHandler(OnAppFilterText_TextChanged);
 		this.panel1.AutoScroll = true;
