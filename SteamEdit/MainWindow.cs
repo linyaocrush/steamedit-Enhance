@@ -891,8 +891,23 @@ internal class MainWindow : Form
 			{
 				BeginInvoke(() =>
 				{
+					if (appSelection.SelectedItem is not IAppInfoEntry currentEntry) return;
+					string previousName = currentEntry.Name;
 					_isSettingUpEntry = true;
-					try { textGameName.Text = translated; }
+					try
+					{
+						textGameName.Text = translated;
+						currentEntry.Name = translated;
+						UpdateGlossaryForEntry(currentEntry, previousName);
+						if (!currentEntry.HasSortAs)
+						{
+							_refreshingGamesListAfterEdit = true;
+							ResortEntry(currentEntry);
+							_refreshingGamesListAfterEdit = false;
+							textSortAs.Text = currentEntry.SortAs;
+						}
+						appSelection.Invalidate(appSelection.GetItemRectangle(appSelection.SelectedIndex));
+					}
 					finally { _isSettingUpEntry = false; }
 					Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
 				});
