@@ -89,6 +89,8 @@ internal class MainWindow : Form
 
 	private Button btnBatchTranslate;
 
+	private Button btnBatchReplace;
+
 	private ComboBox listVR;
 
 	private ContextMenuStrip filterSelectorMenu;
@@ -748,6 +750,8 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
 		btnBatchTranslate.Text = Strings.MainWindow_BatchTranslate;
 		toolTips.SetToolTip(btnBatchTranslate, Strings.Tooltip_BatchTranslate);
+		btnBatchReplace.Text = Strings.MainWindow_BatchReplace;
+		toolTips.SetToolTip(btnBatchReplace, Strings.Tooltip_BatchReplace);
 		toolTips.SetToolTip(btnSearch, Strings.Tooltip_Search);
 		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
 		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
@@ -1081,6 +1085,21 @@ internal class MainWindow : Form
 		if (flag)
 		{
 			Setup();
+		}
+	}
+
+	private void OnBtnBatchReplace_Click(object sender, EventArgs e)
+	{
+		if (_entries == null || _entries.Count == 0) return;
+		using var dialog = new BatchReplaceDialog(_entries);
+		if (dialog.ShowDialog(this) == DialogResult.OK)
+		{
+			int replaced = dialog.ReplaceAll();
+			if (replaced > 0)
+			{
+				SortEntries();
+				Setup();
+			}
 		}
 	}
 
@@ -1498,6 +1517,14 @@ internal class MainWindow : Form
 		this.toolTips.SetToolTip(this.btnBatchTranslate, "Batch translate all filtered games");
 		this.btnBatchTranslate.UseVisualStyleBackColor = true;
 		this.btnBatchTranslate.Click += new System.EventHandler(OnBtnBatchTranslate_Click);
+		// btnBatchReplace
+		this.btnBatchReplace = new System.Windows.Forms.Button();
+		this.btnBatchReplace.Name = "btnBatchReplace";
+		this.btnBatchReplace.Size = new System.Drawing.Size(75, 34);
+		this.btnBatchReplace.TabIndex = 4;
+		this.btnBatchReplace.Text = "Find & Replace";
+		this.btnBatchReplace.UseVisualStyleBackColor = true;
+		this.btnBatchReplace.Click += new System.EventHandler(OnBtnBatchReplace_Click);
 		this.btnSearch.Name = "btnSearch";
 		this.btnSearch.Size = new System.Drawing.Size(75, 34);
 		this.btnSearch.TabIndex = 3;
@@ -1510,6 +1537,7 @@ internal class MainWindow : Form
 		flowLayoutPanel2.Controls.Add(this.btnSaveApply);
 		flowLayoutPanel2.Controls.Add(this.btnSaveApplyRestart);
 		flowLayoutPanel2.Controls.Add(this.btnBatchTranslate);
+		flowLayoutPanel2.Controls.Add(this.btnBatchReplace);
 		flowLayoutPanel2.Location = new System.Drawing.Point(0, 0);
 		flowLayoutPanel2.Margin = new System.Windows.Forms.Padding(0);
 		flowLayoutPanel2.Name = "flowLayoutPanel1";
