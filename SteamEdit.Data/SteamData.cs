@@ -173,14 +173,15 @@ internal static class SteamData
 		if (processesByName.Length != 0)
 		{
 			Log.WriteLine("Closing Steam");
-			Process[] array = processesByName;
-			for (int i = 0; i < array.Length; i++)
+			foreach (var proc in processesByName)
 			{
-				array[i].Kill();
+				try { proc.Kill(); }
+				catch (Exception ex) { Log.WriteLine("Failed to kill steam process: {0}", ex.Message); }
+				finally { proc.Dispose(); }
 			}
 			// Intentionally ignoring cancellation/timeout — proceed with Save/Apply regardless
 			using (var dlg = new WaitingDialog(SteamEdit.Strings.SteamData_WaitingForClose))
-				dlg.ShowAndWait(() => Process.GetProcessesByName("steam").Length != 0);
+				dlg.ShowAndWait(() => IsSteamRunning());
 			flag = true;
 		}
 		Save();
@@ -191,9 +192,16 @@ internal static class SteamData
 		}
 	}
 
+	private static bool IsSteamRunning()
+	{
+		var procs = Process.GetProcessesByName("steam");
+		foreach (var p in procs) p.Dispose();
+		return procs.Length != 0;
+	}
+
 	public static void EnsureSteamRunning(bool focusIfRunning)
 	{
-		if (focusIfRunning || Process.GetProcessesByName("steam").Length == 0)
+		if (focusIfRunning || !IsSteamRunning())
 		{
 			string[] args = Environment.GetCommandLineArgs();
 			string text = AppHelper.GetPassthroughArguments(args);
@@ -202,7 +210,7 @@ internal static class SteamData
 				text += "-silent ";
 			}
 			Log.WriteLine("Starting Steam");
-			Process.Start(Path.Combine(SteamDir, "steam.exe"), text);
+			Process.Start(Path.Combine(SteamDir, "steam.exe"), text)?.Dispose();
 		}
 	}
 }

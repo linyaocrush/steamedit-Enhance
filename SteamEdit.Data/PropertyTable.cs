@@ -240,7 +240,6 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	{
 		if (other == null || Count != other.Count) return false;
 		return _properties.All(prop => other._propertyMap.TryGetValue(prop.Name, out var otherProp) && prop.Equals(otherProp));
-		return false;
 	}
 
 	public override bool Equals(object obj)

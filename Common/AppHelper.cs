@@ -21,7 +21,7 @@ internal static class AppHelper
 			{
 				text = text.Substring(1);
 			}
-			else if (text[0] == '-' && text[1] == '-')
+			else if (text.Length >= 2 && text[0] == '-' && text[1] == '-')
 			{
 				text = text.Substring(2);
 			}

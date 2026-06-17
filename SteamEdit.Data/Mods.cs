@@ -30,10 +30,11 @@ internal class Mods
 			{
 				List<ModifiedEntry> list = new List<ModifiedEntry>();
 				readerFunction(binaryReader, list);
+				var entryById = new Dictionary<int, IAppInfoEntry>();
+				foreach (var entry in mods._appInfo.Entries) entryById[entry.ID] = entry;
 				foreach (ModifiedEntry modEntry in list)
 				{
-					IAppInfoEntry appInfoEntry = mods._appInfo.Entries.FirstOrDefault((IAppInfoEntry e) => e.ID == modEntry.ID);
-					if (appInfoEntry != null)
+					if (entryById.TryGetValue(modEntry.ID, out var appInfoEntry))
 					{
 						appInfoEntry.Modification = modEntry;
 					}

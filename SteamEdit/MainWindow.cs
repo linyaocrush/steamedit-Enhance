@@ -434,7 +434,7 @@ internal class MainWindow : Form
 	private void RefreshGameList()
 	{
 		object selectedItem = appSelection.SelectedItem;
-		IEnumerable<IAppInfoEntry> source = SteamData.AppInfoData.Entries.Where((IAppInfoEntry ent) => ent.Name != null);
+		var source = SteamData.AppInfoData.Entries.Where((IAppInfoEntry ent) => ent.Name != null).ToList();
 		IEnumerable<IAppInfoEntry> source2 = source.Where((IAppInfoEntry ent) => (ent.Type & _currentFilters) != 0);
 		if (Settings.Default.FiltersShowEntries == ShowEntriesMode.OnlyModified)
 		{
@@ -620,7 +620,7 @@ internal class MainWindow : Form
 		I18n.LanguageChanged -= OnLanguageChanged;
 		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
-		Settings.Default.Save();
+		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); }
 		if (SteamData.NeedsSave)
 		{
 			switch (MessageBox.Show(Strings.Msg_UnsavedChanges, Strings.Msg_SaveFirst, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))
@@ -748,8 +748,7 @@ internal class MainWindow : Form
 
 	private void OnBtnSettings_Click(object sender, EventArgs e)
 	{
-		new SettingsDlg().ShowDialog(this);
-		Settings.Default.Save();
+		using (var dlg = new SettingsDlg()) dlg.ShowDialog(this);
 		SteamData.UseCompleted = Settings.Default.EnableCompleted;
 		SteamData.UseHidden = Settings.Default.EnableHidden;
 	}
@@ -988,7 +987,7 @@ internal class MainWindow : Form
 
 	private void OnBtnControllerBatch_Click(object sender, EventArgs e)
 	{
-		ControllerBatch controllerBatch = new ControllerBatch();
+		using var controllerBatch = new ControllerBatch();
 		if (controllerBatch.ShowDialog(this) != DialogResult.OK)
 		{
 			return;
@@ -1047,7 +1046,7 @@ internal class MainWindow : Form
 
 	private void OnBtnVRBatch_Click(object sender, EventArgs e)
 	{
-		VRBatch vRBatch = new VRBatch();
+		using var vRBatch = new VRBatch();
 		if (vRBatch.ShowDialog(this) != DialogResult.OK)
 		{
 			return;
@@ -1123,7 +1122,7 @@ internal class MainWindow : Form
 
 	private void OnHelp_Click(object sender, EventArgs e)
 	{
-		new About().ShowDialog(this);
+		using (var dlg = new About()) dlg.ShowDialog(this);
 	}
 
 	private void appSelection_MouseMove(object sender, MouseEventArgs e)
