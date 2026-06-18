@@ -1880,7 +1880,7 @@ internal class MainWindow : Form
 		// btnBatchReplace
 		this.btnBatchReplace = new System.Windows.Forms.Button();
 		this.btnBatchReplace.Name = "btnBatchReplace";
-		this.btnBatchReplace.Size = new System.Drawing.Size(75, 34);
+		this.btnBatchReplace.Size = new System.Drawing.Size(130, 34);
 		this.btnBatchReplace.TabIndex = 4;
 		this.btnBatchReplace.Text = "Find & Replace";
 		this.btnBatchReplace.UseVisualStyleBackColor = true;
