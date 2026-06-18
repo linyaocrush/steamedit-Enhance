@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="app.ico" alt="SteamEdit Logo" width="128" />
+  <img src="app.ico" alt="steamedit-Enhance Logo" width="128" />
 </p>
 
-<h1 align="center">SteamEdit</h1>
+<h1 align="center">steamedit-Enhance</h1>
 
 <p align="center">
   <strong>Steam 游戏库本地编辑工具</strong><br/>
