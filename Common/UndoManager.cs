@@ -34,21 +34,4 @@ internal class UndoManager
     {
         return _undoStack.Pop();
     }
-
-    public void Undo()
-    {
-        if (!CanUndo) return;
-
-        var record = _undoStack.Pop();
-
-        // 用 SetPropertyValue 恢复到上一步的值（而非原始值）
-        // SetPropertyValue 会更新 live 属性表、更新 Changes 增量记录、触发 Modified 事件
-        record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
-
-        // 如果 Changes 为空，说明所有修改都已撤销，清除修改标记
-        if (record.Entry.Modification?.Changes.Count == 0)
-        {
-            record.Entry.Revert();
-        }
-    }
 }

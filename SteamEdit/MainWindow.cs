@@ -325,13 +325,13 @@ internal class MainWindow : Form
 		}
 		else if (sender == checkHidden)
 		{
-			key = "hidden_type";
-			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "type");
+			key = "hidden";
+			value = entry.GetPropertyValue(0, "appinfo", "steam_edit", "is_hidden");
 		}
 		else if (sender == checkCompleted)
 		{
-			key = "completed_name";
-			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "name");
+			key = "completed";
+			value = entry.GetPropertyValue(0, "appinfo", "steam_edit", "is_completed");
 		}
 		else if (sender == listEntryType)
 		{
@@ -347,6 +347,7 @@ internal class MainWindow : Form
 		{
 			key = "vr";
 			value = entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport");
+			_snapshotValues["vr_base"] = entry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
 		}
 
 		if (key != null)
@@ -569,6 +570,7 @@ internal class MainWindow : Form
 			return;
 		}
 		_isSettingUpEntry = true;
+		_snapshotValues.Clear();
 		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
 		if (appInfoEntry != null)
 		{
@@ -649,9 +651,9 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
-			if (_snapshotValues.TryGetValue("hidden_type", out var prevVal) && prevVal is string prevType)
+			if (_snapshotValues.TryGetValue("hidden", out var prevVal) && prevVal is int prevHidden)
 			{
-				_undoManager.Push(entry, new[] { "appinfo", "common", "type" }, PropertyType.String, prevType);
+				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_hidden" }, PropertyType.Int32, prevHidden);
 			}
 			entry.IsHidden = checkHidden.Checked;
 			appSelection.Invalidate();
@@ -850,9 +852,9 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
-			if (_snapshotValues.TryGetValue("completed_name", out var prevVal) && prevVal is string prevName)
+			if (_snapshotValues.TryGetValue("completed", out var prevVal) && prevVal is int prevCompleted)
 			{
-				_undoManager.Push(entry, new[] { "appinfo", "common", "name" }, PropertyType.String, prevName);
+				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_completed" }, PropertyType.Int32, prevCompleted);
 			}
 			entry.IsCompleted = checkCompleted.Checked;
 			appSelection.Invalidate();
@@ -912,12 +914,21 @@ internal class MainWindow : Form
 		}
 
 		_isSettingUpEntry = true;
-		record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
 
-		// 如果所有修改都已撤销，清除修改标记
-		if (record.Entry.Modification?.Changes.Count == 0)
+		// 判断恢复的值是否等于原始值
+		var origType = record.Entry.GetOriginalPropertyType(record.PropertyPath);
+		var origValue = record.Entry.GetOriginalPropertyValue(record.PropertyPath);
+		bool isOriginal = origType == record.Type && Equals(record.PreviousValue, origValue);
+
+		if (isOriginal)
 		{
-			record.Entry.Revert();
+			// 恢复到原始值：用 RevertModifiedProperty 从 Changes 中移除该属性
+			record.Entry.RevertModifiedProperty(record.PropertyPath);
+		}
+		else
+		{
+			// 恢复到中间值：用 SetPropertyValue 更新属性并保留 Changes 记录
+			record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
 		}
 
 		_isSettingUpEntry = false;
@@ -1260,6 +1271,10 @@ internal class MainWindow : Form
 			if (_snapshotValues.TryGetValue("vr", out var prevVal) && prevVal is int prevVR)
 			{
 				_undoManager.Push(entry, new[] { "appinfo", "common", "openvrsupport" }, PropertyType.Int32, prevVR);
+				if (_snapshotValues.TryGetValue("vr_base", out var prevBaseVal) && prevBaseVal is int prevBase)
+				{
+					_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "base_openvrsupport" }, PropertyType.Int32, prevBase);
+				}
 			}
 			SetEntryVR(entry, listVR.SelectedIndex != 0);
 		}

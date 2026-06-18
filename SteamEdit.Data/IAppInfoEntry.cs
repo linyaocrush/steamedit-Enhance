@@ -41,4 +41,8 @@ internal interface IAppInfoEntry
 	void RevertModifiedProperty(params string[] PropertyPath);
 
 	bool Revert();
+
+	PropertyType? GetOriginalPropertyType(params string[] PropertyPath);
+
+	object GetOriginalPropertyValue(params string[] PropertyPath);
 }

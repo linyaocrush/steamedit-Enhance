@@ -249,6 +249,39 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		this.Modified?.Invoke(this, EventArgs.Empty);
 	}
 
+	public PropertyType? GetOriginalPropertyType(params string[] PropertyPath)
+	{
+		if (_modifications?.OriginalData == null || PropertyPath.Length == 0) return null;
+		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
+		var table = PropertyTableIO.ReadPropertyTable_Mods(reader);
+		// 遍历路径到达父表
+		foreach (var key in PropertyPath.Take(PropertyPath.Length - 1))
+		{
+			var prop = table[key];
+			if (prop == null) return null;
+			table = prop.GetValue<PropertyTable>();
+			if (table == null) return null;
+		}
+		var target = table[PropertyPath.Last()];
+		return target?.PropertyType;
+	}
+
+	public object GetOriginalPropertyValue(params string[] PropertyPath)
+	{
+		if (_modifications?.OriginalData == null || PropertyPath.Length == 0) return null;
+		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
+		var table = PropertyTableIO.ReadPropertyTable_Mods(reader);
+		// 遍历路径到达父表
+		foreach (var key in PropertyPath.Take(PropertyPath.Length - 1))
+		{
+			var prop = table[key];
+			if (prop == null) return null;
+			table = prop.GetValue<PropertyTable>();
+			if (table == null) return null;
+		}
+		return table.GetPropertyAsObject(PropertyPath.Last());
+	}
+
 	protected ModifiedEntry ModificationsCreate()
 	{
 		if (_modifications == null)
