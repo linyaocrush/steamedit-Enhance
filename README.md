@@ -5,177 +5,228 @@
 <h1 align="center">SteamEdit</h1>
 
 <p align="center">
-  <strong>Steam Game Info Editor</strong><br/>
-  Rename games, sort, manage launch configs, batch-set controller & VR support
+  <strong>Local Steam Library Editing Tool</strong><br/>
+  Rename games, modify sorting, manage launch configurations, batch-set controller & VR support
 </p>
 
 <p align="center">
-  <a href="README-CN.md">中文版</a>
+  <a href="README-CN.md">中文</a>
 </p>
 
-A Windows desktop application for editing Steam's local `appinfo.vdf` file. Supports renaming games, sorting, hiding, completion markers, batch editing controller/VR settings, and translating names via AI.
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 10" />
+  <img src="https://img.shields.io/badge/UI%20Languages-English%20%7C%20简体中文-orange?style=flat-square" alt="Languages" />
+  <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
+</p>
 
-> Based on [steamedit](https://steamedit.tg-software.com/) by Tim Green.
+---
+
+## About
+
+SteamEdit is a Windows desktop application that edits Steam's local `appinfo.vdf` file. It lets you customize display names, sorting order, hidden/completed status, launch parameters, controller support, VR settings, and more — all from your local Steam library.
+
+> **Original software:** [https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
+
+> **Disclaimer:** This project is a migration and localization of the original SteamEdit. If you believe your rights are being infringed, please [submit an Issue](../../issues) and I will address it promptly.
+
+---
+
+## New Features (Compared to the Original)
+
+| Feature | Description |
+|:---|:---|
+| **AI Translation** | Integrated OpenAI-compatible API for one-click game name translation. Customizable API endpoint, key, and model selection; supports fetching model lists. Automatically uses existing modifications as a glossary to maintain translation consistency. |
+| **Glossary Cache** | Modified game names are automatically cached in `glossary.json`, incrementally synced at startup, and read directly during translation — no rebuilding needed. |
+| **Web Search** | One-click browser search for game name + translated name. Supports Google, Bing, Baidu, and DuckDuckGo. |
+| **Bilingual UI** | Full English and Simplified Chinese support. Switch languages in Settings without restarting. |
+| **Start with Windows** | Option to launch SteamEdit automatically on system startup. Supports `-autofix` (auto-apply changes) and `-forcestart` (restart Steam) arguments. |
+| **DPI Awareness** | PerMonitorV2 high-DPI support — no blurriness on 4K or high-resolution displays. |
+| **Asynchronous Loading** | `appinfo.vdf` loading runs asynchronously with a wait dialog, cancel option, and 30-second timeout. |
+| **Filter Debounce** | 500ms debounce on search input to avoid excessive list refreshes. |
+| **Custom Sorting** | Sort games by Name or App ID, with ascending/descending toggle. Sort preference is persisted. |
+| **Batch Find & Replace** | Supports plain text and regular expressions with case-sensitivity toggle. Shows live match count. |
+| **Translation Rules** | AI analyzes the glossary to automatically derive translation rules, which are then applied to future translations for consistent style. |
+
+---
+
+## Improvements Over the Original
+
+| Improvement | Description |
+|:---|:---|
+| **Property Lookup Speed** | PropertyTable now uses a parallel Dictionary, reducing property lookup from O(n) to O(1). |
+| **Buffered Log Writing** | Replaced `File.AppendAllLines` with `StreamWriter` (auto-flush every 20 lines) to cut disk I/O. Old logs are cleared on startup; only the current session's log is kept. |
+| **Code Refactoring** | Extracted a common base class for three `AppInfoEntry` versions, eliminating ~800 lines of duplicated code. |
+| **Unified Path Resolution** | Consolidated startup path logic into a single method, removing three separate implementations. |
+| **Sort Precomputation** | Normalized sort keys are precomputed, avoiding repeated string processing during O(n log n) sorting. |
+| **Resource Management** | `IDisposable` resources (e.g., SHA1) are properly released, eliminating memory leaks. |
+| **Null-Reference Guards** | Added null checks in 9+ event handlers to prevent crashes when the list is empty. |
+| **UI Layout Fix** | Autostart area now uses `FlowLayoutPanel` so Chinese text no longer overlaps adjacent controls. |
+
+---
 
 ## Features
 
-### Edit Game Information
+| Feature | Description |
+|:---|:---|
+| **Game Renaming** | Customize the display name of games in your Steam library |
+| **Sorting Modification** | Set a custom sort name to change the game’s position in the list |
+| **Hide / Completed** | Mark games as hidden or completed |
+| **Launch Configuration** | Edit launch executable, arguments, and working directory |
+| **Entry Type** | Change the game type (Game, DLC, Demo, etc.) |
+| **Controller Support** | Batch-set controller support level (None / Partial / Full) |
+| **VR Category** | Batch-set VR category (Default / Removed) |
+| **Custom Sorting** | Sort by Name or App ID, with ascending/descending toggle |
+| **Batch Find & Replace** | Replace game names in filtered results using plain text or regex, with case-sensitivity option |
+| **AI Translation** | Translate game names individually or in batch, with customizable prompt and translation rules |
 
-- Rename games, modify sort names
-- Toggle hidden/completed status
-- Change game type (Game, DLC, Demo, etc.)
-- Edit launch configurations (EXE path, launch parameters, working directory)
-- Single/batch edit controller support (None/Partial/Full)
-- Single/batch edit VR category (Default/Removed)
+---
 
-### AI Translation
+## Requirements
 
-- Translate game names to any language via OpenAI-compatible API
-- Context-aware: sends developer/publisher/type to improve translation quality
-- Custom translation prompts with variables
-- Batch translate all filtered games with progress, pause/resume, cancel
-- Auto-cached glossary (`glossary.json`): skip API calls for known translations
-- AI learns translation rules by analyzing existing glossary patterns
+- Windows 10 / 11 (x64)
+- Steam client installed
 
-### Search & Find/Replace
+> **Self-contained build** requires no .NET runtime. **Framework-dependent build** needs [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0).
 
-- Multi-word fuzzy search (fuzzy search, search terms separated by spaces)
-- Web search for game names (supports Google/Bing/DuckDuckGo)
-- Batch find/replace with regex and case-sensitivity support
+---
 
-### Custom Sort
-
-- Sort by Name or App ID, ascending/descending
-
-### Other
-
-- Multi-language UI: English / Chinese, switch instantly
-- Save / Apply & Restart Steam (single click)
-- Auto-start with Windows
-- Command-line mode: `-autofix` (headless apply), `-forcestart` (apply & restart Steam)
-- Single-file distribution (~600KB, requires .NET 10 Runtime)
-
-## Usage
-
-### 1. Download & Install
-
-Install .NET 10 Runtime (if not using self-contained build):
-
-[Download .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0)
-
-### 2. Run
+## Building and Running
 
 ```bash
+# Clone the repository
+git clone https://github.com/<your-username>/steamedit.git
+cd steamedit
+
+# Development build
+dotnet build SteamEdit.csproj
+
+# Publish self-contained single-file EXE (~110 MB, no runtime required)
+dotnet publish SteamEdit.csproj -c Release
+
+# Publish framework-dependent (~567 KB, requires .NET 10 Runtime)
+dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
+
+# Run
 dotnet run --project SteamEdit.csproj
 ```
 
-### 3. Build
+Published output is located under `bin/Release/net10.0-windows/win-x64/publish/`.
+
+---
+
+## Usage
+
+### First Launch
+
+1. Run `SteamEdit.exe`
+2. The program will automatically locate the Steam installation via the registry
+3. If not found, a file dialog will appear — manually locate `appinfo.vdf`  
+   > Default path: `C:\Program Files (x86)\Steam\appcache\appinfo.vdf`
+
+### Editing Workflow
+
+1. Select a game from the list on the left
+2. Modify the name, sort key, controller support, and other fields on the right
+3. Click **Save** → **Apply** → **Restart Steam** for changes to take effect
+
+### AI Translation
+
+1. Open **Settings**, enter your AI API endpoint (e.g., `https://api.openai.com/v1`) and API Key
+2. Click **Fetch Model List** to select a model, or enter the model name manually
+3. Choose the target translation language (Simplified Chinese / English)
+4. Select a game in the main window and click the **AI Translate** button — the translated name will be automatically filled in
+5. The glossary is cached to `glossary.json`; translation style will reference your previous modifications
+
+Any service compatible with the OpenAI Chat Completions API is supported (OpenAI, Claude API proxies, local Ollama, etc.).
+
+### Web Search
+
+Select a game and click **Web Search** to open a browser searching for `game name + target language`. The search engine can be changed in Settings (Google / Bing / Baidu / DuckDuckGo).
+
+### Command-Line Mode
 
 ```bash
-dotnet build SteamEdit.csproj
-```
-
-### 4. Publish Single Executable
-
-Self-contained (no runtime required, ~110MB):
-
-```bash
-dotnet publish SteamEdit.csproj -c Release
-```
-
-Framework-dependent (requires .NET 10 Runtime, ~600KB):
-
-```bash
-dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
-```
-
-Output: `bin\Release\net10.0-windows\win-x64\publish\SteamEdit.exe`
-
-### 5. Usage Steps
-
-1. Start the application — it auto-detects Steam path
-2. Modify game names, toggle hidden/completed, batch edit controller/VR
-3. Click **Save** (saves to `mods.dat`) or **Save & Apply** (writes to `appinfo.vdf` and restarts Steam)
-
-## Technical Stack
-
-| Item | Description |
-|------|-------------|
-| Framework | .NET 10 |
-| UI | Windows Forms (WinForms) |
-| Build Tool | dotnet CLI |
-| Language | C# 13+ |
-| Dependencies | None |
-
-## Project Structure
-
-```
-SteamEdit.csproj                  # Single project file
-
-SteamEdit/                        # UI Layer
-  MainWindow.cs                   # Main form (game list + edit panel)
-  LaunchEditor.cs                 # Launch config editor
-  SettingsDlg.cs                  # Settings dialog
-  BatchTranslateDialog.cs         # Batch AI translation dialog
-  BatchReplaceDialog.cs           # Batch find/replace dialog
-  ClearableTextBox.cs             # Custom TextBox with clear button
-  I18n.cs                         # Language manager (event-based)
-  Resources/
-    Strings.resx                  # English strings (default)
-    Strings.zh-CN.resx            # Chinese translations
-
-SteamEdit.Data/                   # Core Data Model & I/O
-  SteamData.cs                    # Static singleton orchestrator
-  AppInfoFactory.cs               # Version-dispatching factory
-  PropertyTable.cs                # Hierarchical property store (Dictionary-optimized)
-  Mods.cs                         # mods.dat binary format reader/writer
-  ModifiedEntry.cs                # Modification overlay (diff tracker)
-
-SteamEdit.Data.Impl/              # Version-specific parsers
-  AppInfoEntryBase.cs             # Shared base class
-  AppInfoEntry_0x07564427.cs      # Old format
-  AppInfoEntry_0x07564428.cs      # Mid format
-  AppInfoEntry_0x07564429.cs      # New format
-
-Common/                           # Shared Utilities
-  Settings.cs                     # User preferences (custom XML serialization)
-  AiTranslator.cs                 # OpenAI-compatible API client
-  TranslationGlossary.cs          # Glossary cache
-  StringTitleComparer.cs          # Natural sort
-  UndoManager.cs                  # Undo stack
-```
-
-## Architecture Highlights
-
-| Design | Description |
-|--------|-------------|
-| Version polymorphism | `AppInfoFactory` + `AppInfoEntryBase` + version-specific subclasses |
-| Property path addressing | `["appinfo", "common", "name"]` mirrors VDF hierarchy |
-| Modification overlay | Original data preserved, changes tracked as property diffs |
-| PropertyTable optimization | Parallel `Dictionary` for O(1) lookups |
-| Display name cache | `Dictionary<int, string>` for ListBox rendering |
-| Incremental search | Three-way narrowing/widening/replacement filter |
-
-## Steam Path Detection
-
-Reads `HKCU\Software\Valve\Steam\SteamPath` from the registry, then constructs `appcache/appinfo.vdf`. Falls back to `%ProgramFiles(x86)%\Steam`.
-
-## Command-Line Mode
-
-```bash
-# Auto-apply pending changes (headless)
+# Auto-apply pending changes (no GUI)
 SteamEdit.exe -autofix
 
 # Auto-apply and restart Steam
 SteamEdit.exe -autofix -forcestart
 ```
 
-Used for scheduled tasks or unattended operation.
+Useful for periodic maintenance via scheduled tasks.
 
-## License
+---
 
-Internal tool, no license.
+## Internationalization
 
-## Acknowledgments
+SteamEdit includes English and Simplified Chinese, managed through `.resx` resource files.
 
-- [steamedit](https://steamedit.tg-software.com/) by Tim Green
+### Switching Languages
+
+1. Open **Settings** (gear icon)
+2. Choose `English` or `简体中文` from the **Language** dropdown
+3. The UI switches instantly — no restart required
+
+### Adding a New Language
+
+1. Copy `SteamEdit/Resources/Strings.resx` to `Strings.{culture}.resx` (e.g., `Strings.ja.resx`)
+2. Translate all text inside `<value>` tags
+3. Add the corresponding option in `SettingsDlg.cs` → `comboLanguage.Items`
+
+---
+
+## Project Structure
+
+```
+steamedit/
+├── SteamEdit/                    # WinForms UI layer
+│   ├── MainWindow.cs             # Main window (game list + edit panel)
+│   ├── LaunchEditor.cs           # Launch configuration editor
+│   ├── SettingsDlg.cs            # Settings dialog
+│   ├── ControllerBatch.cs        # Controller support batch edit
+│   ├── VRBatch.cs                # VR category batch edit
+│   ├── I18n.cs                   # Language manager
+│   └── Resources/
+│       ├── Strings.resx          # English resources (default)
+│       └── Strings.zh-CN.resx   # Simplified Chinese translation
+├── SteamEdit.Data/               # Core data model & I/O
+│   ├── SteamData.cs              # Data loading / saving / applying
+│   ├── AppInfoFactory.cs         # Version dispatch factory
+│   ├── PropertyTable.cs          # Property table (Dictionary-optimized)
+│   └── Mods.cs                   # mods.dat read/write
+├── SteamEdit.Data.Impl/          # appinfo.vdf version implementations
+│   ├── AppInfoEntryBase.cs       # Entry base class (shared logic)
+│   ├── AppInfo_0x07564427.cs     # Legacy format
+│   ├── AppInfo_0x07564428.cs     # Intermediate format
+│   └── AppInfo_0x07564429.cs     # Latest format
+├── Common/                       # Shared utilities
+│   ├── Settings.cs               # User settings (XML serialization)
+│   ├── Log.cs                    # Buffered logger
+│   ├── AiTranslator.cs           # AI translator (OpenAI-compatible API)
+│   ├── TranslationGlossary.cs    # Glossary cache (glossary.json)
+│   └── AppHelper.cs              # Path & argument helpers
+└── SteamEdit.csproj              # Project file
+```
+
+---
+
+## Tech Stack
+
+| Technology | Version |
+|:---|:---|
+| .NET | 10.0 |
+| Language | C# 13+ |
+| UI Framework | Windows Forms |
+| Target Platform | win-x64 |
+| Publishing | Single-file EXE (self-contained or framework-dependent) |
+
+---
+
+## License & Disclaimer
+
+- Original software copyright belongs to [Tim Green](mailto:tim@tg-software.com)
+- Original download: [https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
+- This project only involves a technical migration (.NET Framework → .NET 10) and UI localization
+- **If there is any infringement, please [submit an Issue](../../issues) to request removal**
+```
