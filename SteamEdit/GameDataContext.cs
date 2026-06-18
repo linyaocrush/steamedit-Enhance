@@ -9,6 +9,5 @@ internal class GameDataContext
 	public List<IAppInfoEntry> BaseEntries { get; set; } = new();
 	public int TotalEntryCount { get; set; }
 	public string CurrentSearchTerm { get; set; } = "";
-	public AppInfoEntryType CurrentFilters { get; set; }
 	public Dictionary<int, string> DisplayNames { get; } = new();
 }

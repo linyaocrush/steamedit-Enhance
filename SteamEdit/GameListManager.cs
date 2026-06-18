@@ -37,7 +37,6 @@ internal class GameListManager : IDisposable
 	private bool _refreshingGamesListAfterEdit;
 
 	public event EventHandler<IAppInfoEntry> SelectedEntryChanged;
-	public event EventHandler ListRefreshed;
 
 	public GameListManager(
 		GameDataContext ctx,
@@ -159,8 +158,6 @@ internal class GameListManager : IDisposable
 		_sortSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 
 		SteamData.AppInfoData.Modified += OnEntryModified;
-		SteamData.OnNeedsSave += OnNeedsSaveOrApply;
-		SteamData.OnNeedsApply += OnNeedsSaveOrApply;
 
 		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)
 		{
@@ -511,7 +508,6 @@ internal class GameListManager : IDisposable
 		var type = (AppInfoEntryType)item.Tag;
 		if (item.Checked) _currentFilters |= type;
 		else _currentFilters &= ~type;
-		_ctx.CurrentFilters = _currentFilters;
 		Settings.Default.Filters = _currentFilters;
 		Settings.Default.Save();
 		RefreshGameList();
@@ -562,11 +558,6 @@ internal class GameListManager : IDisposable
 		_statusBarDebounceTimer.Start();
 	}
 
-	private void OnNeedsSaveOrApply(object sender, EventArgs e)
-	{
-		// MainWindow 负责更新标题栏
-	}
-
 	public void Dispose()
 	{
 		_appSearchTermTimer?.Dispose();
@@ -576,7 +567,5 @@ internal class GameListManager : IDisposable
 		_hiddenAppSelectionFont?.Dispose();
 		_bgLogoAttributes?.Dispose();
 		SteamData.AppInfoData.Modified -= OnEntryModified;
-		SteamData.OnNeedsSave -= OnNeedsSaveOrApply;
-		SteamData.OnNeedsApply -= OnNeedsSaveOrApply;
 	}
 }

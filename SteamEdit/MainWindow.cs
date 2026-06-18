@@ -96,15 +96,12 @@ internal class MainWindow : Form
 			btnTranslate.Enabled = entry != null && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 			btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 		};
-		_listManager.ListRefreshed += (_, _) => UpdateStatusBar();
 
 		// 创建编辑控制器
 		_editController = new EditController(
 			_ctx, _listManager, textGameName, textSortAs,
 			checkHidden, checkCompleted, listControllerSupport,
 			listVR, listEntryType);
-		_editController.NeedsResort += (_, entry) => _listManager.ResortEntry(entry);
-
 		// 订阅 SteamData 事件
 		SteamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
@@ -371,18 +368,7 @@ internal class MainWindow : Form
 					var currentEntry = _listManager.GetSelectedEntry();
 					if (currentEntry == null) return;
 					string previousName = currentEntry.Name;
-					textGameName.Text = translated;
-					currentEntry.Name = translated;
-					_listManager.InvalidateDisplayName(currentEntry);
-					_editController.UpdateGlossaryForEntry(currentEntry, previousName);
-					if (!currentEntry.HasSortAs)
-					{
-						_listManager.RefreshingAfterEdit = true;
-						_listManager.ResortEntry(currentEntry);
-						_listManager.RefreshingAfterEdit = false;
-						textSortAs.Text = currentEntry.SortAs;
-					}
-					_listManager.InvalidateItem(currentEntry);
+					_editController.ApplyTranslation(currentEntry, translated, previousName);
 					Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
 				});
 			}

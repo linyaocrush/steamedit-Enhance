@@ -28,10 +28,7 @@ internal class EditController
 	private readonly Dictionary<string, object> _snapshotValues = new();
 
 	private bool _isSettingUpEntry;
-	private Color _defaultNameColor;
 	private Color _defaultSortAsColor;
-
-	public event EventHandler<IAppInfoEntry> NeedsResort;
 
 	public EditController(
 		GameDataContext ctx,
@@ -54,7 +51,6 @@ internal class EditController
 		_listVR = listVR;
 		_listEntryType = listEntryType;
 
-		_defaultNameColor = _textGameName.ForeColor;
 		_defaultSortAsColor = _textSortAs.ForeColor;
 
 		// 构建下拉框
@@ -182,6 +178,27 @@ internal class EditController
 				_listManager.RefreshGameList();
 			}
 		}
+	}
+
+	public void ApplyTranslation(IAppInfoEntry entry, string translated, string previousName)
+	{
+		_isSettingUpEntry = true;
+		try
+		{
+			_textGameName.Text = translated;
+			entry.Name = translated;
+			_listManager.InvalidateDisplayName(entry);
+			UpdateGlossaryForEntry(entry, previousName);
+			if (!entry.HasSortAs)
+			{
+				_listManager.RefreshingAfterEdit = true;
+				_listManager.ResortEntry(entry);
+				_listManager.RefreshingAfterEdit = false;
+				_textSortAs.Text = entry.SortAs;
+			}
+			_listManager.InvalidateItem(entry);
+		}
+		finally { _isSettingUpEntry = false; }
 	}
 
 	public void ApplyLanguage()
