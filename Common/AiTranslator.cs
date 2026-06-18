@@ -249,7 +249,9 @@ Output a concise list of rules in English. Focus on:
 - Terminology consistency patterns
 - Any recurring translation conventions
 
-Do NOT list individual translations. Only output generalized rules. Keep the output under 500 words."
+Do NOT list individual translations. Only output generalized rules. Keep the output under 500 words.
+
+IMPORTANT: Start your response directly with the first rule (e.g., ""- Brand names...""). Do NOT write any introductory sentence like ""Here are the rules"" or ""Based on the analysis""."
 + systemPromptSection + @"
 
 Translation pairs:
@@ -262,7 +264,7 @@ Translation pairs:
 			model,
 			messages = new[]
 			{
-				new { role = "system", content = "You are a translation style analyst. Output only the rules, no preamble or explanation." },
+				new { role = "system", content = "You are a translation style analyst. Output ONLY the rules as a bullet list. Do NOT include any preamble, greeting, introduction, or concluding remarks. Start directly with the first rule." },
 				new { role = "user", content = analysisPrompt }
 			},
 			max_tokens = 4096,
