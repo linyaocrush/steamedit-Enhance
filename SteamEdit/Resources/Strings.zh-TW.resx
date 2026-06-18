@@ -235,7 +235,7 @@
     <value>翻譯失敗：{0}</value>
   </data>
   <data name="AiLang_zhCN" xml:space="preserve">
-    <value>簡體中文</value>
+    <value>中文</value>
   </data>
   <data name="AiLang_en" xml:space="preserve">
     <value>英文</value>

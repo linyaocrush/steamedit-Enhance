@@ -165,7 +165,7 @@ internal class SettingsDlg : Form
             Settings.Default.AutoStartForceStart = checkAutoStartForceStart.Checked;
             Settings.Default.AiApiUrl = textAiApiUrl.Text;
             Settings.Default.AiApiKey = textAiApiKey.Text;
-            Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : "zh-CN";
+            Settings.Default.AiTargetLanguage = comboAiTargetLanguage.SelectedIndex == 1 ? "en" : I18n.CurrentCulture.Name;
             Settings.Default.AiModel = comboAiModel.Text;
             Settings.Default.AiCustomSystemPrompt = textCustomSystemPrompt.Text == AiTranslator.DefaultSystemPrompt ? "" : textCustomSystemPrompt.Text;
             Settings.Default.AiCustomUserMessage = textCustomUserMessage.Text == AiTranslator.DefaultUserMessage ? "" : textCustomUserMessage.Text;
@@ -686,7 +686,7 @@ internal class SettingsDlg : Form
         // comboAiTargetLanguage
         this.comboAiTargetLanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
         this.comboAiTargetLanguage.FormattingEnabled = true;
-        this.comboAiTargetLanguage.Items.AddRange(new object[] { "简体中文", "English" });
+        this.comboAiTargetLanguage.Items.AddRange(new object[] { "中文", "English" });
         this.comboAiTargetLanguage.Name = "comboAiTargetLanguage";
         this.comboAiTargetLanguage.Size = new System.Drawing.Size(121, 21);
         this.comboAiTargetLanguage.TabIndex = 23;
