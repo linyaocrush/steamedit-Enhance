@@ -21,6 +21,7 @@ internal class BatchReplaceDialog : Form
     private Label lblMatchCount;
     private Label lblFind;
     private Label lblReplace;
+    private ListView listPreview;
 
     private ToolTip toolTips;
     private bool _caseSensitive;
@@ -73,6 +74,7 @@ internal class BatchReplaceDialog : Form
         this.lblMatchCount = new Label();
         this.lblFind = new Label();
         this.lblReplace = new Label();
+        this.listPreview = new ListView();
         this.components = new System.ComponentModel.Container();
         toolTips = new ToolTip(components);
         SuspendLayout();
@@ -131,9 +133,26 @@ internal class BatchReplaceDialog : Form
         lblMatchCount.ForeColor = SystemColors.GrayText;
         lblMatchCount.Text = "Matched: 0 games";
 
+        // listPreview
+        listPreview.Location = new Point(12, 88);
+        listPreview.Name = "listPreview";
+        listPreview.Size = new Size(376, 140);
+        listPreview.TabIndex = 6;
+        listPreview.View = View.Details;
+        listPreview.FullRowSelect = true;
+        listPreview.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+        listPreview.OwnerDraw = true;
+        listPreview.GridLines = true;
+        listPreview.Columns.Add("#", 30);
+        listPreview.Columns.Add("Original", 155);
+        listPreview.Columns.Add("Result", 155);
+        listPreview.DrawColumnHeader += OnListPreview_DrawColumnHeader;
+        listPreview.DrawItem += OnListPreview_DrawItem;
+        listPreview.DrawSubItem += OnListPreview_DrawSubItem;
+
         // btnReplaceAll
         btnReplaceAll.DialogResult = DialogResult.OK;
-        btnReplaceAll.Location = new Point(232, 90);
+        btnReplaceAll.Location = new Point(232, 236);
         btnReplaceAll.Name = "btnReplaceAll";
         btnReplaceAll.Size = new Size(75, 26);
         btnReplaceAll.TabIndex = 4;
@@ -142,7 +161,7 @@ internal class BatchReplaceDialog : Form
 
         // btnCancel
         btnCancel.DialogResult = DialogResult.Cancel;
-        btnCancel.Location = new Point(313, 90);
+        btnCancel.Location = new Point(313, 236);
         btnCancel.Name = "btnCancel";
         btnCancel.Size = new Size(75, 26);
         btnCancel.TabIndex = 5;
@@ -154,8 +173,9 @@ internal class BatchReplaceDialog : Form
         CancelButton = btnCancel;
         AutoScaleDimensions = new SizeF(6F, 13F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(400, 125);
+        ClientSize = new Size(400, 270);
         ControlBox = false;
+        Controls.Add(listPreview);
         Controls.Add(btnCancel);
         Controls.Add(btnReplaceAll);
         Controls.Add(lblMatchCount);
@@ -195,6 +215,22 @@ internal class BatchReplaceDialog : Form
         btnRegex.BackColor = _regexMode ? SystemColors.Highlight : SystemColors.Control;
         btnRegex.ForeColor = _regexMode ? SystemColors.HighlightText : SystemColors.ControlText;
         UpdateMatchCount();
+    }
+
+    private void OnListPreview_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
+    {
+        e.DrawDefault = true;
+    }
+
+    private void OnListPreview_DrawItem(object sender, DrawListViewItemEventArgs e)
+    {
+        e.DrawDefault = false;
+        e.Graphics.FillRectangle(e.Item.Selected ? SystemBrushes.Highlight : SystemBrushes.Window, e.Bounds);
+    }
+
+    private void OnListPreview_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+    {
+        e.DrawDefault = true;
     }
 
     private void UpdateMatchCount()
