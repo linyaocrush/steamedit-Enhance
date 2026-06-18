@@ -184,8 +184,6 @@ steamedit/
 │   ├── MainWindow.cs             # 主窗口（游戏列表 + 编辑面板）
 │   ├── LaunchEditor.cs           # 启动配置编辑器
 │   ├── SettingsDlg.cs            # 设置对话框
-│   ├── ControllerBatch.cs        # 控制器支持批量修改
-│   ├── VRBatch.cs                # VR 类别批量修改
 │   ├── I18n.cs                   # 语言管理器
 │   └── Resources/
 │       ├── Strings.resx          # 英文资源（默认）

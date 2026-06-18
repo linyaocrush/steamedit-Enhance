@@ -184,8 +184,6 @@ steamedit/
 │   ├── MainWindow.cs             # Main window (game list + edit panel)
 │   ├── LaunchEditor.cs           # Launch configuration editor
 │   ├── SettingsDlg.cs            # Settings dialog
-│   ├── ControllerBatch.cs        # Controller support batch edit
-│   ├── VRBatch.cs                # VR category batch edit
 │   ├── I18n.cs                   # Language manager
 │   └── Resources/
 │       ├── Strings.resx          # English resources (default)
