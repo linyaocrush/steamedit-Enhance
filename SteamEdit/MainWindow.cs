@@ -1324,7 +1324,7 @@ internal class MainWindow : Form
 		}
 		string text = controllerBatch.From;
 		string to = controllerBatch.To;
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry appInfoEntry = GetSelectedEntry();
 		bool flag = false;
 		foreach (IAppInfoEntry entry in _entries)
 		{
@@ -1538,7 +1538,7 @@ internal class MainWindow : Form
 		{
 			if (appSelection_LastHoverI != num)
 			{
-				IAppInfoEntry entry = (IAppInfoEntry)appSelection.Items[num];
+				IAppInfoEntry entry = _entries[num];
 				appSelection_LastHoverI = num;
 				toolTips.Active = false;
 				toolTips.SetToolTip(appSelection, GetEntryToolTip(entry));
