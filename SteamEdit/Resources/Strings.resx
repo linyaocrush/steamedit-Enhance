@@ -139,12 +139,6 @@
   <data name="Tooltip_About" xml:space="preserve">
     <value>About</value>
   </data>
-  <data name="Tooltip_BatchController" xml:space="preserve">
-    <value>Batch controller support</value>
-  </data>
-  <data name="Tooltip_BatchVR" xml:space="preserve">
-    <value>Batch VR</value>
-  </data>
 
   <!-- Settings -->
   <data name="Settings_Title" xml:space="preserve">
@@ -290,39 +284,6 @@
     <value>Play </value>
   </data>
 
-  <!-- ControllerBatch -->
-  <data name="ControllerBatch_Title" xml:space="preserve">
-    <value>Controller Batch</value>
-  </data>
-  <data name="ControllerBatch_LabelChange" xml:space="preserve">
-    <value>Change</value>
-  </data>
-  <data name="ControllerBatch_LabelTo" xml:space="preserve">
-    <value>to</value>
-  </data>
-  <data name="ControllerBatch_BtnOkay" xml:space="preserve">
-    <value>Okay</value>
-  </data>
-  <data name="ControllerBatch_BtnCancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-
-  <!-- VRBatch -->
-  <data name="VRBatch_Title" xml:space="preserve">
-    <value>VR Batch</value>
-  </data>
-  <data name="VRBatch_LabelSetAll" xml:space="preserve">
-    <value>Set all</value>
-  </data>
-  <data name="VRBatch_BtnOkay" xml:space="preserve">
-    <value>Okay</value>
-  </data>
-  <data name="VRBatch_BtnCancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="VRBatch_Value_Remove" xml:space="preserve">
-    <value>remove</value>
-  </data>
 
   <!-- SelectAppLaunch -->
   <data name="SelectAppLaunch_Title" xml:space="preserve">

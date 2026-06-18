@@ -76,8 +76,6 @@ namespace SteamEdit {
         internal static string Tooltip_SaveApplyRestart => ResourceManager.GetString("Tooltip_SaveApplyRestart", resourceCulture);
         internal static string Tooltip_Settings => ResourceManager.GetString("Tooltip_Settings", resourceCulture);
         internal static string Tooltip_About => ResourceManager.GetString("Tooltip_About", resourceCulture);
-        internal static string Tooltip_BatchController => ResourceManager.GetString("Tooltip_BatchController", resourceCulture);
-        internal static string Tooltip_BatchVR => ResourceManager.GetString("Tooltip_BatchVR", resourceCulture);
         internal static string Settings_Title => ResourceManager.GetString("Settings_Title", resourceCulture);
         internal static string Settings_EnableCompleted => ResourceManager.GetString("Settings_EnableCompleted", resourceCulture);
         internal static string Settings_EnableHidden => ResourceManager.GetString("Settings_EnableHidden", resourceCulture);
@@ -129,16 +127,6 @@ namespace SteamEdit {
         internal static string LaunchEditorItem_BtnDelete => ResourceManager.GetString("LaunchEditorItem_BtnDelete", resourceCulture);
         internal static string LaunchEditorItem_BtnCopy => ResourceManager.GetString("LaunchEditorItem_BtnCopy", resourceCulture);
         internal static string LaunchEditorItem_PlayPrefix => ResourceManager.GetString("LaunchEditorItem_PlayPrefix", resourceCulture);
-        internal static string ControllerBatch_Title => ResourceManager.GetString("ControllerBatch_Title", resourceCulture);
-        internal static string ControllerBatch_LabelChange => ResourceManager.GetString("ControllerBatch_LabelChange", resourceCulture);
-        internal static string ControllerBatch_LabelTo => ResourceManager.GetString("ControllerBatch_LabelTo", resourceCulture);
-        internal static string ControllerBatch_BtnOkay => ResourceManager.GetString("ControllerBatch_BtnOkay", resourceCulture);
-        internal static string ControllerBatch_BtnCancel => ResourceManager.GetString("ControllerBatch_BtnCancel", resourceCulture);
-        internal static string VRBatch_Title => ResourceManager.GetString("VRBatch_Title", resourceCulture);
-        internal static string VRBatch_LabelSetAll => ResourceManager.GetString("VRBatch_LabelSetAll", resourceCulture);
-        internal static string VRBatch_BtnOkay => ResourceManager.GetString("VRBatch_BtnOkay", resourceCulture);
-        internal static string VRBatch_BtnCancel => ResourceManager.GetString("VRBatch_BtnCancel", resourceCulture);
-        internal static string VRBatch_Value_Remove => ResourceManager.GetString("VRBatch_Value_Remove", resourceCulture);
         internal static string SelectAppLaunch_Title => ResourceManager.GetString("SelectAppLaunch_Title", resourceCulture);
         internal static string SelectAppLaunch_LabelLaunchItem => ResourceManager.GetString("SelectAppLaunch_LabelLaunchItem", resourceCulture);
         internal static string SelectAppLaunch_BtnOK => ResourceManager.GetString("SelectAppLaunch_BtnOK", resourceCulture);

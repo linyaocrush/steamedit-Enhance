@@ -139,12 +139,6 @@
   <data name="Tooltip_About" xml:space="preserve">
     <value>關於</value>
   </data>
-  <data name="Tooltip_BatchController" xml:space="preserve">
-    <value>批次修改控制器支援</value>
-  </data>
-  <data name="Tooltip_BatchVR" xml:space="preserve">
-    <value>批次修改 VR</value>
-  </data>
 
   <!-- Settings -->
   <data name="Settings_Title" xml:space="preserve">
@@ -290,39 +284,6 @@
     <value>啟動 </value>
   </data>
 
-  <!-- ControllerBatch -->
-  <data name="ControllerBatch_Title" xml:space="preserve">
-    <value>批次控制器設定</value>
-  </data>
-  <data name="ControllerBatch_LabelChange" xml:space="preserve">
-    <value>將</value>
-  </data>
-  <data name="ControllerBatch_LabelTo" xml:space="preserve">
-    <value>改為</value>
-  </data>
-  <data name="ControllerBatch_BtnOkay" xml:space="preserve">
-    <value>確定</value>
-  </data>
-  <data name="ControllerBatch_BtnCancel" xml:space="preserve">
-    <value>取消</value>
-  </data>
-
-  <!-- VRBatch -->
-  <data name="VRBatch_Title" xml:space="preserve">
-    <value>批次 VR 設定</value>
-  </data>
-  <data name="VRBatch_LabelSetAll" xml:space="preserve">
-    <value>全部設定為</value>
-  </data>
-  <data name="VRBatch_BtnOkay" xml:space="preserve">
-    <value>確定</value>
-  </data>
-  <data name="VRBatch_BtnCancel" xml:space="preserve">
-    <value>取消</value>
-  </data>
-  <data name="VRBatch_Value_Remove" xml:space="preserve">
-    <value>移除</value>
-  </data>
 
   <!-- SelectAppLaunch -->
   <data name="SelectAppLaunch_Title" xml:space="preserve">
