@@ -14,8 +14,6 @@ internal class Settings
 {
 	public static readonly Settings Default = new Settings();
 
-	private readonly string _settingsFilePath;
-
 	private readonly Dictionary<string, object> _values;
 
 	private bool _isDirty;
@@ -37,6 +35,7 @@ internal class Settings
 		set
 		{
 			_values["EnableCompleted"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -50,6 +49,7 @@ internal class Settings
 		set
 		{
 			_values["EnableHidden"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -63,6 +63,7 @@ internal class Settings
 		set
 		{
 			_values["ReplaceLocalizedNames"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -76,6 +77,7 @@ internal class Settings
 		set
 		{
 			_values["PassThroughArguments"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -89,6 +91,7 @@ internal class Settings
 		set
 		{
 			_values["Filters"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -102,6 +105,7 @@ internal class Settings
 		set
 		{
 			_values["FiltersShowEntries"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -115,6 +119,7 @@ internal class Settings
 		set
 		{
 			_values["AppInfoPath"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -128,6 +133,7 @@ internal class Settings
 		set
 		{
 			_values["ModsLocation"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -141,6 +147,7 @@ internal class Settings
 		set
 		{
 			_values["ShownVersion"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -154,6 +161,7 @@ internal class Settings
 		set
 		{
 			_values["WindowLocationX"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -167,6 +175,7 @@ internal class Settings
 		set
 		{
 			_values["WindowLocationY"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -180,6 +189,7 @@ internal class Settings
 		set
 		{
 			_values["WindowSizeX"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -193,6 +203,7 @@ internal class Settings
 		set
 		{
 			_values["WindowSizeY"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -206,6 +217,7 @@ internal class Settings
 		set
 		{
 			_values["MainWindowSplitter"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -219,6 +231,7 @@ internal class Settings
 		set
 		{
 			_values["AutoStart"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -232,6 +245,7 @@ internal class Settings
 		set
 		{
 			_values["AutoStartAutoFix"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -245,6 +259,7 @@ internal class Settings
 		set
 		{
 			_values["AutoStartForceStart"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -258,6 +273,7 @@ internal class Settings
 		set
 		{
 			_values["Language"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -271,6 +287,7 @@ internal class Settings
 		set
 		{
 			_values["AiApiUrl"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -284,6 +301,7 @@ internal class Settings
 		set
 		{
 			_values["AiApiKey"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -297,6 +315,7 @@ internal class Settings
 		set
 		{
 			_values["AiModel"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -310,6 +329,7 @@ internal class Settings
 		set
 		{
 			_values["SearchEngine"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -323,6 +343,7 @@ internal class Settings
 		set
 		{
 			_values["AiTargetLanguage"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -336,6 +357,7 @@ internal class Settings
 		set
 		{
 			_values["AiCustomSystemPrompt"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -349,6 +371,7 @@ internal class Settings
 		set
 		{
 			_values["AiCustomUserMessage"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -362,6 +385,7 @@ internal class Settings
 		set
 		{
 			_values["AiTranslationRules"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -375,6 +399,7 @@ internal class Settings
 		set
 		{
 			_values["SortField"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -388,6 +413,7 @@ internal class Settings
 		set
 		{
 			_values["SortDescending"] = value;
+			MarkDirty();
 		}
 	}
 
@@ -410,7 +436,6 @@ internal class Settings
 		// 第二步：尝试加载配置文件
 		string jsonPath = GetJsonFilePath();
 		string xmlPath = GetXmlFilePath();
-		_settingsFilePath = xmlPath; // 保留给 Save() 使用，下个任务会移除
 
 		if (File.Exists(jsonPath))
 		{
@@ -526,23 +551,16 @@ internal class Settings
 
 	public void Save()
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(_settingsFilePath));
-		XmlWriterSettings settings = new XmlWriterSettings
+		if (!_isDirty) return;
+		try
 		{
-			Indent = true
-		};
-		using XmlWriter xmlWriter = XmlWriter.Create(_settingsFilePath, settings);
-		xmlWriter.WriteStartDocument();
-		xmlWriter.WriteStartElement("Settings");
-		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-		foreach (PropertyInfo propertyInfo in properties)
-		{
-			xmlWriter.WriteStartElement(propertyInfo.Name);
-			xmlWriter.WriteValue(propertyInfo.GetValue(this, null)?.ToString() ?? "");
-			xmlWriter.WriteEndElement();
+			SaveJson(GetJsonFilePath());
+			_isDirty = false;
 		}
-		xmlWriter.WriteEndElement();
-		xmlWriter.WriteEndDocument();
+		catch (Exception ex)
+		{
+			Log.WriteLine("Settings: Save failed: {0}", ex.Message);
+		}
 	}
 
 	private void ReadXml<T>(XmlElement root, string name)
@@ -598,6 +616,12 @@ internal class Settings
 	private string GetJsonFilePath()
 	{
 		return Path.Combine(AppHelper.GetAppDirectory(), "Settings.json");
+	}
+
+	private void MarkDirty()
+	{
+		if (!_suppressDirtyTracking)
+			_isDirty = true;
 	}
 
 	private string GetXmlFilePath()
