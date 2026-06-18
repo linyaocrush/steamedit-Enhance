@@ -1,4 +1,4 @@
 /docs
-/bin
-/obj
+**/bin/
+**/obj/
 CLAUDE.md
