@@ -876,6 +876,14 @@ internal class MainWindow : Form
 			return;
 		}
 
+		if (e.Control && e.KeyCode == Keys.Z)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			PerformUndo();
+			return;
+		}
+
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
@@ -884,6 +892,42 @@ internal class MainWindow : Form
 		case Keys.Prior:
 			appSelection.SelectedIndex = Math.Max(appSelection.SelectedIndex - 1, 0);
 			break;
+		}
+	}
+
+	private void PerformUndo()
+	{
+		if (!_undoManager.CanUndo) return;
+
+		var record = _undoManager.Pop();
+
+		// 如果撤销的游戏不是当前选中的，切换到该游戏
+		if (appSelection.SelectedItem != record.Entry)
+		{
+			int idx = appSelection.Items.IndexOf(record.Entry);
+			if (idx >= 0)
+			{
+				appSelection.SelectedIndex = idx;
+			}
+		}
+
+		_isSettingUpEntry = true;
+		record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
+
+		// 如果所有修改都已撤销，清除修改标记
+		if (record.Entry.Modification?.Changes.Count == 0)
+		{
+			record.Entry.Revert();
+		}
+
+		_isSettingUpEntry = false;
+		Setup();
+
+		// 刷新游戏列表显示（修改标记等）
+		if (appSelection.SelectedIndex >= 0)
+		{
+			Rectangle itemRect = appSelection.GetItemRectangle(appSelection.SelectedIndex);
+			appSelection.Invalidate(itemRect);
 		}
 	}
 
