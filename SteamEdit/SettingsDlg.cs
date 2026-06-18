@@ -124,7 +124,11 @@ internal class SettingsDlg : Form
         {
             savedLang = System.Globalization.CultureInfo.CurrentUICulture.Name;
         }
-        if (savedLang.StartsWith("zh"))
+        if (savedLang == "zh-TW" || savedLang.StartsWith("zh-TW"))
+        {
+            comboLanguage.SelectedIndex = 2;
+        }
+        else if (savedLang.StartsWith("zh"))
         {
             comboLanguage.SelectedIndex = 1;
         }
@@ -291,7 +295,12 @@ internal class SettingsDlg : Form
 
     private void comboLanguage_SelectedIndexChanged(object sender, EventArgs e)
     {
-        string cultureCode = comboLanguage.SelectedIndex == 1 ? "zh-CN" : "en";
+        string cultureCode = comboLanguage.SelectedIndex switch
+        {
+            1 => "zh-CN",
+            2 => "zh-TW",
+            _ => "en"
+        };
         I18n.SetLanguage(cultureCode);
     }
 
@@ -525,7 +534,7 @@ internal class SettingsDlg : Form
         // comboLanguage
         this.comboLanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
         this.comboLanguage.FormattingEnabled = true;
-        this.comboLanguage.Items.AddRange(new object[] { "English", "简体中文" });
+        this.comboLanguage.Items.AddRange(new object[] { "English", "简体中文", "繁體中文" });
         this.comboLanguage.Name = "comboLanguage";
         this.comboLanguage.Size = new System.Drawing.Size(121, 21);
         this.comboLanguage.TabIndex = 11;
