@@ -495,22 +495,31 @@ internal class Settings
 
 	private static object DeserializeJsonElement(JsonElement element, Type targetType)
 	{
-		if (targetType == typeof(bool))
-			return element.GetBoolean();
-		if (targetType == typeof(int))
-			return element.GetInt32();
-		if (targetType == typeof(string))
-			return element.GetString() ?? "";
-		if (targetType.IsEnum)
+		// SaveJson 将所有值存为字符串，所以需要先尝试字符串解析
+		if (element.ValueKind == JsonValueKind.String)
 		{
-			string enumStr = element.GetString();
-			if (!string.IsNullOrEmpty(enumStr))
+			string str = element.GetString();
+			if (targetType == typeof(bool))
+				return bool.TryParse(str, out var b) ? b : null;
+			if (targetType == typeof(int))
+				return int.TryParse(str, out var i) ? i : null;
+			if (targetType == typeof(string))
+				return str ?? "";
+			if (targetType.IsEnum)
 			{
-				try { return Enum.Parse(targetType, enumStr); }
+				try { return Enum.Parse(targetType, str); }
 				catch { return null; }
 			}
 			return null;
 		}
+
+		// 原生 JSON 类型（直接加载的 JSON 或未来可能的原生序列化）
+		if (targetType == typeof(bool) && (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False))
+			return element.GetBoolean();
+		if (targetType == typeof(int) && element.ValueKind == JsonValueKind.Number)
+			return element.GetInt32();
+		if (targetType == typeof(string))
+			return element.GetRawText();
 		return null;
 	}
 
