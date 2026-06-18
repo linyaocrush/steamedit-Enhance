@@ -611,11 +611,14 @@ internal class MainWindow : Form
 
 	private void UpdateStatusBar()
 	{
-		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
+		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, _totalEntryCount);
 		int modifiedCount = 0;
-		foreach (var ent in SteamData.AppInfoData.Entries)
+		if (SteamData.AppInfoData != null)
 		{
-			if (ent.IsModified) modifiedCount++;
+			foreach (var ent in SteamData.AppInfoData.Entries)
+			{
+				if (ent.IsModified) modifiedCount++;
+			}
 		}
 		lblModifiedCount.Text = string.Format(_originalModifiedCountText, modifiedCount);
 	}
@@ -743,6 +746,7 @@ internal class MainWindow : Form
 			}
 			Rectangle itemRectangle = appSelection.GetItemRectangle(appSelection.SelectedIndex);
 			appSelection.Invalidate(itemRectangle);
+			UpdateStatusBar();
 		}
 	}
 
@@ -763,6 +767,7 @@ internal class MainWindow : Form
 				int idx = _entries.IndexOf(appInfoEntry);
 				if (idx >= 0) appSelection.SelectedIndex = idx;
 				textSortAs.ForeColor = (appInfoEntry.HasSortAs ? _defaultSortAsColor : Color.Gray);
+				UpdateStatusBar();
 			}
 		}
 	}
@@ -779,6 +784,7 @@ internal class MainWindow : Form
 			}
 			entry.IsHidden = checkHidden.Checked;
 			appSelection.Invalidate();
+			UpdateStatusBar();
 		}
 	}
 
@@ -984,6 +990,7 @@ internal class MainWindow : Form
 			}
 			entry.IsCompleted = checkCompleted.Checked;
 			appSelection.Invalidate();
+			UpdateStatusBar();
 		}
 	}
 
@@ -1273,6 +1280,7 @@ internal class MainWindow : Form
 		// Refresh the list to reflect changes
 		appSelection.Invalidate();
 		Setup();
+		UpdateStatusBar();
 	}
 
 	private void OnBtnSave_Click(object sender, EventArgs e)
@@ -1333,6 +1341,7 @@ internal class MainWindow : Form
 				_undoManager.Push(entry, new[] { "appinfo", "common", "controller_support" }, PropertyType.String, prevController);
 			}
 			entry.SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
+			UpdateStatusBar();
 		}
 	}
 
@@ -1362,6 +1371,8 @@ internal class MainWindow : Form
 		{
 			Setup();
 		}
+		appSelection.Invalidate();
+		UpdateStatusBar();
 	}
 
 	private void OnBtnBatchReplace_Click(object sender, EventArgs e)
@@ -1376,6 +1387,7 @@ internal class MainWindow : Form
 				ClearDisplayNameCache();
 				SortEntries();
 				Setup();
+				UpdateStatusBar();
 			}
 		}
 	}
@@ -1417,6 +1429,7 @@ internal class MainWindow : Form
 				}
 			}
 			SetEntryVR(entry, listVR.SelectedIndex != 0);
+			UpdateStatusBar();
 		}
 	}
 
@@ -1433,6 +1446,7 @@ internal class MainWindow : Form
 			SetEntryVR(entry, value == VRBatch.ValueTag.Remove);
 		}
 		Setup();
+		UpdateStatusBar();
 	}
 
 	private void OnFilterSelectorMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e)
@@ -1873,7 +1887,7 @@ internal class MainWindow : Form
 		this.lblVRCategory.Size = new System.Drawing.Size(70, 13);
 		this.lblVRCategory.TabIndex = 24;
 		this.lblVRCategory.Text = "VR Category:";
-		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[2] { this.lblNumAppsShown, this.lblModifiedCount });
+		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[3] { this.lblNumAppsShown, new System.Windows.Forms.ToolStripSeparator(), this.lblModifiedCount });
 		statusStrip.Location = new System.Drawing.Point(0, 306);
 		statusStrip.Name = "statusStrip1";
 		statusStrip.Size = new System.Drawing.Size(227, 22);
