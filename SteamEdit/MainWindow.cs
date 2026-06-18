@@ -57,6 +57,9 @@ internal class MainWindow : Form
 
 	private int appSelection_LastHoverI = -1;
 
+	private readonly UndoManager _undoManager = new();
+	private readonly Dictionary<string, object> _snapshotValues = new();
+
 	private IContainer components;
 
 	private ClearableTextBox textGameName;
@@ -299,6 +302,56 @@ internal class MainWindow : Form
 			{
 				(sender as ComboBox).DroppedDown = false;
 			}
+		}
+	}
+
+	private void OnEditControl_Enter(object sender, EventArgs e)
+	{
+		if (_isSettingUpEntry) return;
+		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+
+		string key = null;
+		object value = null;
+
+		if (sender == textGameName)
+		{
+			key = "name";
+			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "name");
+		}
+		else if (sender == textSortAs)
+		{
+			key = "sortas";
+			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "sortas");
+		}
+		else if (sender == checkHidden)
+		{
+			key = "hidden_type";
+			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "type");
+		}
+		else if (sender == checkCompleted)
+		{
+			key = "completed_name";
+			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "name");
+		}
+		else if (sender == listEntryType)
+		{
+			key = "type";
+			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "type");
+		}
+		else if (sender == listControllerSupport)
+		{
+			key = "controller";
+			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "controller_support");
+		}
+		else if (sender == listVR)
+		{
+			key = "vr";
+			value = entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport");
+		}
+
+		if (key != null)
+		{
+			_snapshotValues[key] = value;
 		}
 	}
 
@@ -1612,6 +1665,7 @@ internal class MainWindow : Form
 		this.checkCompleted.Text = "Completed";
 		this.checkCompleted.UseVisualStyleBackColor = false;
 		this.checkCompleted.CheckedChanged += new System.EventHandler(OnCheckCompleted_CheckedChanged);
+		this.checkCompleted.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.checkHidden.AutoSize = true;
 		this.checkHidden.BackColor = System.Drawing.Color.Transparent;
 		this.checkHidden.Location = new System.Drawing.Point(58, 59);
@@ -1621,6 +1675,7 @@ internal class MainWindow : Form
 		this.checkHidden.Text = "Hidden";
 		this.checkHidden.UseVisualStyleBackColor = false;
 		this.checkHidden.CheckedChanged += new System.EventHandler(OnCheckHidden_CheckedChanged);
+		this.checkHidden.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.btnControllerBatch.Location = new System.Drawing.Point(282, 87);
 		this.btnControllerBatch.Name = "btnControllerBatch";
 		this.btnControllerBatch.Size = new System.Drawing.Size(29, 23);
@@ -1645,6 +1700,7 @@ internal class MainWindow : Form
 		this.listControllerSupport.TabIndex = 5;
 		this.listControllerSupport.SelectedIndexChanged += new System.EventHandler(OnListControllerSupport_SelectedIndexChanged);
 		this.listControllerSupport.KeyDown += new System.Windows.Forms.KeyEventHandler(OnGeneric_KeyDown);
+		this.listControllerSupport.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.listVR.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 		this.listVR.FormattingEnabled = true;
 		this.listVR.Location = new System.Drawing.Point(155, 123);
@@ -1653,6 +1709,7 @@ internal class MainWindow : Form
 		this.listVR.TabIndex = 7;
 		this.listVR.SelectedIndexChanged += new System.EventHandler(OnListVR_SelectedIndexChanged);
 		this.listVR.KeyDown += new System.Windows.Forms.KeyEventHandler(OnGeneric_KeyDown);
+		this.listVR.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.filterSelectorMenu.Name = "filterSelectorMenu";
 		this.filterSelectorMenu.ShowCheckMargin = true;
 		this.filterSelectorMenu.Size = new System.Drawing.Size(83, 4);
@@ -1753,6 +1810,7 @@ internal class MainWindow : Form
 		this.listEntryType.Size = new System.Drawing.Size(79, 21);
 		this.listEntryType.TabIndex = 4;
 		this.listEntryType.SelectedIndexChanged += new System.EventHandler(listEntryType_SelectedIndexChanged);
+		this.listEntryType.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.textGameName.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.textGameName.AutoClearX = false;
 		this.textGameName.ClearXVisible = true;
@@ -1762,6 +1820,7 @@ internal class MainWindow : Form
 		this.textGameName.TabIndex = 0;
 		this.textGameName.ClearXClicked += new System.ComponentModel.HandledEventHandler(textGameName_ClearXClicked);
 		this.textGameName.TextChanged += new System.EventHandler(OnTextGameName_TextChanged);
+		this.textGameName.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.textSortAs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.textSortAs.AutoClearX = false;
 		this.textSortAs.ClearXVisible = true;
@@ -1771,6 +1830,7 @@ internal class MainWindow : Form
 		this.textSortAs.TabIndex = 1;
 		this.textSortAs.ClearXClicked += new System.ComponentModel.HandledEventHandler(textSortAs_ClearXClicked);
 		this.textSortAs.TextChanged += new System.EventHandler(OnTextSortAs_TextChanged);
+		this.textSortAs.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayoutPanel3.AutoSize = true;
 		this.flowLayoutPanel3.Controls.Add(this.btnHelp);
