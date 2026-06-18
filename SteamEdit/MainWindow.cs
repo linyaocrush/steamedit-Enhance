@@ -744,7 +744,8 @@ internal class MainWindow : Form
 				_refreshingGamesListAfterEdit = true;
 				ResortEntry(appInfoEntry);
 				_refreshingGamesListAfterEdit = false;
-				appSelection.SelectedItem = appInfoEntry;
+				int idx = _entries.IndexOf(appInfoEntry);
+				if (idx >= 0) appSelection.SelectedIndex = idx;
 				textSortAs.ForeColor = (appInfoEntry.HasSortAs ? _defaultSortAsColor : Color.Gray);
 			}
 		}
@@ -1084,7 +1085,8 @@ internal class MainWindow : Form
 			SteamData.AppInfoData.RevertEntry(appInfoEntry);
 			ResortEntry(appInfoEntry);
 			ClearDisplayNameCache();
-			appSelection.SelectedItem = appInfoEntry;
+			int idx2 = _entries.IndexOf(appInfoEntry);
+			if (idx2 >= 0) appSelection.SelectedIndex = idx2;
 			Setup();
 		}
 		catch (NotImplementedException)
@@ -1352,6 +1354,7 @@ internal class MainWindow : Form
 			int replaced = dialog.ReplaceAll();
 			if (replaced > 0)
 			{
+				ClearDisplayNameCache();
 				SortEntries();
 				Setup();
 			}
