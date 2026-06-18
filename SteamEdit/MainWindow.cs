@@ -81,10 +81,6 @@ internal class MainWindow : Form
 
 	private ComboBox listControllerSupport;
 
-	private Button btnControllerBatch;
-
-	private Button btnVRBatch;
-
 	private Button btnSettings;
 
 	private Button btnHelp;
@@ -599,8 +595,6 @@ internal class MainWindow : Form
 		_currentSearchTerm = "";
 		ApplyIncrementalSearch();
 
-		btnControllerBatch.Enabled = _entries.Count > 0;
-
 		// \u6062\u590d\u9009\u4e2d\u9879
 		if (selectedEntry != null)
 		{
@@ -693,7 +687,6 @@ internal class MainWindow : Form
 		btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 		listControllerSupport.Enabled = flag;
 		listVR.Enabled = flag;
-		btnVRBatch.Enabled = flag;
 		listEntryType.Enabled = flag;
 		if (!flag)
 		{
@@ -955,8 +948,6 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnSettings, Strings.Tooltip_Settings);
 		toolTips.SetToolTip(btnHelp, Strings.Tooltip_About);
 		toolTips.SetToolTip(btnShortcuts, Strings.Tooltip_Shortcuts);
-		toolTips.SetToolTip(btnControllerBatch, Strings.Tooltip_BatchController);
-		toolTips.SetToolTip(btnVRBatch, Strings.Tooltip_BatchVR);
 		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
 
 		// Refresh status bar
@@ -1364,35 +1355,6 @@ internal class MainWindow : Form
 		}
 	}
 
-	private void OnBtnControllerBatch_Click(object sender, EventArgs e)
-	{
-		using var controllerBatch = new ControllerBatch();
-		if (controllerBatch.ShowDialog(this) != DialogResult.OK)
-		{
-			return;
-		}
-		string text = controllerBatch.From;
-		string to = controllerBatch.To;
-		IAppInfoEntry appInfoEntry = GetSelectedEntry();
-		bool flag = false;
-		foreach (IAppInfoEntry entry in _entries)
-		{
-			if (entry.GetPropertyValue("none", "appinfo", "common", "controller_support") == text)
-			{
-				entry.SetPropertyValue(PropertyType.String, to, "appinfo", "common", "controller_support");
-				if (appInfoEntry == entry)
-				{
-					flag = true;
-				}
-			}
-		}
-		if (flag)
-		{
-			Setup();
-		}
-		appSelection.Invalidate();
-	}
-
 	private void OnBtnBatchReplace_Click(object sender, EventArgs e)
 	{
 		if (_entries == null || _entries.Count == 0) return;
@@ -1447,21 +1409,6 @@ internal class MainWindow : Form
 			}
 			SetEntryVR(entry, listVR.SelectedIndex != 0);
 		}
-	}
-
-	private void OnBtnVRBatch_Click(object sender, EventArgs e)
-	{
-		using var vRBatch = new VRBatch();
-		if (vRBatch.ShowDialog(this) != DialogResult.OK)
-		{
-			return;
-		}
-		VRBatch.ValueTag value = vRBatch.Value;
-		foreach (IAppInfoEntry entry in _entries)
-		{
-			SetEntryVR(entry, value == VRBatch.ValueTag.Remove);
-		}
-		Setup();
 	}
 
 	private void OnFilterSelectorMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e)
@@ -1762,8 +1709,6 @@ internal class MainWindow : Form
 		this.checkCompleted = new System.Windows.Forms.CheckBox();
 		this.checkHidden = new System.Windows.Forms.CheckBox();
 		this.toolTips = new System.Windows.Forms.ToolTip(this.components);
-		this.btnControllerBatch = new System.Windows.Forms.Button();
-		this.btnVRBatch = new System.Windows.Forms.Button();
 		this.listControllerSupport = new System.Windows.Forms.ComboBox();
 		this.listVR = new System.Windows.Forms.ComboBox();
 		this.filterSelectorMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -1977,22 +1922,6 @@ internal class MainWindow : Form
 		this.checkHidden.UseVisualStyleBackColor = false;
 		this.checkHidden.CheckedChanged += new System.EventHandler(OnCheckHidden_CheckedChanged);
 		this.checkHidden.Enter += new System.EventHandler(OnEditControl_Enter);
-		this.btnControllerBatch.Location = new System.Drawing.Point(282, 87);
-		this.btnControllerBatch.Name = "btnControllerBatch";
-		this.btnControllerBatch.Size = new System.Drawing.Size(29, 23);
-		this.btnControllerBatch.TabIndex = 6;
-		this.btnControllerBatch.Text = "...";
-		this.toolTips.SetToolTip(this.btnControllerBatch, "Batch controller support");
-		this.btnControllerBatch.UseVisualStyleBackColor = true;
-		this.btnControllerBatch.Click += new System.EventHandler(OnBtnControllerBatch_Click);
-		this.btnVRBatch.Location = new System.Drawing.Point(232, 121);
-		this.btnVRBatch.Name = "btnVRBatch";
-		this.btnVRBatch.Size = new System.Drawing.Size(29, 23);
-		this.btnVRBatch.TabIndex = 8;
-		this.btnVRBatch.Text = "...";
-		this.toolTips.SetToolTip(this.btnVRBatch, "Batch VR");
-		this.btnVRBatch.UseVisualStyleBackColor = true;
-		this.btnVRBatch.Click += new System.EventHandler(OnBtnVRBatch_Click);
 		this.listControllerSupport.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 		this.listControllerSupport.FormattingEnabled = true;
 		this.listControllerSupport.Location = new System.Drawing.Point(155, 89);
@@ -2088,7 +2017,6 @@ internal class MainWindow : Form
 		this.panel1.Controls.Add(flowLayoutPanel);
 		this.panel1.Controls.Add(this.checkCompleted);
 		this.panel1.Controls.Add(this.lblName);
-		this.panel1.Controls.Add(this.btnVRBatch);
 		this.panel1.Controls.Add(this.lblControllerSupport);
 		this.panel1.Controls.Add(this.checkHidden);
 		this.panel1.Controls.Add(this.textSortAs);
@@ -2096,7 +2024,6 @@ internal class MainWindow : Form
 		this.panel1.Controls.Add(this.listControllerSupport);
 		this.panel1.Controls.Add(this.lblVRCategory);
 		this.panel1.Controls.Add(this.lblSortAs);
-		this.panel1.Controls.Add(this.btnControllerBatch);
 		this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
 		this.panel1.Location = new System.Drawing.Point(0, 0);
 		this.panel1.Margin = new System.Windows.Forms.Padding(0);
