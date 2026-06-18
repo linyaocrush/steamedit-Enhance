@@ -20,10 +20,6 @@ internal class MainWindow : Form
 {
 	private string _originalTitle;
 
-	private string _originalNumShownLabelText;
-
-	private string _originalModifiedCountText;
-
 	private List<IAppInfoEntry> _entries;
 	private List<IAppInfoEntry> _baseEntries = new();
 	private string _currentSearchTerm = "";
@@ -57,6 +53,8 @@ internal class MainWindow : Form
 	private Timer appSearchTermTimer = new Timer();
 
 	private Timer _filterDebounceTimer = new Timer();
+
+	private Timer _statusBarDebounceTimer = new Timer();
 
 	private ImageAttributes _bgLogoAttributes;
 
@@ -283,8 +281,13 @@ internal class MainWindow : Form
 		_boldAppSelectionFont = new Font(appSelection.Font, FontStyle.Bold);
 		_hiddenAppSelectionFont = new Font(appSelection.Font, FontStyle.Strikeout);
 		_originalTitle = Text;
-		_originalNumShownLabelText = lblNumAppsShown.Text;
-		_originalModifiedCountText = lblModifiedCount.Text;
+		_statusBarDebounceTimer.Interval = 200;
+		_statusBarDebounceTimer.Tick += delegate
+		{
+			_statusBarDebounceTimer.Stop();
+			UpdateStatusBarInner();
+		};
+		SteamData.AppInfoData.Modified += OnEntryModified;
 		SteamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
 		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)
@@ -609,18 +612,22 @@ internal class MainWindow : Form
 		UpdateStatusBar();
 	}
 
+	private void OnEntryModified(object sender, EventArgs e)
+	{
+		_statusBarDebounceTimer.Stop();
+		_statusBarDebounceTimer.Start();
+	}
+
 	private void UpdateStatusBar()
 	{
-		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, _totalEntryCount);
-		int modifiedCount = 0;
-		if (SteamData.AppInfoData != null)
-		{
-			foreach (var ent in SteamData.AppInfoData.Entries)
-			{
-				if (ent.IsModified) modifiedCount++;
-			}
-		}
-		lblModifiedCount.Text = string.Format(_originalModifiedCountText, modifiedCount);
+		UpdateStatusBarInner();
+	}
+
+	private void UpdateStatusBarInner()
+	{
+		lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _entries?.Count ?? 0, _totalEntryCount);
+		int modifiedCount = SteamData.AppInfoData?.Entries.Count(e => e.IsModified) ?? 0;
+		lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, modifiedCount);
 	}
 
 	private void ApplyIncrementalSearch()
@@ -746,7 +753,6 @@ internal class MainWindow : Form
 			}
 			Rectangle itemRectangle = appSelection.GetItemRectangle(appSelection.SelectedIndex);
 			appSelection.Invalidate(itemRectangle);
-			UpdateStatusBar();
 		}
 	}
 
@@ -767,7 +773,6 @@ internal class MainWindow : Form
 				int idx = _entries.IndexOf(appInfoEntry);
 				if (idx >= 0) appSelection.SelectedIndex = idx;
 				textSortAs.ForeColor = (appInfoEntry.HasSortAs ? _defaultSortAsColor : Color.Gray);
-				UpdateStatusBar();
 			}
 		}
 	}
@@ -784,7 +789,6 @@ internal class MainWindow : Form
 			}
 			entry.IsHidden = checkHidden.Checked;
 			appSelection.Invalidate();
-			UpdateStatusBar();
 		}
 	}
 
@@ -834,6 +838,8 @@ internal class MainWindow : Form
 	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
 	{
 		I18n.LanguageChanged -= OnLanguageChanged;
+		SteamData.AppInfoData.Modified -= OnEntryModified;
+		_statusBarDebounceTimer.Stop();
 		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
 		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); }
@@ -869,9 +875,6 @@ internal class MainWindow : Form
 			Text += Strings.MainWindow_UnsavedSuffix;
 		if (SteamData.NeedsApply)
 			Text += Strings.MainWindow_UnappliedSuffix;
-
-		_originalNumShownLabelText = Strings.MainWindow_StatusShown;
-		_originalModifiedCountText = Strings.MainWindow_StatusModified;
 
 		checkHidden.Text = Strings.MainWindow_CheckHidden;
 		checkCompleted.Text = Strings.MainWindow_CheckCompleted;
@@ -990,7 +993,6 @@ internal class MainWindow : Form
 			}
 			entry.IsCompleted = checkCompleted.Checked;
 			appSelection.Invalidate();
-			UpdateStatusBar();
 		}
 	}
 
@@ -1075,7 +1077,6 @@ internal class MainWindow : Form
 			Rectangle itemRect = appSelection.GetItemRectangle(appSelection.SelectedIndex);
 			appSelection.Invalidate(itemRect);
 		}
-		UpdateStatusBar();
 	}
 
 	private void appSelection_KeyPress(object sender, KeyPressEventArgs e)
@@ -1113,7 +1114,6 @@ internal class MainWindow : Form
 			int idx2 = _entries.IndexOf(appInfoEntry);
 			if (idx2 >= 0) appSelection.SelectedIndex = idx2;
 			Setup();
-			UpdateStatusBar();
 		}
 		catch (NotImplementedException)
 		{
@@ -1280,7 +1280,6 @@ internal class MainWindow : Form
 		// Refresh the list to reflect changes
 		appSelection.Invalidate();
 		Setup();
-		UpdateStatusBar();
 	}
 
 	private void OnBtnSave_Click(object sender, EventArgs e)
@@ -1341,7 +1340,6 @@ internal class MainWindow : Form
 				_undoManager.Push(entry, new[] { "appinfo", "common", "controller_support" }, PropertyType.String, prevController);
 			}
 			entry.SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
-			UpdateStatusBar();
 		}
 	}
 
@@ -1372,7 +1370,6 @@ internal class MainWindow : Form
 			Setup();
 		}
 		appSelection.Invalidate();
-		UpdateStatusBar();
 	}
 
 	private void OnBtnBatchReplace_Click(object sender, EventArgs e)
@@ -1387,7 +1384,6 @@ internal class MainWindow : Form
 				ClearDisplayNameCache();
 				SortEntries();
 				Setup();
-				UpdateStatusBar();
 			}
 		}
 	}
@@ -1429,7 +1425,6 @@ internal class MainWindow : Form
 				}
 			}
 			SetEntryVR(entry, listVR.SelectedIndex != 0);
-			UpdateStatusBar();
 		}
 	}
 
@@ -1446,7 +1441,6 @@ internal class MainWindow : Form
 			SetEntryVR(entry, value == VRBatch.ValueTag.Remove);
 		}
 		Setup();
-		UpdateStatusBar();
 	}
 
 	private void OnFilterSelectorMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e)
