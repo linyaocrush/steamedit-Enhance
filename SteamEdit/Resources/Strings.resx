@@ -385,6 +385,22 @@
     <value>Close</value>
   </data>
 
+  <!-- Shortcuts -->
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>Keyboard Shortcuts</value>
+  </data>
+  <data name="Tooltip_Shortcuts" xml:space="preserve">
+    <value>Keyboard Shortcuts</value>
+  </data>
+  <data name="Shortcuts_Content" xml:space="preserve">
+    <value>Ctrl+S      Save
+Ctrl+Enter  Save &amp; Apply
+Ctrl+Z      Undo
+Ctrl+F      Focus search box
+Page Up     Previous game
+Page Down   Next game</value>
+  </data>
+
   <!-- Messages -->
   <data name="Msg_UnsavedChanges" xml:space="preserve">
     <value>You have unsaved changes! Do you want to save before closing?</value>

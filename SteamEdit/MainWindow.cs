@@ -89,6 +89,8 @@ internal class MainWindow : Form
 
 	private Button btnHelp;
 
+	private Button btnShortcuts;
+
 	private Button btnTranslate;
 
 	private Button btnSearch;
@@ -952,6 +954,7 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnSaveApplyRestart, Strings.Tooltip_SaveApplyRestart);
 		toolTips.SetToolTip(btnSettings, Strings.Tooltip_Settings);
 		toolTips.SetToolTip(btnHelp, Strings.Tooltip_About);
+		toolTips.SetToolTip(btnShortcuts, Strings.Tooltip_Shortcuts);
 		toolTips.SetToolTip(btnControllerBatch, Strings.Tooltip_BatchController);
 		toolTips.SetToolTip(btnVRBatch, Strings.Tooltip_BatchVR);
 		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
@@ -1577,6 +1580,35 @@ internal class MainWindow : Form
 		using (var dlg = new About()) dlg.ShowDialog(this);
 	}
 
+	private void OnBtnShortcuts_Click(object sender, EventArgs e)
+	{
+		using var dlg = new Form();
+		dlg.Text = Strings.Shortcuts_Title;
+		dlg.StartPosition = FormStartPosition.CenterParent;
+		dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+		dlg.MaximizeBox = false;
+		dlg.MinimizeBox = false;
+		dlg.ShowInTaskbar = false;
+		dlg.ClientSize = new Size(320, 240);
+
+		var lbl = new Label();
+		lbl.Dock = DockStyle.Fill;
+		lbl.Padding = new Padding(12);
+		lbl.Text = Strings.Shortcuts_Content;
+
+		var btnClose = new Button();
+		btnClose.Text = Strings.About_BtnClose;
+		btnClose.Dock = DockStyle.Bottom;
+		btnClose.Height = 30;
+		btnClose.Click += (_, _) => dlg.Close();
+
+		dlg.AcceptButton = btnClose;
+		dlg.CancelButton = btnClose;
+		dlg.Controls.Add(lbl);
+		dlg.Controls.Add(btnClose);
+		dlg.ShowDialog(this);
+	}
+
 	private void appSelection_MouseMove(object sender, MouseEventArgs e)
 	{
 		Point p = appSelection.PointToClient(Control.MousePosition);
@@ -1749,6 +1781,7 @@ internal class MainWindow : Form
 		this.btnSaveApplyRestart = new System.Windows.Forms.Button();
 		this.btnSettings = new System.Windows.Forms.Button();
 		this.btnHelp = new System.Windows.Forms.Button();
+		this.btnShortcuts = new System.Windows.Forms.Button();
 		this.lblVRCategory = new System.Windows.Forms.Label();
 		System.Windows.Forms.StatusStrip statusStrip = new System.Windows.Forms.StatusStrip();
 		flowLayoutPanel.SuspendLayout();
@@ -1891,6 +1924,14 @@ internal class MainWindow : Form
 		this.toolTips.SetToolTip(this.btnHelp, "About");
 		this.btnHelp.UseVisualStyleBackColor = true;
 		this.btnHelp.Click += new System.EventHandler(OnHelp_Click);
+		this.btnShortcuts.Location = new System.Drawing.Point(78, 3);
+		this.btnShortcuts.Name = "btnShortcuts";
+		this.btnShortcuts.Size = new System.Drawing.Size(34, 34);
+		this.btnShortcuts.TabIndex = 28;
+		this.btnShortcuts.Text = "H";
+		this.toolTips.SetToolTip(this.btnShortcuts, "Keyboard Shortcuts");
+		this.btnShortcuts.UseVisualStyleBackColor = true;
+		this.btnShortcuts.Click += new System.EventHandler(OnBtnShortcuts_Click);
 		this.lblVRCategory.AutoSize = true;
 		this.lblVRCategory.BackColor = System.Drawing.Color.Transparent;
 		this.lblVRCategory.Location = new System.Drawing.Point(79, 126);
@@ -2088,6 +2129,7 @@ internal class MainWindow : Form
 		this.textSortAs.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayoutPanel3.AutoSize = true;
+		this.flowLayoutPanel3.Controls.Add(this.btnShortcuts);
 		this.flowLayoutPanel3.Controls.Add(this.btnHelp);
 		this.flowLayoutPanel3.Controls.Add(this.btnSettings);
 		this.flowLayoutPanel3.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;

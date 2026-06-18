@@ -385,6 +385,22 @@
     <value>关闭</value>
   </data>
 
+  <!-- Shortcuts -->
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>快捷键</value>
+  </data>
+  <data name="Tooltip_Shortcuts" xml:space="preserve">
+    <value>快捷键</value>
+  </data>
+  <data name="Shortcuts_Content" xml:space="preserve">
+    <value>Ctrl+S      保存
+Ctrl+Enter  保存并应用
+Ctrl+Z      撤销
+Ctrl+F      聚焦搜索框
+Page Up     上一个游戏
+Page Down   下一个游戏</value>
+  </data>
+
   <!-- Messages -->
   <data name="Msg_UnsavedChanges" xml:space="preserve">
     <value>您有未保存的更改！是否在关闭前保存？</value>
