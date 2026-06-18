@@ -172,7 +172,9 @@ internal class MainWindow : Form
 		_filterDebounceTimer.Tick += delegate
 		{
 			_filterDebounceTimer.Stop();
-			RefreshGameList();
+			ApplyIncrementalSearch();
+			Setup();
+			lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
 		};
 		_currentFilters = Settings.Default.Filters;
 		_filterImages = new Dictionary<AppInfoEntryType, Image>
@@ -563,13 +565,14 @@ internal class MainWindow : Form
 
 	private void RefreshGameList()
 	{
-		object selectedItem = appSelection.SelectedItem;
+		var selectedEntry = GetSelectedEntry();
 		var showMode = Settings.Default.FiltersShowEntries;
-		string fuzzyPattern = appFilterText.Text;
-		string[] patternParts = fuzzyPattern.ToLower().Split(' ', '\t', '\u00a0');
 
+		ClearDisplayNameCache();
+
+		// \u7b2c\u4e00\u6b65\uff1a\u7c7b\u578b\u8fc7\u6ee4 \u2192 _baseEntries
 		int totalCount = 0;
-		var result = new List<IAppInfoEntry>();
+		_baseEntries = new List<IAppInfoEntry>();
 		foreach (var ent in SteamData.AppInfoData.Entries)
 		{
 			if (ent.Name == null) continue;
@@ -577,18 +580,67 @@ internal class MainWindow : Form
 			if ((ent.Type & _currentFilters) == 0) continue;
 			if (showMode == ShowEntriesMode.OnlyModified && !ent.IsModified) continue;
 			if (showMode == ShowEntriesMode.OnlyUnmodified && ent.IsModified) continue;
-			if (!IsFuzzyMatch(ent.Name, patternParts)) continue;
-			result.Add(ent);
+			_baseEntries.Add(ent);
 		}
-		_entries = result;
+		_totalEntryCount = totalCount;
+
+		// \u7b2c\u4e8c\u6b65\uff1a\u641c\u7d22\u8fc7\u6ee4\uff08\u91cd\u7f6e\u4e3a\u5168\u91cf\uff09
+		_currentSearchTerm = "";
+		ApplyIncrementalSearch();
+
 		btnControllerBatch.Enabled = _entries.Count > 0;
-		SortEntries();
-		appSelection.SelectedItem = selectedItem;
+
+		// \u6062\u590d\u9009\u4e2d\u9879
+		if (selectedEntry != null)
+		{
+			int newIdx = _entries.IndexOf(selectedEntry);
+			if (newIdx >= 0) appSelection.SelectedIndex = newIdx;
+		}
 		if (appSelection.SelectedIndex < 0 && appSelection.Items.Count > 0)
 			appSelection.SelectedIndex = 0;
+
 		Setup();
-		_totalEntryCount = totalCount;
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
+	}
+
+	private void ApplyIncrementalSearch()
+	{
+		string newText = appFilterText.Text ?? "";
+		string trimmed = newText.Trim();
+
+		if (string.IsNullOrEmpty(trimmed))
+		{
+			_entries = new List<IAppInfoEntry>(_baseEntries);
+			_currentSearchTerm = "";
+			SortEntries();
+			return;
+		}
+
+		string[] patternParts = trimmed.ToLower().Split(' ', '\t', ' ');
+
+		List<IAppInfoEntry> source;
+		if (!string.IsNullOrEmpty(_currentSearchTerm) && trimmed.StartsWith(_currentSearchTerm, StringComparison.OrdinalIgnoreCase))
+		{
+			source = _entries;  // \u7f29\u5c0f\u8303\u56f4
+		}
+		else if (!string.IsNullOrEmpty(_currentSearchTerm) && _currentSearchTerm.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
+		{
+			source = _baseEntries;  // \u6269\u5927\u8303\u56f4
+		}
+		else
+		{
+			source = _baseEntries;  // \u5b8c\u5168\u66ff\u6362
+		}
+
+		_entries = new List<IAppInfoEntry>();
+		foreach (var ent in source)
+		{
+			if (IsFuzzyMatch(GetDisplayName(ent), patternParts))
+				_entries.Add(ent);
+		}
+
+		_currentSearchTerm = trimmed;
+		SortEntries();
 	}
 
 	private void OnAppSelection_SelectedIndexChanged(object sender, EventArgs e)
