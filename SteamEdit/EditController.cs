@@ -31,7 +31,6 @@ internal class EditController
 	private Color _defaultNameColor;
 	private Color _defaultSortAsColor;
 
-	public event EventHandler<IAppInfoEntry> EntryModified;
 	public event EventHandler<IAppInfoEntry> NeedsResort;
 
 	public EditController(

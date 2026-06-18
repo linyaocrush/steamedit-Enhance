@@ -103,11 +103,6 @@ internal class MainWindow : Form
 			_ctx, _listManager, textGameName, textSortAs,
 			checkHidden, checkCompleted, listControllerSupport,
 			listVR, listEntryType);
-		_editController.EntryModified += (_, _) =>
-		{
-			_listManager.InvalidateAll();
-			UpdateStatusBar();
-		};
 		_editController.NeedsResort += (_, entry) => _listManager.ResortEntry(entry);
 
 		// 订阅 SteamData 事件
