@@ -369,6 +369,9 @@
   <data name="About_LabelAuthor" xml:space="preserve">
     <value>作者：</value>
   </data>
+  <data name="About_LabelModifiedBy" xml:space="preserve">
+    <value>修改者：</value>
+  </data>
   <data name="About_AppName" xml:space="preserve">
     <value>SteamEdit</value>
   </data>

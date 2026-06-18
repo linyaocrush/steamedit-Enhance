@@ -47,6 +47,8 @@ public class About : Form
 			if (btnClose != null) btnClose.Text = Strings.About_BtnClose;
 			var linkRN = panel.Controls.Find("linkReleaseNotes", true).FirstOrDefault() as LinkLabel;
 			if (linkRN != null) linkRN.Text = Strings.About_ReleaseNotes;
+			var lblModified = panel.Controls.Find("labelModified", true).FirstOrDefault();
+			if (lblModified != null) lblModified.Text = Strings.About_LabelModifiedBy + " linyao crush";
 		}
 	}
 
