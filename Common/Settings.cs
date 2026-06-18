@@ -16,6 +16,9 @@ internal class Settings
 
 	private readonly Dictionary<string, object> _values;
 
+	private bool _isDirty;
+	private bool _suppressDirtyTracking;
+
 	[DefaultValue(true)]
 	public bool EnableCompleted
 	{
