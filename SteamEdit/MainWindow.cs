@@ -23,6 +23,9 @@ internal class MainWindow : Form
 	private string _originalNumShownLabelText;
 
 	private List<IAppInfoEntry> _entries;
+	private List<IAppInfoEntry> _baseEntries = new();
+	private string _currentSearchTerm = "";
+	private readonly Dictionary<int, string> _displayNames = new();
 	private int _totalEntryCount;
 
 	private static readonly string[] ControllerRawValues = { "none", "partial", "full" };
@@ -367,6 +370,39 @@ internal class MainWindow : Form
 		{
 			Text += Strings.MainWindow_UnappliedSuffix;
 		}
+	}
+
+	private IAppInfoEntry GetSelectedEntry()
+	{
+		int idx = appSelection.SelectedIndex;
+		return idx >= 0 && idx < _entries.Count ? _entries[idx] : null;
+	}
+
+	private string GetDisplayName(IAppInfoEntry entry)
+	{
+		if (_displayNames.TryGetValue(entry.ID, out var name)) return name;
+		name = entry.ToString();
+		_displayNames[entry.ID] = name;
+		return name;
+	}
+
+	private void InvalidateDisplayName(IAppInfoEntry entry)
+	{
+		_displayNames.Remove(entry.ID);
+	}
+
+	private void ClearDisplayNameCache()
+	{
+		_displayNames.Clear();
+	}
+
+	private void RebuildListBoxItems()
+	{
+		appSelection.BeginUpdate();
+		appSelection.Items.Clear();
+		for (int i = 0; i < _entries.Count; i++)
+			appSelection.Items.Add(i);
+		appSelection.EndUpdate();
 	}
 
 	private void SortEntries()
