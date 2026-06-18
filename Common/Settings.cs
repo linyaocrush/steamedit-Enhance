@@ -444,10 +444,11 @@ internal class Settings
 		else if (File.Exists(xmlPath))
 		{
 			LoadFromXml(xmlPath, properties);
-			// 迁移：直接写出 JSON
+			// 迁移：直接写出 JSON 并删除旧 XML
 			try
 			{
 				SaveJson(jsonPath);
+				File.Delete(xmlPath);
 				Log.WriteLine("Settings: Migrated from XML to JSON");
 			}
 			catch (Exception ex)
@@ -495,6 +496,9 @@ internal class Settings
 
 	private static object DeserializeJsonElement(JsonElement element, Type targetType)
 	{
+		if (element.ValueKind == JsonValueKind.Null || element.ValueKind == JsonValueKind.Undefined)
+			return null;
+
 		// SaveJson 将所有值存为字符串，所以需要先尝试字符串解析
 		if (element.ValueKind == JsonValueKind.String)
 		{
@@ -555,7 +559,9 @@ internal class Settings
 			dict[prop.Name] = value?.ToString() ?? "";
 		}
 		string json = JsonSerializer.Serialize(dict, _jsonOptions);
-		File.WriteAllText(path, json);
+		string tempPath = path + ".tmp";
+		File.WriteAllText(tempPath, json);
+		File.Move(tempPath, path, overwrite: true);
 	}
 
 	public void Save()
