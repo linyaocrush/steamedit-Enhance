@@ -27,6 +27,9 @@ internal class BatchReplaceDialog : Form
     private bool _caseSensitive;
     private bool _regexMode;
 
+    private static readonly Color HighlightColor = Color.FromArgb(80, 70, 130, 230);
+    private static readonly Color HighlightColorSelected = Color.FromArgb(120, 70, 130, 230);
+
     public BatchReplaceDialog(IReadOnlyList<IAppInfoEntry> entries)
     {
         _entries = entries;
@@ -51,6 +54,11 @@ internal class BatchReplaceDialog : Form
         btnCancel.Text = Strings.BatchReplace_BtnCancel;
         toolTips.SetToolTip(btnCaseSensitive, Strings.BatchReplace_CaseSensitive);
         toolTips.SetToolTip(btnRegex, Strings.BatchReplace_Regex);
+        if (listPreview.Columns.Count >= 3)
+        {
+            listPreview.Columns[1].Text = Strings.BatchReplace_PreviewOriginal;
+            listPreview.Columns[2].Text = Strings.BatchReplace_PreviewResult;
+        }
     }
 
     protected override void Dispose(bool disposing)
@@ -231,7 +239,53 @@ internal class BatchReplaceDialog : Form
 
     private void OnListPreview_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
     {
-        e.DrawDefault = true;
+        if (e.ColumnIndex == 0)
+        {
+            e.DrawDefault = true;
+            return;
+        }
+
+        var ranges = e.Item.Tag as List<(int Index, int Length)>;
+        if (ranges == null || ranges.Count == 0)
+        {
+            e.DrawDefault = true;
+            return;
+        }
+
+        string text = e.SubItem.Text;
+        bool selected = e.Item.Selected;
+        var textColor = selected ? SystemColors.HighlightText : SystemColors.WindowText;
+        var bgColor = selected ? HighlightColorSelected : HighlightColor;
+
+        int x = e.Bounds.X + 2;
+        int y = e.Bounds.Y;
+        int lastIdx = 0;
+
+        foreach (var (idx, len) in ranges)
+        {
+            if (idx > lastIdx)
+            {
+                string before = text.Substring(lastIdx, idx - lastIdx);
+                TextRenderer.DrawText(e.Graphics, before, Font, new Point(x, y), textColor);
+                x += TextRenderer.MeasureText(e.Graphics, before, Font).Width;
+            }
+
+            string match = text.Substring(idx, len);
+            var matchSize = TextRenderer.MeasureText(e.Graphics, match, Font);
+            using (var brush = new SolidBrush(bgColor))
+            {
+                e.Graphics.FillRectangle(brush, x, y, matchSize.Width, matchSize.Height);
+            }
+            TextRenderer.DrawText(e.Graphics, match, Font, new Point(x, y), textColor);
+            x += matchSize.Width;
+            lastIdx = idx + len;
+        }
+
+        if (lastIdx < text.Length)
+        {
+            string after = text.Substring(lastIdx);
+            TextRenderer.DrawText(e.Graphics, after, Font, new Point(x, y), textColor);
+        }
     }
 
     private void UpdatePreview()
