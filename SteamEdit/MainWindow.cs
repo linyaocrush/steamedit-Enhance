@@ -22,6 +22,8 @@ internal class MainWindow : Form
 
 	private string _originalNumShownLabelText;
 
+	private string _originalModifiedCountText;
+
 	private List<IAppInfoEntry> _entries;
 	private List<IAppInfoEntry> _baseEntries = new();
 	private string _currentSearchTerm = "";
@@ -120,6 +122,8 @@ internal class MainWindow : Form
 
 	private ToolStripStatusLabel lblNumAppsShown;
 
+	private ToolStripStatusLabel lblModifiedCount;
+
 	private Label lblSortAs;
 
 	private Label lblName;
@@ -174,7 +178,7 @@ internal class MainWindow : Form
 			_filterDebounceTimer.Stop();
 			ApplyIncrementalSearch();
 			Setup();
-			lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
+			UpdateStatusBar();
 		};
 		_currentFilters = Settings.Default.Filters;
 		_filterImages = new Dictionary<AppInfoEntryType, Image>
@@ -280,6 +284,7 @@ internal class MainWindow : Form
 		_hiddenAppSelectionFont = new Font(appSelection.Font, FontStyle.Strikeout);
 		_originalTitle = Text;
 		_originalNumShownLabelText = lblNumAppsShown.Text;
+		_originalModifiedCountText = lblModifiedCount.Text;
 		SteamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
 		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)
@@ -601,7 +606,18 @@ internal class MainWindow : Form
 			appSelection.SelectedIndex = 0;
 
 		Setup();
+		UpdateStatusBar();
+	}
+
+	private void UpdateStatusBar()
+	{
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries.Count, _totalEntryCount);
+		int modifiedCount = 0;
+		foreach (var ent in SteamData.AppInfoData.Entries)
+		{
+			if (ent.IsModified) modifiedCount++;
+		}
+		lblModifiedCount.Text = string.Format(_originalModifiedCountText, modifiedCount);
 	}
 
 	private void ApplyIncrementalSearch()
@@ -849,6 +865,7 @@ internal class MainWindow : Form
 			Text += Strings.MainWindow_UnappliedSuffix;
 
 		_originalNumShownLabelText = Strings.MainWindow_StatusShown;
+		_originalModifiedCountText = Strings.MainWindow_StatusModified;
 
 		checkHidden.Text = Strings.MainWindow_CheckHidden;
 		checkCompleted.Text = Strings.MainWindow_CheckCompleted;
@@ -931,7 +948,7 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
 
 		// Refresh status bar
-		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, _totalEntryCount);
+		UpdateStatusBar();
 
 		ClearDisplayNameCache();
 		Setup();
@@ -1051,6 +1068,7 @@ internal class MainWindow : Form
 			Rectangle itemRect = appSelection.GetItemRectangle(appSelection.SelectedIndex);
 			appSelection.Invalidate(itemRect);
 		}
+		UpdateStatusBar();
 	}
 
 	private void appSelection_KeyPress(object sender, KeyPressEventArgs e)
@@ -1088,6 +1106,7 @@ internal class MainWindow : Form
 			int idx2 = _entries.IndexOf(appInfoEntry);
 			if (idx2 >= 0) appSelection.SelectedIndex = idx2;
 			Setup();
+			UpdateStatusBar();
 		}
 		catch (NotImplementedException)
 		{
@@ -1677,6 +1696,7 @@ internal class MainWindow : Form
 		this.btnSearch = new System.Windows.Forms.Button();
 		this.btnBatchTranslate = new System.Windows.Forms.Button();
 		this.lblNumAppsShown = new System.Windows.Forms.ToolStripStatusLabel();
+		this.lblModifiedCount = new System.Windows.Forms.ToolStripStatusLabel();
 		this.checkCompleted = new System.Windows.Forms.CheckBox();
 		this.checkHidden = new System.Windows.Forms.CheckBox();
 		this.toolTips = new System.Windows.Forms.ToolTip(this.components);
@@ -1853,7 +1873,7 @@ internal class MainWindow : Form
 		this.lblVRCategory.Size = new System.Drawing.Size(70, 13);
 		this.lblVRCategory.TabIndex = 24;
 		this.lblVRCategory.Text = "VR Category:";
-		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[1] { this.lblNumAppsShown });
+		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[2] { this.lblNumAppsShown, this.lblModifiedCount });
 		statusStrip.Location = new System.Drawing.Point(0, 306);
 		statusStrip.Name = "statusStrip1";
 		statusStrip.Size = new System.Drawing.Size(227, 22);
@@ -1863,6 +1883,9 @@ internal class MainWindow : Form
 		this.lblNumAppsShown.Name = "lblNumAppsShown";
 		this.lblNumAppsShown.Size = new System.Drawing.Size(90, 17);
 		this.lblNumAppsShown.Text = "Shown: ({0}/{1})";
+		this.lblModifiedCount.Name = "lblModifiedCount";
+		this.lblModifiedCount.Size = new System.Drawing.Size(90, 17);
+		this.lblModifiedCount.Text = "Modified: {0}";
 		this.checkCompleted.AutoSize = true;
 		this.checkCompleted.BackColor = System.Drawing.Color.Transparent;
 		this.checkCompleted.Location = new System.Drawing.Point(129, 59);

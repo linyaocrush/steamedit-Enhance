@@ -95,6 +95,9 @@
   <data name="MainWindow_StatusShown" xml:space="preserve">
     <value>显示：({0}/{1})</value>
   </data>
+  <data name="MainWindow_StatusModified" xml:space="preserve">
+    <value>已修改：{0}</value>
+  </data>
   <data name="MainWindow_Filter_All" xml:space="preserve">
     <value>全部</value>
   </data>
