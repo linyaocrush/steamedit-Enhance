@@ -42,7 +42,7 @@ public class About : Form
 		if (panel != null)
 		{
 			var lbl = panel.Controls.Find("label1", true).FirstOrDefault();
-			if (lbl != null) lbl.Text = "steamedit-Enhance";
+			if (lbl != null) lbl.Text = Strings.About_AppName;
 			var lbl2 = panel.Controls.Find("label2", true).FirstOrDefault();
 			if (lbl2 != null) lbl2.Text = Strings.About_LabelAuthor;
 			var lbl3 = panel.Controls.Find("label3", true).FirstOrDefault();

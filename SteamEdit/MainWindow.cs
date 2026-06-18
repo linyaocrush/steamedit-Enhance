@@ -654,7 +654,7 @@ internal class MainWindow : Form
 
 	private void Setup()
 	{
-		bool flag = appSelection.SelectedItem != null;
+		bool flag = appSelection.SelectedIndex >= 0;
 		textGameName.Enabled = flag;
 		textSortAs.Enabled = flag;
 		checkHidden.Enabled = flag;
