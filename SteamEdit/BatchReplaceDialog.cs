@@ -33,7 +33,7 @@ internal class BatchReplaceDialog : Form
         InitializeComponent();
         I18n.LanguageChanged += OnLanguageChanged;
         ApplyLanguage();
-        UpdateMatchCount();
+        UpdatePreview();
     }
 
     private void OnLanguageChanged(object sender, EventArgs e)
@@ -125,6 +125,7 @@ internal class BatchReplaceDialog : Form
         textReplace.Name = "textReplace";
         textReplace.Size = new Size(318, 20);
         textReplace.TabIndex = 3;
+        textReplace.TextChanged += (s, e) => UpdatePreview();
 
         // lblMatchCount
         lblMatchCount.AutoSize = true;
@@ -198,7 +199,7 @@ internal class BatchReplaceDialog : Form
 
     private void OnTextFind_TextChanged(object sender, EventArgs e)
     {
-        UpdateMatchCount();
+        UpdatePreview();
     }
 
     private void OnBtnCaseSensitive_Click(object sender, EventArgs e)
@@ -206,7 +207,7 @@ internal class BatchReplaceDialog : Form
         _caseSensitive = !_caseSensitive;
         btnCaseSensitive.BackColor = _caseSensitive ? SystemColors.Highlight : SystemColors.Control;
         btnCaseSensitive.ForeColor = _caseSensitive ? SystemColors.HighlightText : SystemColors.ControlText;
-        UpdateMatchCount();
+        UpdatePreview();
     }
 
     private void OnBtnRegex_Click(object sender, EventArgs e)
@@ -214,7 +215,7 @@ internal class BatchReplaceDialog : Form
         _regexMode = !_regexMode;
         btnRegex.BackColor = _regexMode ? SystemColors.Highlight : SystemColors.Control;
         btnRegex.ForeColor = _regexMode ? SystemColors.HighlightText : SystemColors.ControlText;
-        UpdateMatchCount();
+        UpdatePreview();
     }
 
     private void OnListPreview_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
@@ -233,23 +234,36 @@ internal class BatchReplaceDialog : Form
         e.DrawDefault = true;
     }
 
-    private void UpdateMatchCount()
+    private void UpdatePreview()
     {
         string find = textFind.Text;
+        string replace = textReplace.Text ?? "";
         if (string.IsNullOrEmpty(find))
         {
             lblMatchCount.Text = string.Format(Strings.BatchReplace_MatchCount, 0);
             btnReplaceAll.Enabled = false;
+            listPreview.Items.Clear();
             return;
         }
 
         int count = 0;
+        listPreview.BeginUpdate();
+        listPreview.Items.Clear();
         try
         {
             foreach (var entry in _entries)
             {
-                if (IsMatch(entry.Name, find))
-                    count++;
+                if (!IsMatch(entry.Name, find)) continue;
+
+                count++;
+                string result = ComputeResult(entry.Name, find, replace);
+                var ranges = GetMatchRanges(entry.Name, find);
+
+                var item = new ListViewItem(count.ToString());
+                item.SubItems.Add(entry.Name);
+                item.SubItems.Add(result);
+                item.Tag = ranges;
+                listPreview.Items.Add(item);
             }
             lblMatchCount.Text = string.Format(Strings.BatchReplace_MatchCount, count);
             btnReplaceAll.Enabled = count > 0;
@@ -259,6 +273,50 @@ internal class BatchReplaceDialog : Form
             lblMatchCount.Text = string.Format(Strings.BatchReplace_InvalidRegex, ex.Message);
             btnReplaceAll.Enabled = false;
         }
+        finally
+        {
+            listPreview.EndUpdate();
+        }
+    }
+
+    private string ComputeResult(string original, string find, string replace)
+    {
+        if (_regexMode)
+        {
+            var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+            return Regex.Replace(original, find, replace, options);
+        }
+        else
+        {
+            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            return ReplaceWithStringComparison(original, find, replace, comparison);
+        }
+    }
+
+    private List<(int Index, int Length)> GetMatchRanges(string text, string pattern)
+    {
+        var ranges = new List<(int Index, int Length)>();
+        if (_regexMode)
+        {
+            var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+            foreach (Match m in Regex.Matches(text, pattern, options))
+            {
+                ranges.Add((m.Index, m.Length));
+            }
+        }
+        else
+        {
+            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            int pos = 0;
+            while (pos < text.Length)
+            {
+                int idx = text.IndexOf(pattern, pos, comparison);
+                if (idx < 0) break;
+                ranges.Add((idx, pattern.Length));
+                pos = idx + pattern.Length;
+            }
+        }
+        return ranges;
     }
 
     private bool IsMatch(string text, string pattern)
