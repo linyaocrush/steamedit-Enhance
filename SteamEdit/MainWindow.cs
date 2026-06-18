@@ -407,7 +407,7 @@ internal class MainWindow : Form
 
 	private void SortEntries()
 	{
-		IAppInfoEntry selectedItem = appSelection.SelectedItem as IAppInfoEntry;
+		var selectedEntry = GetSelectedEntry();
 		string sortField = Settings.Default.SortField;
 		bool descending = Settings.Default.SortDescending;
 
@@ -424,7 +424,7 @@ internal class MainWindow : Form
 				return num;
 			});
 		}
-		else // "Name" or default
+		else
 		{
 			var keys = new Dictionary<IAppInfoEntry, string>(_entries.Count);
 			foreach (var e in _entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
@@ -440,20 +440,23 @@ internal class MainWindow : Form
 			});
 		}
 
-		appSelection.BeginUpdate();
-		appSelection.Items.Clear();
-		foreach (var entry in _entries)
-			appSelection.Items.Add(entry);
-		appSelection.EndUpdate();
-		appSelection.SelectedItem = selectedItem;
+		RebuildListBoxItems();
+
+		// 恢复选中项
+		if (selectedEntry != null)
+		{
+			int newIdx = _entries.IndexOf(selectedEntry);
+			if (newIdx >= 0) appSelection.SelectedIndex = newIdx;
+		}
 		if (appSelection.SelectedIndex < 0 && appSelection.Items.Count > 0)
 			appSelection.SelectedIndex = 0;
 	}
 
 	private void ResortEntry(IAppInfoEntry entry)
 	{
-		IAppInfoEntry selectedItem = appSelection.SelectedItem as IAppInfoEntry;
+		var selectedEntry = GetSelectedEntry();
 		int i = _entries.IndexOf(entry);
+		if (i < 0) return;
 		int index = i;
 		while (i > 0 && StringTitleComparer.CompareStrings(entry.SortAs, _entries[i - 1].SortAs) < 0)
 		{
@@ -466,11 +469,21 @@ internal class MainWindow : Form
 			_entries[i] = _entries[i + 1];
 			_entries[i + 1] = entry;
 		}
+
+		// 重建所有受影响位置的索引
 		appSelection.BeginUpdate();
-		appSelection.Items.RemoveAt(index);
-		appSelection.Items.Insert(i, entry);
+		int lo = Math.Min(index, i);
+		int hi = Math.Max(index, i);
+		for (int j = lo; j <= hi; j++)
+			appSelection.Items[j] = j;
 		appSelection.EndUpdate();
-		appSelection.SelectedItem = selectedItem;
+
+		// 恢复选中项
+		if (selectedEntry != null)
+		{
+			int newIdx = _entries.IndexOf(selectedEntry);
+			if (newIdx >= 0) appSelection.SelectedIndex = newIdx;
+		}
 	}
 
 	private bool IsOnScreen()
