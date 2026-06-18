@@ -422,6 +422,12 @@ Page Down   下一個遊戲</value>
   <data name="Tooltip_BatchReplace" xml:space="preserve">
     <value>批次尋找和取代遊戲名稱</value>
   </data>
+  <data name="BatchReplace_PreviewOriginal" xml:space="preserve">
+    <value>原始名稱</value>
+  </data>
+  <data name="BatchReplace_PreviewResult" xml:space="preserve">
+    <value>替換結果</value>
+  </data>
   <data name="Sort_Title" xml:space="preserve">
     <value>排序</value>
   </data>

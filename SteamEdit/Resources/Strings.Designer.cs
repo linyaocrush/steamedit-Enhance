@@ -210,6 +210,9 @@ namespace SteamEdit {
         internal static string BatchReplace_InvalidRegex => ResourceManager.GetString("BatchReplace_InvalidRegex", resourceCulture);
         internal static string BatchReplace_ConfirmReplace => ResourceManager.GetString("BatchReplace_ConfirmReplace", resourceCulture);
 
+        internal static string BatchReplace_PreviewOriginal => ResourceManager.GetString("BatchReplace_PreviewOriginal", resourceCulture);
+        internal static string BatchReplace_PreviewResult => ResourceManager.GetString("BatchReplace_PreviewResult", resourceCulture);
+
         internal static string Tooltip_BatchReplace => ResourceManager.GetString("Tooltip_BatchReplace", resourceCulture);
         internal static string MainWindow_BatchReplace => ResourceManager.GetString("MainWindow_BatchReplace", resourceCulture);
     }

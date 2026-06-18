@@ -566,6 +566,12 @@ Page Down   Next game</value>
   <data name="BatchReplace_ConfirmReplace" xml:space="preserve">
     <value>Replace {0} occurrences in {1} games?</value>
   </data>
+  <data name="BatchReplace_PreviewOriginal" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="BatchReplace_PreviewResult" xml:space="preserve">
+    <value>Result</value>
+  </data>
   <data name="Tooltip_BatchReplace" xml:space="preserve">
     <value>Batch find and replace game names</value>
   </data>
