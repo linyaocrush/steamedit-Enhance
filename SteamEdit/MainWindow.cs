@@ -932,6 +932,7 @@ internal class MainWindow : Form
 		// Refresh status bar
 		lblNumAppsShown.Text = string.Format(_originalNumShownLabelText, _entries?.Count ?? 0, _totalEntryCount);
 
+		ClearDisplayNameCache();
 		Setup();
 	}
 
@@ -1011,9 +1012,9 @@ internal class MainWindow : Form
 		var record = _undoManager.Pop();
 
 		// 如果撤销的游戏不是当前选中的，切换到该游戏
-		if (appSelection.SelectedItem != record.Entry)
+		if (GetSelectedEntry() != record.Entry)
 		{
-			int idx = appSelection.Items.IndexOf(record.Entry);
+			int idx = _entries.IndexOf(record.Entry);
 			if (idx >= 0)
 			{
 				appSelection.SelectedIndex = idx;
@@ -1031,11 +1032,13 @@ internal class MainWindow : Form
 		{
 			// 恢复到原始值：用 RevertModifiedProperty 从 Changes 中移除该属性
 			record.Entry.RevertModifiedProperty(record.PropertyPath);
+			InvalidateDisplayName(record.Entry);
 		}
 		else
 		{
 			// 恢复到中间值：用 SetPropertyValue 更新属性并保留 Changes 记录
 			record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
+			InvalidateDisplayName(record.Entry);
 		}
 
 		_isSettingUpEntry = false;
