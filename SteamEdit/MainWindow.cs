@@ -747,6 +747,7 @@ internal class MainWindow : Form
 		btnSaveApplyRestart.Text = Strings.MainWindow_BtnSaveApplyRestart;
 		btnTranslate.Text = Strings.MainWindow_BtnTranslate;
 		btnSearch.Text = Strings.MainWindow_BtnSearch;
+		btnRevert.Text = Strings.MainWindow_BtnRevert;
 		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
 		btnBatchTranslate.Text = Strings.MainWindow_BatchTranslate;
 		toolTips.SetToolTip(btnBatchTranslate, Strings.Tooltip_BatchTranslate);
@@ -797,6 +798,21 @@ internal class MainWindow : Form
 
 	private void OnMainWindow_KeyDown(object sender, KeyEventArgs e)
 	{
+		if (e.Control && e.KeyCode == Keys.S)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			try
+			{
+				SteamData.Save();
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
+			}
+			return;
+		}
+
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
