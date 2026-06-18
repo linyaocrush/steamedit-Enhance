@@ -41,8 +41,14 @@ internal class UndoManager
 
         var record = _undoStack.Pop();
 
-        // RevertModifiedProperty 会：1) 从 Changes 中移除该属性的修改
-        // 2) 从原始数据备份中恢复该属性的值 3) 如果 Changes 为空则完全 Revert 条目
-        record.Entry.RevertModifiedProperty(record.PropertyPath);
+        // 用 SetPropertyValue 恢复到上一步的值（而非原始值）
+        // SetPropertyValue 会更新 live 属性表、更新 Changes 增量记录、触发 Modified 事件
+        record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
+
+        // 如果 Changes 为空，说明所有修改都已撤销，清除修改标记
+        if (record.Entry.Modification?.Changes.Count == 0)
+        {
+            record.Entry.Revert();
+        }
     }
 }
