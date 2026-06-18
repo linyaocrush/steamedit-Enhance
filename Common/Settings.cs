@@ -394,9 +394,11 @@ internal class Settings
 	private Settings()
 	{
 		_values = new Dictionary<string, object>();
+		_suppressDirtyTracking = true;
+
+		// 第一步：应用 [DefaultValue] 默认值
 		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-		PropertyInfo[] array = properties;
-		foreach (PropertyInfo propertyInfo in array)
+		foreach (PropertyInfo propertyInfo in properties)
 		{
 			DefaultValueAttribute defaultValueAttribute = (DefaultValueAttribute)Attribute.GetCustomAttribute(propertyInfo, typeof(DefaultValueAttribute));
 			if (defaultValueAttribute != null)
@@ -404,21 +406,122 @@ internal class Settings
 				propertyInfo.SetValue(this, defaultValueAttribute.Value, null);
 			}
 		}
-		_settingsFilePath = Path.Combine(AppHelper.GetAppDirectory(), "Settings.xml");
-		if (!File.Exists(_settingsFilePath))
+
+		// 第二步：尝试加载配置文件
+		string jsonPath = GetJsonFilePath();
+		string xmlPath = GetXmlFilePath();
+		_settingsFilePath = xmlPath; // 保留给 Save() 使用，下个任务会移除
+
+		if (File.Exists(jsonPath))
 		{
-			return;
+			LoadFromJson(jsonPath, properties);
 		}
-		using XmlReader reader = XmlReader.Create(_settingsFilePath);
-		XmlDocument xmlDocument = new XmlDocument();
-		xmlDocument.Load(reader);
-		XmlElement documentElement = xmlDocument.DocumentElement;
-		array = properties;
-		var readXmlMethod = GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic);
-		foreach (PropertyInfo propertyInfo2 in array)
+		else if (File.Exists(xmlPath))
 		{
-			readXmlMethod.MakeGenericMethod(propertyInfo2.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo2.Name });
+			LoadFromXml(xmlPath, properties);
+			// 迁移：直接写出 JSON
+			try
+			{
+				SaveJson(jsonPath);
+				Log.WriteLine("Settings: Migrated from XML to JSON");
+			}
+			catch (Exception ex)
+			{
+				Log.WriteLine("Settings: XML to JSON migration failed: {0}", ex.Message);
+			}
 		}
+
+		_suppressDirtyTracking = false;
+		_isDirty = false;
+	}
+
+	private void LoadFromJson(string jsonPath, PropertyInfo[] properties)
+	{
+		try
+		{
+			string json = File.ReadAllText(jsonPath);
+			using var doc = JsonDocument.Parse(json);
+			var root = doc.RootElement;
+
+			foreach (PropertyInfo prop in properties)
+			{
+				if (!root.TryGetProperty(prop.Name, out JsonElement element))
+					continue;
+
+				try
+				{
+					object value = DeserializeJsonElement(element, prop.PropertyType);
+					if (value != null)
+					{
+						prop.SetValue(this, value, null);
+					}
+				}
+				catch (Exception ex)
+				{
+					Log.WriteLine("Settings: Failed to load property '{0}': {1}", prop.Name, ex.Message);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("Settings: JSON parse error, using defaults: {0}", ex.Message);
+		}
+	}
+
+	private static object DeserializeJsonElement(JsonElement element, Type targetType)
+	{
+		if (targetType == typeof(bool))
+			return element.GetBoolean();
+		if (targetType == typeof(int))
+			return element.GetInt32();
+		if (targetType == typeof(string))
+			return element.GetString() ?? "";
+		if (targetType.IsEnum)
+		{
+			string enumStr = element.GetString();
+			if (!string.IsNullOrEmpty(enumStr))
+			{
+				try { return Enum.Parse(targetType, enumStr); }
+				catch { return null; }
+			}
+			return null;
+		}
+		return null;
+	}
+
+	private void LoadFromXml(string xmlPath, PropertyInfo[] properties)
+	{
+		try
+		{
+			using XmlReader reader = XmlReader.Create(xmlPath);
+			XmlDocument xmlDocument = new XmlDocument();
+			xmlDocument.Load(reader);
+			XmlElement documentElement = xmlDocument.DocumentElement;
+
+			var readXmlMethod = GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic);
+			foreach (PropertyInfo propertyInfo in properties)
+			{
+				readXmlMethod.MakeGenericMethod(propertyInfo.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo.Name });
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("Settings: XML parse error, using defaults: {0}", ex.Message);
+		}
+	}
+
+	private void SaveJson(string path)
+	{
+		Directory.CreateDirectory(Path.GetDirectoryName(path));
+		var dict = new Dictionary<string, string>();
+		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+		foreach (PropertyInfo prop in properties)
+		{
+			object value = prop.GetValue(this, null);
+			dict[prop.Name] = value?.ToString() ?? "";
+		}
+		string json = JsonSerializer.Serialize(dict, _jsonOptions);
+		File.WriteAllText(path, json);
 	}
 
 	public void Save()
