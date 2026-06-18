@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Local Steam Library Editing Tool</strong><br/>
-  Rename games, modify sorting, manage launch configurations, batch-set controller & VR support
+  Rename games, modify sorting, manage launch configurations, AI translate game names
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 10" />
-  <img src="https://img.shields.io/badge/UI%20Languages-English%20%7C%20简体中文-orange?style=flat-square" alt="Languages" />
+  <img src="https://img.shields.io/badge/UI%20Languages-English%20%7C%20简体中文%20%7C%20繁體中文-orange?style=flat-square" alt="Languages" />
   <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
 </p>
 
@@ -39,7 +39,7 @@ SteamEdit is a Windows desktop application that edits Steam's local `appinfo.vdf
 | **AI Translation** | Integrated OpenAI-compatible API for one-click game name translation. Customizable API endpoint, key, and model selection; supports fetching model lists. Automatically uses existing modifications as a glossary to maintain translation consistency. |
 | **Glossary Cache** | Modified game names are automatically cached in `glossary.json`, incrementally synced at startup, and read directly during translation — no rebuilding needed. |
 | **Web Search** | One-click browser search for game name + translated name. Supports Google, Bing, Baidu, and DuckDuckGo. |
-| **Bilingual UI** | Full English and Simplified Chinese support. Switch languages in Settings without restarting. |
+| **Multilingual UI** | English, Simplified Chinese, and Traditional Chinese. Switch languages in Settings without restarting. |
 | **Start with Windows** | Option to launch SteamEdit automatically on system startup. Supports `-autofix` (auto-apply changes) and `-forcestart` (restart Steam) arguments. |
 | **DPI Awareness** | PerMonitorV2 high-DPI support — no blurriness on 4K or high-resolution displays. |
 | **Asynchronous Loading** | `appinfo.vdf` loading runs asynchronously with a wait dialog, cancel option, and 30-second timeout. |
@@ -74,8 +74,8 @@ SteamEdit is a Windows desktop application that edits Steam's local `appinfo.vdf
 | **Hide / Completed** | Mark games as hidden or completed |
 | **Launch Configuration** | Edit launch executable, arguments, and working directory |
 | **Entry Type** | Change the game type (Game, DLC, Demo, etc.) |
-| **Controller Support** | Batch-set controller support level (None / Partial / Full) |
-| **VR Category** | Batch-set VR category (Default / Removed) |
+| **Controller Support** | Set controller support level (None / Partial / Full) |
+| **VR Category** | Set VR category (Default / Removed) |
 | **Custom Sorting** | Sort by Name or App ID, with ascending/descending toggle |
 | **Batch Find & Replace** | Replace game names in filtered results using plain text or regex, with case-sensitivity option |
 | **AI Translation** | Translate game names individually or in batch, with customizable prompt and translation rules |
@@ -101,10 +101,13 @@ cd steamedit
 # Development build
 dotnet build SteamEdit.csproj
 
+# Run tests
+dotnet test SteamEditTests/SteamEditTests.csproj
+
 # Publish self-contained single-file EXE (~110 MB, no runtime required)
 dotnet publish SteamEdit.csproj -c Release
 
-# Publish framework-dependent (~567 KB, requires .NET 10 Runtime)
+# Publish framework-dependent (~627 KB, requires .NET 10 Runtime)
 dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
 
 # Run
@@ -160,12 +163,12 @@ Useful for periodic maintenance via scheduled tasks.
 
 ## Internationalization
 
-SteamEdit includes English and Simplified Chinese, managed through `.resx` resource files.
+SteamEdit includes English, Simplified Chinese, and Traditional Chinese, managed through `.resx` resource files.
 
 ### Switching Languages
 
 1. Open **Settings** (gear icon)
-2. Choose `English` or `简体中文` from the **Language** dropdown
+2. Choose `English`, `简体中文`, or `繁體中文` from the **Language** dropdown
 3. The UI switches instantly — no restart required
 
 ### Adding a New Language
@@ -181,13 +184,17 @@ SteamEdit includes English and Simplified Chinese, managed through `.resx` resou
 ```
 steamedit/
 ├── SteamEdit/                    # WinForms UI layer
-│   ├── MainWindow.cs             # Main window (game list + edit panel)
+│   ├── MainWindow.cs             # Main window (layout + event routing)
+│   ├── GameListManager.cs        # Game list: search/filter/sort/ListBox
+│   ├── EditController.cs         # Property editing/undo/revert
+│   ├── GameDataContext.cs        # Shared data container
 │   ├── LaunchEditor.cs           # Launch configuration editor
 │   ├── SettingsDlg.cs            # Settings dialog
 │   ├── I18n.cs                   # Language manager
 │   └── Resources/
 │       ├── Strings.resx          # English resources (default)
-│       └── Strings.zh-CN.resx   # Simplified Chinese translation
+│       ├── Strings.zh-CN.resx   # Simplified Chinese translation
+│       └── Strings.zh-TW.resx   # Traditional Chinese translation
 ├── SteamEdit.Data/               # Core data model & I/O
 │   ├── SteamData.cs              # Data loading / saving / applying
 │   ├── AppInfoFactory.cs         # Version dispatch factory
@@ -199,11 +206,15 @@ steamedit/
 │   ├── AppInfo_0x07564428.cs     # Intermediate format
 │   └── AppInfo_0x07564429.cs     # Latest format
 ├── Common/                       # Shared utilities
-│   ├── Settings.cs               # User settings (XML serialization)
+│   ├── Settings.cs               # User settings (JSON serialization + dirty flag)
 │   ├── Log.cs                    # Buffered logger
 │   ├── AiTranslator.cs           # AI translator (OpenAI-compatible API)
 │   ├── TranslationGlossary.cs    # Glossary cache (glossary.json)
 │   └── AppHelper.cs              # Path & argument helpers
+├── SteamEditTests/               # MSTest unit tests
+│   ├── PropertyTableTests.cs     # PropertyTable: 15 tests
+│   ├── ModsTests.cs              # Mods binary format: 5 tests
+│   └── SettingsTests.cs          # Settings JSON serialization: 4 tests
 └── SteamEdit.csproj              # Project file
 ```
 

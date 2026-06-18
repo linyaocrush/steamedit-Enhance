@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Steam 游戏库本地编辑工具</strong><br/>
-  重命名游戏、修改排序、管理启动配置、批量设置控制器与 VR 支持
+  重命名游戏、修改排序、管理启动配置、AI 翻译游戏名称
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/平台-Windows%2010%2F11-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 10" />
-  <img src="https://img.shields.io/badge/界面语言-English%20%7C%20简体中文-orange?style=flat-square" alt="Languages" />
+  <img src="https://img.shields.io/badge/界面语言-English%20%7C%20简体中文%20%7C%20繁體中文-orange?style=flat-square" alt="Languages" />
   <img src="https://img.shields.io/badge/许可证-专有软件-red?style=flat-square" alt="License" />
 </p>
 
@@ -39,7 +39,7 @@ SteamEdit 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo
 | **AI 翻译** | 集成 OpenAI 兼容 API，一键翻译游戏名称。支持自定义 API 地址、密钥、模型选择，可获取模型列表。翻译时自动参考已有修改记录作为术语表，保持翻译风格一致 |
 | **术语表缓存** | 已修改的游戏名称自动缓存为 `glossary.json`，启动时增量同步，翻译时直接读取，无需每次重建 |
 | **网页搜索** | 一键在浏览器中搜索游戏名 + 翻译名，支持 Google/Bing/Baidu/DuckDuckGo 搜索引擎选择 |
-| **中英双语界面** | 支持 English 和简体中文，设置中即时切换，无需重启 |
+| **多语言界面** | 支持 English、简体中文和繁體中文，设置中即时切换，无需重启 |
 | **开机自启动** | 可设置 Windows 启动时自动运行，支持附加 `-autofix`（自动应用更改）和 `-forcestart`（重启 Steam）参数 |
 | **DPI 感知** | 启用 PerMonitorV2 高 DPI 支持，4K/高分屏不再模糊 |
 | **异步加载** | appinfo.vdf 加载过程异步执行，显示等待对话框，支持取消和 30 秒超时 |
@@ -74,8 +74,8 @@ SteamEdit 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo
 | **隐藏 / 完成** | 标记游戏为隐藏或已完成状态 |
 | **启动配置** | 编辑游戏的启动项（可执行文件、参数、工作目录） |
 | **条目类型** | 修改游戏类型（Game、DLC、Demo 等） |
-| **控制器支持** | 批量设置控制器支持级别（无 / 部分 / 完整） |
-| **VR 类别** | 批量设置 VR 类别（默认 / 已移除） |
+| **控制器支持** | 设置控制器支持级别（无 / 部分 / 完整） |
+| **VR 类别** | 设置 VR 类别（默认 / 已移除） |
 | **自定义排序** | 按名称或 App ID 排序，支持正序/倒序切换 |
 | **批量查找替换** | 对当前筛选结果批量替换游戏名，支持正则和大小写敏感 |
 | **AI 翻译** | 单个或批量翻译游戏名称，支持自定义提示词和翻译规则 |
@@ -101,10 +101,13 @@ cd steamedit
 # 开发构建
 dotnet build SteamEdit.csproj
 
+# 运行测试
+dotnet test SteamEditTests/SteamEditTests.csproj
+
 # 发布自包含单文件 EXE（约 110MB，无需安装运行时）
 dotnet publish SteamEdit.csproj -c Release
 
-# 发布框架依赖版（约 567KB，需要 .NET 10 Runtime）
+# 发布框架依赖版（约 627KB，需要 .NET 10 Runtime）
 dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
 
 # 运行
@@ -160,12 +163,12 @@ SteamEdit.exe -autofix -forcestart
 
 ## 国际化
 
-SteamEdit 内置英语和简体中文两种语言，通过 `.resx` 资源文件管理。
+SteamEdit 内置英语、简体中文和繁体中文三种语言，通过 `.resx` 资源文件管理。
 
 ### 切换语言
 
 1. 打开 **设置**（齿轮图标）
-2. 在 **语言** 下拉框中选择 `English` 或 `简体中文`
+2. 在 **语言** 下拉框中选择 `English`、`简体中文` 或 `繁體中文`
 3. 界面即时切换，无需重启
 
 ### 添加新语言
@@ -181,13 +184,17 @@ SteamEdit 内置英语和简体中文两种语言，通过 `.resx` 资源文件�
 ```
 steamedit/
 ├── SteamEdit/                    # WinForms UI 层
-│   ├── MainWindow.cs             # 主窗口（游戏列表 + 编辑面板）
+│   ├── MainWindow.cs             # 主窗口（布局 + 事件路由）
+│   ├── GameListManager.cs        # 游戏列表：搜索/过滤/排序/ListBox
+│   ├── EditController.cs         # 属性编辑/撤销/还原
+│   ├── GameDataContext.cs        # 共享数据容器
 │   ├── LaunchEditor.cs           # 启动配置编辑器
 │   ├── SettingsDlg.cs            # 设置对话框
 │   ├── I18n.cs                   # 语言管理器
 │   └── Resources/
 │       ├── Strings.resx          # 英文资源（默认）
-│       └── Strings.zh-CN.resx   # 中文翻译
+│       ├── Strings.zh-CN.resx   # 简体中文翻译
+│       └── Strings.zh-TW.resx   # 繁体中文翻译
 ├── SteamEdit.Data/               # 核心数据模型与 I/O
 │   ├── SteamData.cs              # 数据加载/保存/应用
 │   ├── AppInfoFactory.cs         # 版本分发工厂
@@ -199,11 +206,15 @@ steamedit/
 │   ├── AppInfo_0x07564428.cs     # 中版格式
 │   └── AppInfo_0x07564429.cs     # 新版格式
 ├── Common/                       # 共享工具
-│   ├── Settings.cs               # 用户设置（XML 序列化）
+│   ├── Settings.cs               # 用户设置（JSON 序列化 + 脏标记）
 │   ├── Log.cs                    # 缓冲日志
 │   ├── AiTranslator.cs           # AI 翻译（OpenAI 兼容 API）
 │   ├── TranslationGlossary.cs    # 术语表缓存（glossary.json）
 │   └── AppHelper.cs              # 路径与参数工具
+├── SteamEditTests/               # MSTest 单元测试
+│   ├── PropertyTableTests.cs     # PropertyTable：15 个测试
+│   ├── ModsTests.cs              # Mods 二进制格式：5 个测试
+│   └── SettingsTests.cs          # Settings JSON 序列化：4 个测试
 └── SteamEdit.csproj              # 项目文件
 ```
 
