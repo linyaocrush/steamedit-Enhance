@@ -936,6 +936,7 @@ internal class MainWindow : Form
 		btnTranslate.Text = Strings.MainWindow_BtnTranslate;
 		btnSearch.Text = Strings.MainWindow_BtnSearch;
 		btnRevert.Text = Strings.MainWindow_BtnRevert;
+		btnEditLaunch.Text = Strings.MainWindow_BtnEditLaunch;
 		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
 		btnBatchTranslate.Text = Strings.MainWindow_BatchTranslate;
 		toolTips.SetToolTip(btnBatchTranslate, Strings.Tooltip_BatchTranslate);
