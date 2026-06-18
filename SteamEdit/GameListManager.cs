@@ -179,6 +179,7 @@ internal class GameListManager : IDisposable
 	public AppInfoEntryType CurrentFilters => _currentFilters;
 	public bool RefreshingAfterEdit { get => _refreshingGamesListAfterEdit; set => _refreshingGamesListAfterEdit = value; }
 	public ImageAttributes BgLogoAttributes => _bgLogoAttributes;
+	public Dictionary<AppInfoEntryType, Image> GetFilterImages() => _filterImages;
 
 	// --- 公开方法 ---
 

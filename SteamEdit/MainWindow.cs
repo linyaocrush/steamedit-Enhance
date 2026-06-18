@@ -3,12 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
@@ -20,479 +15,113 @@ internal class MainWindow : Form
 {
 	private string _originalTitle;
 
-	private List<IAppInfoEntry> _entries;
-	private List<IAppInfoEntry> _baseEntries = new();
-	private string _currentSearchTerm = "";
-	private readonly Dictionary<int, string> _displayNames = new();
-	private int _totalEntryCount;
-
-	private static readonly string[] ControllerRawValues = { "none", "partial", "full" };
-
-	private static readonly string[] VRRawValues = { "default", "removed" };
-
-	private Dictionary<AppInfoEntryType, Image> _filterImages;
-
-	private AppInfoEntryType _currentFilters;
-
-	private bool _isSettingUpEntry;
-
-	private Color _defaultNameColor;
-
-	private Color _defaultSortAsColor;
-
-	private Font _defaultAppSelectionFont;
-
-	private Font _boldAppSelectionFont;
-
-	private Font _hiddenAppSelectionFont;
-
-	private bool _refreshingGamesListAfterEdit;
-
-	private StringBuilder appSearchTerm = new StringBuilder();
-
-	private Timer appSearchTermTimer = new Timer();
-
-	private Timer _filterDebounceTimer = new Timer();
-
-	private Timer _statusBarDebounceTimer = new Timer();
-
-	private ImageAttributes _bgLogoAttributes;
-
-	private int appSelection_LastHoverI = -1;
-
-	private readonly UndoManager _undoManager = new();
-	private readonly Dictionary<string, object> _snapshotValues = new();
+	private GameDataContext _ctx;
+	private GameListManager _listManager;
+	private EditController _editController;
 
 	private IContainer components;
 
 	private ClearableTextBox textGameName;
-
 	private CheckBox checkHidden;
-
 	private CheckBox checkCompleted;
-
 	private ClearableTextBox textSortAs;
-
 	private Button btnEditLaunch;
-
 	private Button btnRevert;
-
 	private ToolTip toolTips;
-
 	private ComboBox listControllerSupport;
-
 	private Button btnSettings;
-
 	private Button btnHelp;
-
 	private Button btnShortcuts;
-
 	private Button btnTranslate;
-
 	private Button btnSearch;
-
 	private Button btnBatchTranslate;
-
 	private Button btnBatchReplace;
-
 	private ComboBox listVR;
-
 	private ContextMenuStrip filterSelectorMenu;
-
 	private Button filterSelector;
-
 	private ContextMenuStrip sortSelectorMenu;
 	private Button sortSelector;
-
 	private SplitContainer splitContainer1;
-
 	private ListBox appSelection;
-
 	private ClearableTextBox appFilterText;
-
 	private Panel panel1;
-
 	private FlowLayoutPanel flowLayoutPanel3;
-
 	private ComboBox listEntryType;
-
 	private ToolStripStatusLabel lblNumAppsShown;
-
 	private ToolStripStatusLabel lblModifiedCount;
-
 	private Label lblSortAs;
-
 	private Label lblName;
-
 	private Label lblControllerSupport;
-
 	private Label lblVRCategory;
-
 	private Button btnSave;
-
 	private Button btnSaveApply;
-
 	private Button btnSaveApplyRestart;
 
 	public MainWindow()
 	{
-		_isSettingUpEntry = false;
-		float[][] array = new float[3][]
-		{
-			new float[3] { 0.3f, 0.3f, 0.3f },
-			new float[3] { 0.59f, 0.59f, 0.59f },
-			new float[3] { 0.11f, 0.11f, 0.11f }
-		};
-		float[][] array2 = new float[3][]
-		{
-			new float[3] { 1f, 0f, 0f },
-			new float[3] { 0f, 1f, 0f },
-			new float[3] { 0f, 0f, 1f }
-		};
-		float num = 0.5f;
-		ColorMatrix colorMatrix = new ColorMatrix();
-		for (int i = 0; i < 3; i++)
-		{
-			for (int j = 0; j < 3; j++)
-			{
-				colorMatrix[i, j] = num * array[i][j] + (1f - num) * array2[i][j];
-			}
-		}
-		colorMatrix[3, 3] = 0.08f;
-		_bgLogoAttributes = new ImageAttributes();
-		_bgLogoAttributes.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
 		InitializeComponent();
-		appSearchTermTimer.Interval = 500;
-		appSearchTermTimer.Tick += delegate
-		{
-			appSearchTerm.Clear();
-			appSearchTermTimer.Stop();
-		};
-		_filterDebounceTimer.Interval = 500;
-		_filterDebounceTimer.Tick += delegate
-		{
-			_filterDebounceTimer.Stop();
-			ApplyIncrementalSearch();
-			Setup();
-			UpdateStatusBar();
-		};
-		_currentFilters = Settings.Default.Filters;
-		_filterImages = new Dictionary<AppInfoEntryType, Image>
-		{
-			{
-				AppInfoEntryType.Game,
-				Resources.filter_game
-			},
-			{
-				AppInfoEntryType.Application,
-				Resources.filter_application
-			},
-			{
-				AppInfoEntryType.Video,
-				Resources.filter_video
-			},
-			{
-				AppInfoEntryType.Music,
-				Resources.filter_music
-			},
-			{
-				AppInfoEntryType.Guide,
-				Resources.filter_guide
-			},
-			{
-				AppInfoEntryType.DLC,
-				Resources.filter_dlc
-			},
-			{
-				AppInfoEntryType.Demo,
-				Resources.filter_demo
-			},
-			{
-				AppInfoEntryType.Tool,
-				Resources.filter_tool
-			},
-			{
-				AppInfoEntryType.Config,
-				Resources.filter_config
-			},
-			{
-				AppInfoEntryType.Beta,
-				Resources.filter_beta
-			},
-			{
-				AppInfoEntryType.Unknown,
-				Resources.filter_unknown
-			}
-		};
-		listEntryType.BeginUpdate();
-		foreach (KeyValuePair<AppInfoEntryType, Image> filterImage in _filterImages)
-		{
-			ToolStripMenuItem toolStripMenuItem = new ToolStripMenuItem(I18n.GetEnumDisplayName(filterImage.Key), filterImage.Value)
-			{
-				DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-				CheckOnClick = true,
-				Tag = filterImage.Key,
-				Checked = _currentFilters.HasFlag(filterImage.Key)
-			};
-			toolStripMenuItem.CheckedChanged += OnFilter_CheckedChanged;
-			filterSelectorMenu.Items.Add(toolStripMenuItem);
-			if (filterImage.Key != AppInfoEntryType.Unknown)
-			{
-				listEntryType.Items.Add(filterImage.Key);
-			}
-		}
-		filterSelectorMenu.Items.Add(new ToolStripSeparator());
-		AddShowEntriesMenuItem("All", ShowEntriesMode.All);
-		AddShowEntriesMenuItem("Only Modified", ShowEntriesMode.OnlyModified);
-		AddShowEntriesMenuItem("Only Unmodified", ShowEntriesMode.OnlyUnmodified);
-		listEntryType.EndUpdate();
+
+		// 构建 EntryType 下拉框（依赖 filterImages，由 GameListManager 构建）
 		listEntryType.Format += (s, e) =>
 		{
 			if (e.ListItem is AppInfoEntryType entryType)
-			{
 				e.Value = I18n.GetEnumDisplayName(entryType);
-			}
 		};
-		listControllerSupport.Items.Add("none");
-		listControllerSupport.Items.Add("partial");
-		listControllerSupport.Items.Add("full");
-		listVR.Items.Add("default");
-		listVR.Items.Add("removed");
-		// Build sort menu
-		var sortByName = new ToolStripMenuItem(Strings.Sort_ByName) { Tag = "Name", CheckOnClick = true };
-		var sortById = new ToolStripMenuItem(Strings.Sort_ById) { Tag = "AppId", CheckOnClick = true };
-		sortByName.Click += OnSortField_Click;
-		sortById.Click += OnSortField_Click;
-		sortSelectorMenu.Items.Add(sortByName);
-		sortSelectorMenu.Items.Add(sortById);
-		sortSelectorMenu.Items.Add(new ToolStripSeparator());
-		var sortAsc = new ToolStripMenuItem(Strings.Sort_Ascending) { Tag = false, CheckOnClick = true };
-		var sortDesc = new ToolStripMenuItem(Strings.Sort_Descending) { Tag = true, CheckOnClick = true };
-		sortAsc.Click += OnSortDirection_Click;
-		sortDesc.Click += OnSortDirection_Click;
-		sortSelectorMenu.Items.Add(sortAsc);
-		sortSelectorMenu.Items.Add(sortDesc);
+
 		base.Icon = Resources.logo;
-		_defaultNameColor = textGameName.ForeColor;
-		_defaultSortAsColor = textSortAs.ForeColor;
-		_defaultAppSelectionFont = appSelection.Font;
-		_boldAppSelectionFont = new Font(appSelection.Font, FontStyle.Bold);
-		_hiddenAppSelectionFont = new Font(appSelection.Font, FontStyle.Strikeout);
 		_originalTitle = Text;
-		_statusBarDebounceTimer.Interval = 200;
-		_statusBarDebounceTimer.Tick += delegate
+
+		// 创建共享数据上下文
+		_ctx = new GameDataContext();
+
+		// 创建游戏列表管理器
+		_listManager = new GameListManager(
+			_ctx, appSelection, filterSelectorMenu, sortSelectorMenu,
+			toolTips, appFilterText, lblNumAppsShown, lblModifiedCount);
+
+		// 填充 EntryType 下拉框（依赖 _listManager 的 filterImages）
+		listEntryType.BeginUpdate();
+		foreach (var kv in _listManager.GetFilterImages())
 		{
-			_statusBarDebounceTimer.Stop();
-			UpdateStatusBarInner();
+			if (kv.Key != AppInfoEntryType.Unknown)
+				listEntryType.Items.Add(kv.Key);
+		}
+		listEntryType.EndUpdate();
+
+		_listManager.SelectedEntryChanged += (_, entry) =>
+		{
+			_editController.LoadEntry(entry);
+			btnEditLaunch.Enabled = entry != null;
+			btnRevert.Enabled = entry != null;
+			btnTranslate.Enabled = entry != null && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
+			btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 		};
-		SteamData.AppInfoData.Modified += OnEntryModified;
+		_listManager.ListRefreshed += (_, _) => UpdateStatusBar();
+
+		// 创建编辑控制器
+		_editController = new EditController(
+			_ctx, _listManager, textGameName, textSortAs,
+			checkHidden, checkCompleted, listControllerSupport,
+			listVR, listEntryType);
+		_editController.EntryModified += (_, _) =>
+		{
+			_listManager.InvalidateAll();
+			UpdateStatusBar();
+		};
+		_editController.NeedsResort += (_, entry) => _listManager.ResortEntry(entry);
+
+		// 订阅 SteamData 事件
 		SteamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
-		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)
-		{
-			ToolStripMenuItem toolStripMenuItem2 = new ToolStripMenuItem(name)
-			{
-				DisplayStyle = ToolStripItemDisplayStyle.Text,
-				CheckOnClick = true,
-				Tag = mode,
-				Checked = (Settings.Default.FiltersShowEntries == mode)
-			};
-			toolStripMenuItem2.Click += OnFilter_ShowEntriesModeChanged;
-			filterSelectorMenu.Items.Add(toolStripMenuItem2);
-		}
-	}
-
-	private void OnGeneric_KeyDown(object sender, KeyEventArgs e)
-	{
-		Keys keyCode = e.KeyCode;
-		if ((uint)(keyCode - 33) <= 1u)
-		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			if (sender is ComboBox)
-			{
-				(sender as ComboBox).DroppedDown = false;
-			}
-		}
-	}
-
-	private void OnEditControl_Enter(object sender, EventArgs e)
-	{
-		if (_isSettingUpEntry) return;
-		var entry = GetSelectedEntry();
-		if (entry == null) return;
-
-		string key = null;
-		object value = null;
-
-		if (sender == textGameName)
-		{
-			key = "name";
-			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "name");
-		}
-		else if (sender == textSortAs)
-		{
-			key = "sortas";
-			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "sortas");
-		}
-		else if (sender == checkHidden)
-		{
-			key = "hidden";
-			value = entry.GetPropertyValue(0, "appinfo", "steam_edit", "is_hidden");
-		}
-		else if (sender == checkCompleted)
-		{
-			key = "completed";
-			value = entry.GetPropertyValue(0, "appinfo", "steam_edit", "is_completed");
-		}
-		else if (sender == listEntryType)
-		{
-			key = "type";
-			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "type");
-		}
-		else if (sender == listControllerSupport)
-		{
-			key = "controller";
-			value = entry.GetPropertyValue<string>(null, "appinfo", "common", "controller_support");
-		}
-		else if (sender == listVR)
-		{
-			key = "vr";
-			value = entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport");
-			_snapshotValues["vr_base"] = entry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
-		}
-
-		if (key != null)
-		{
-			_snapshotValues[key] = value;
-		}
 	}
 
 	private void SteamData_OnNeedsSaveOrApply(object sender, EventArgs e)
 	{
 		Text = _originalTitle;
 		if (SteamData.NeedsSave)
-		{
 			Text += Strings.MainWindow_UnsavedSuffix;
-		}
 		if (SteamData.NeedsApply)
-		{
 			Text += Strings.MainWindow_UnappliedSuffix;
-		}
-	}
-
-	private IAppInfoEntry GetSelectedEntry()
-	{
-		int idx = appSelection.SelectedIndex;
-		return idx >= 0 && idx < _entries.Count ? _entries[idx] : null;
-	}
-
-	private string GetDisplayName(IAppInfoEntry entry)
-	{
-		if (_displayNames.TryGetValue(entry.ID, out var name)) return name;
-		name = entry.ToString();
-		_displayNames[entry.ID] = name;
-		return name;
-	}
-
-	private void InvalidateDisplayName(IAppInfoEntry entry)
-	{
-		_displayNames.Remove(entry.ID);
-	}
-
-	private void ClearDisplayNameCache()
-	{
-		_displayNames.Clear();
-	}
-
-	private void RebuildListBoxItems()
-	{
-		appSelection.BeginUpdate();
-		appSelection.Items.Clear();
-		for (int i = 0; i < _entries.Count; i++)
-			appSelection.Items.Add(i);
-		appSelection.EndUpdate();
-	}
-
-	private void SortEntries()
-	{
-		var selectedEntry = GetSelectedEntry();
-		string sortField = Settings.Default.SortField;
-		bool descending = Settings.Default.SortDescending;
-
-		if (sortField == "AppId")
-		{
-			_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
-			{
-				int num = a.ID.CompareTo(b.ID);
-				if (descending) num = -num;
-				if (num == 0)
-				{
-					num = StringTitleComparer.CompareStrings(a.SortAs, b.SortAs);
-				}
-				return num;
-			});
-		}
-		else
-		{
-			var keys = new Dictionary<IAppInfoEntry, string>(_entries.Count);
-			foreach (var e in _entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
-			_entries.Sort(delegate(IAppInfoEntry a, IAppInfoEntry b)
-			{
-				int num = StringComparer.CurrentCulture.Compare(keys[a], keys[b]);
-				if (descending) num = -num;
-				if (num == 0)
-				{
-					num = a.ID - b.ID;
-				}
-				return num;
-			});
-		}
-
-		RebuildListBoxItems();
-
-		// 恢复选中项
-		if (selectedEntry != null)
-		{
-			int newIdx = _entries.IndexOf(selectedEntry);
-			if (newIdx >= 0) appSelection.SelectedIndex = newIdx;
-		}
-		if (appSelection.SelectedIndex < 0 && appSelection.Items.Count > 0)
-			appSelection.SelectedIndex = 0;
-	}
-
-	private void ResortEntry(IAppInfoEntry entry)
-	{
-		var selectedEntry = GetSelectedEntry();
-		int i = _entries.IndexOf(entry);
-		if (i < 0) return;
-		int index = i;
-		while (i > 0 && StringTitleComparer.CompareStrings(entry.SortAs, _entries[i - 1].SortAs) < 0)
-		{
-			_entries[i] = _entries[i - 1];
-			_entries[i - 1] = entry;
-			i--;
-		}
-		for (; i < _entries.Count - 1 && StringTitleComparer.CompareStrings(entry.SortAs, _entries[i + 1].SortAs) > 0; i++)
-		{
-			_entries[i] = _entries[i + 1];
-			_entries[i + 1] = entry;
-		}
-
-		// 重建所有受影响位置的索引
-		appSelection.BeginUpdate();
-		int lo = Math.Min(index, i);
-		int hi = Math.Max(index, i);
-		for (int j = lo; j <= hi; j++)
-			appSelection.Items[j] = j;
-		appSelection.EndUpdate();
-
-		// 恢复选中项
-		if (selectedEntry != null)
-		{
-			int newIdx = _entries.IndexOf(selectedEntry);
-			if (newIdx >= 0) appSelection.SelectedIndex = newIdx;
-		}
 	}
 
 	private bool IsOnScreen()
@@ -502,9 +131,7 @@ internal class MainWindow : Form
 		for (int i = 0; i < allScreens.Length; i++)
 		{
 			if (allScreens[i].WorkingArea.IntersectsWith(rect))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -514,39 +141,25 @@ internal class MainWindow : Form
 		Point location = base.Location;
 		Point location2 = base.Location;
 		if (Settings.Default.WindowLocationX != int.MaxValue)
-		{
 			location2.X = Settings.Default.WindowLocationX;
-		}
 		if (Settings.Default.WindowLocationY != int.MaxValue)
-		{
 			location2.Y = Settings.Default.WindowLocationY;
-		}
 		base.Location = location2;
 		if (!IsOnScreen())
-		{
 			base.Location = location;
-		}
 		Size size = base.Size;
 		Size size2 = base.Size;
 		if (Settings.Default.WindowSizeX != int.MaxValue)
-		{
 			size2.Width = Settings.Default.WindowSizeX;
-		}
 		if (Settings.Default.WindowSizeY != int.MaxValue)
-		{
 			size2.Height = Settings.Default.WindowSizeY;
-		}
 		base.Size = size2;
 		if (!IsOnScreen())
-		{
 			base.Size = size;
-		}
 		if (Settings.Default.MainWindowSplitter != int.MaxValue)
-		{
 			splitContainer1.SplitterDistance = Settings.Default.MainWindowSplitter;
-		}
 		SteamData_OnNeedsSaveOrApply(null, null);
-		RefreshGameList();
+		_listManager.RefreshGameList();
 		ReleaseNotesView releaseNotesView = new ReleaseNotesView();
 		if (releaseNotesView.FillNotes(Settings.Default.ShownVersion))
 		{
@@ -559,297 +172,9 @@ internal class MainWindow : Form
 		ApplyLanguage();
 	}
 
-	private static bool IsFuzzyMatch(string testString, string[] patternParts)
-	{
-		string lower = testString.ToLower();
-		foreach (string patt in patternParts)
-		{
-			if (!lower.Contains(patt))
-				return false;
-		}
-		return true;
-	}
-
-	private void RefreshGameList()
-	{
-		var selectedEntry = GetSelectedEntry();
-		var showMode = Settings.Default.FiltersShowEntries;
-
-		ClearDisplayNameCache();
-
-		// \u7b2c\u4e00\u6b65\uff1a\u7c7b\u578b\u8fc7\u6ee4 \u2192 _baseEntries
-		int totalCount = 0;
-		_baseEntries = new List<IAppInfoEntry>();
-		foreach (var ent in SteamData.AppInfoData.Entries)
-		{
-			if (ent.Name == null) continue;
-			totalCount++;
-			if ((ent.Type & _currentFilters) == 0) continue;
-			if (showMode == ShowEntriesMode.OnlyModified && !ent.IsModified) continue;
-			if (showMode == ShowEntriesMode.OnlyUnmodified && ent.IsModified) continue;
-			_baseEntries.Add(ent);
-		}
-		_totalEntryCount = totalCount;
-
-		// \u7b2c\u4e8c\u6b65\uff1a\u641c\u7d22\u8fc7\u6ee4\uff08\u91cd\u7f6e\u4e3a\u5168\u91cf\uff09
-		_currentSearchTerm = "";
-		ApplyIncrementalSearch();
-
-		// \u6062\u590d\u9009\u4e2d\u9879
-		if (selectedEntry != null)
-		{
-			int newIdx = _entries.IndexOf(selectedEntry);
-			if (newIdx >= 0) appSelection.SelectedIndex = newIdx;
-		}
-		if (appSelection.SelectedIndex < 0 && appSelection.Items.Count > 0)
-			appSelection.SelectedIndex = 0;
-
-		Setup();
-		UpdateStatusBar();
-	}
-
-	private void OnEntryModified(object sender, EventArgs e)
-	{
-		_statusBarDebounceTimer.Stop();
-		_statusBarDebounceTimer.Start();
-	}
-
 	private void UpdateStatusBar()
 	{
-		UpdateStatusBarInner();
-	}
-
-	private void UpdateStatusBarInner()
-	{
-		lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _entries?.Count ?? 0, _totalEntryCount);
-		int modifiedCount = SteamData.AppInfoData?.Entries.Count(e => e.IsModified) ?? 0;
-		lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, modifiedCount);
-	}
-
-	private void ApplyIncrementalSearch()
-	{
-		string newText = appFilterText.Text ?? "";
-		string trimmed = newText.Trim();
-
-		if (string.IsNullOrEmpty(trimmed))
-		{
-			_entries = new List<IAppInfoEntry>(_baseEntries);
-			_currentSearchTerm = "";
-			SortEntries();
-			return;
-		}
-
-		string[] patternParts = trimmed.ToLower().Split(' ', '\t', ' ');
-
-		List<IAppInfoEntry> source;
-		if (!string.IsNullOrEmpty(_currentSearchTerm) && trimmed.StartsWith(_currentSearchTerm, StringComparison.OrdinalIgnoreCase))
-		{
-			source = _entries;  // \u7f29\u5c0f\u8303\u56f4
-		}
-		else if (!string.IsNullOrEmpty(_currentSearchTerm) && _currentSearchTerm.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
-		{
-			source = _baseEntries;  // \u6269\u5927\u8303\u56f4
-		}
-		else
-		{
-			source = _baseEntries;  // \u5b8c\u5168\u66ff\u6362
-		}
-
-		_entries = new List<IAppInfoEntry>();
-		foreach (var ent in source)
-		{
-			if (IsFuzzyMatch(GetDisplayName(ent), patternParts))
-				_entries.Add(ent);
-		}
-
-		_currentSearchTerm = trimmed;
-		SortEntries();
-	}
-
-	private void OnAppSelection_SelectedIndexChanged(object sender, EventArgs e)
-	{
-		if (!_refreshingGamesListAfterEdit)
-		{
-			Setup();
-		}
-	}
-
-	private void Setup()
-	{
-		bool flag = appSelection.SelectedIndex >= 0;
-		textGameName.Enabled = flag;
-		textSortAs.Enabled = flag;
-		checkHidden.Enabled = flag;
-		checkCompleted.Enabled = flag;
-		btnEditLaunch.Enabled = flag;
-		btnRevert.Enabled = flag;
-		btnTranslate.Enabled = flag && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
-		btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
-		listControllerSupport.Enabled = flag;
-		listVR.Enabled = flag;
-		listEntryType.Enabled = flag;
-		if (!flag)
-		{
-			return;
-		}
-		_isSettingUpEntry = true;
-		_snapshotValues.Clear();
-		IAppInfoEntry appInfoEntry = GetSelectedEntry();
-		if (appInfoEntry != null)
-		{
-			textGameName.Text = appInfoEntry.Name;
-			textGameName.ClearXVisible = appInfoEntry.IsModified && appInfoEntry.Modification.Changes.HasProperty("appinfo", "common", "name");
-			textSortAs.Text = appInfoEntry.SortAs;
-			textSortAs.ForeColor = (appInfoEntry.HasSortAs ? _defaultSortAsColor : Color.Gray);
-			textSortAs.ClearXVisible = appInfoEntry.IsModified && appInfoEntry.Modification.Changes.HasProperty("appinfo", "common", "sortas");
-			checkHidden.Checked = appInfoEntry.IsHidden;
-			checkCompleted.Checked = appInfoEntry.IsCompleted;
-			string csRaw = appInfoEntry.GetPropertyValue("none", "appinfo", "common", "controller_support");
-			int csIdx = Array.IndexOf(ControllerRawValues, csRaw);
-			listControllerSupport.SelectedIndex = csIdx >= 0 ? csIdx : 0;
-			listEntryType.SelectedItem = appInfoEntry.Type;
-			if (appInfoEntry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport") == int.MaxValue)
-			{
-				listVR.Enabled = false;
-				listVR.SelectedItem = null;
-			}
-			else
-			{
-				listVR.SelectedIndex = ((appInfoEntry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport") != int.MaxValue) ? 1 : 0);
-			}
-		}
-		_isSettingUpEntry = false;
-	}
-
-	private void OnTextGameName_TextChanged(object sender, EventArgs e)
-	{
-		if (_isSettingUpEntry)
-		{
-			return;
-		}
-		IAppInfoEntry appInfoEntry = GetSelectedEntry();
-		if (appInfoEntry == null) return;
-		if (textGameName.Text != appInfoEntry.Name)
-		{
-			string previousName = appInfoEntry.Name;
-			_undoManager.Push(appInfoEntry, new[] { "appinfo", "common", "name" }, PropertyType.String, previousName);
-			appInfoEntry.Name = textGameName.Text;
-			InvalidateDisplayName(appInfoEntry);
-			UpdateGlossaryForEntry(appInfoEntry, previousName);
-			if (!appInfoEntry.HasSortAs)
-			{
-				_refreshingGamesListAfterEdit = true;
-				ResortEntry(appInfoEntry);
-				_refreshingGamesListAfterEdit = false;
-				bool isSettingUpEntry = _isSettingUpEntry;
-				_isSettingUpEntry = true;
-				textSortAs.Text = appInfoEntry.SortAs;
-				_isSettingUpEntry = isSettingUpEntry;
-			}
-			Rectangle itemRectangle = appSelection.GetItemRectangle(appSelection.SelectedIndex);
-			appSelection.Invalidate(itemRectangle);
-		}
-	}
-
-	private void OnTextSortAs_TextChanged(object sender, EventArgs e)
-	{
-		if (!_isSettingUpEntry)
-		{
-			IAppInfoEntry appInfoEntry = GetSelectedEntry();
-			if (appInfoEntry == null) return;
-			if (textSortAs.Text != appInfoEntry.SortAs)
-			{
-				_undoManager.Push(appInfoEntry, new[] { "appinfo", "common", "sortas" }, PropertyType.String, appInfoEntry.SortAs);
-				appInfoEntry.SortAs = textSortAs.Text;
-				InvalidateDisplayName(appInfoEntry);
-				_refreshingGamesListAfterEdit = true;
-				ResortEntry(appInfoEntry);
-				_refreshingGamesListAfterEdit = false;
-				int idx = _entries.IndexOf(appInfoEntry);
-				if (idx >= 0) appSelection.SelectedIndex = idx;
-				textSortAs.ForeColor = (appInfoEntry.HasSortAs ? _defaultSortAsColor : Color.Gray);
-			}
-		}
-	}
-
-	private void OnCheckHidden_CheckedChanged(object sender, EventArgs e)
-	{
-		if (!_isSettingUpEntry)
-		{
-			var entry = GetSelectedEntry();
-			if (entry == null) return;
-			if (_snapshotValues.TryGetValue("hidden", out var prevVal) && prevVal is int prevHidden)
-			{
-				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_hidden" }, PropertyType.Int32, prevHidden);
-			}
-			entry.IsHidden = checkHidden.Checked;
-			appSelection.Invalidate();
-		}
-	}
-
-	private void OnAppSelection_DrawItem(object sender, DrawItemEventArgs e)
-	{
-		e.DrawBackground();
-		if (e.Index >= 0 && e.Index < _entries.Count)
-		{
-			IAppInfoEntry appInfoEntry = _entries[e.Index];
-			string text = GetDisplayName(appInfoEntry);
-			text = text.Replace("&", "&&");
-			Color foreColor = appSelection.ForeColor;
-			Font font = _defaultAppSelectionFont;
-			Rectangle bounds = e.Bounds;
-			int num = e.Bounds.Height - 6;
-			if ((_currentFilters & (_currentFilters - 1)) != 0)
-			{
-				e.Graphics.DrawImage(_filterImages[appInfoEntry.Type], e.Bounds.X + 3, e.Bounds.Y + 3, e.Bounds.Height - 6, e.Bounds.Height - 6);
-				bounds.X += e.Bounds.Height;
-				bounds.Width -= e.Bounds.Height;
-			}
-			int num2 = bounds.Width;
-			if (appInfoEntry.IsModified)
-			{
-				e.Graphics.DrawImage(Resources.icon_modified, bounds.X + num2 - (num + 6), e.Bounds.Y + 3, num, num);
-				bounds.Width = num2 - (num + 6);
-				font = _boldAppSelectionFont;
-			}
-			if (appInfoEntry.IsCompleted)
-			{
-				e.Graphics.DrawImage(Resources.icon_completed, bounds.X + num2 - (num + 6) * 2, e.Bounds.Y + 3, num, num);
-				bounds.Width = num2 - (num + 6) * 2;
-			}
-			if (appInfoEntry.IsHidden)
-			{
-				e.Graphics.DrawImage(Resources.icon_hidden, bounds.X + num2 - (num + 6) * 3, e.Bounds.Y + 3, num, num);
-				bounds.Width = num2 - (num + 6) * 3;
-				foreColor = Color.FromArgb(255 - (255 - foreColor.R) / 2, 255 - (255 - foreColor.G) / 2, 255 - (255 - foreColor.B) / 2);
-				font = _hiddenAppSelectionFont;
-			}
-			Size size = TextRenderer.MeasureText(text, font);
-			bounds.Inflate(0, -((bounds.Height - size.Height) / 2));
-			TextRenderer.DrawText(e.Graphics, text, font, bounds, foreColor, TextFormatFlags.EndEllipsis);
-		}
-	}
-
-	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
-	{
-		I18n.LanguageChanged -= OnLanguageChanged;
-		SteamData.AppInfoData.Modified -= OnEntryModified;
-		_statusBarDebounceTimer.Stop();
-		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
-		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
-		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); }
-		if (SteamData.NeedsSave)
-		{
-			switch (MessageBox.Show(Strings.Msg_UnsavedChanges, Strings.Msg_SaveFirst, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))
-			{
-			case DialogResult.Yes:
-				SteamData.Save();
-				break;
-			case DialogResult.Cancel:
-				e.Cancel = true;
-				break;
-			}
-		}
+		_listManager.UpdateStatusBar();
 	}
 
 	private void OnLanguageChanged(object sender, EventArgs e)
@@ -874,58 +199,13 @@ internal class MainWindow : Form
 		checkHidden.Text = Strings.MainWindow_CheckHidden;
 		checkCompleted.Text = Strings.MainWindow_CheckCompleted;
 
-		_isSettingUpEntry = true;
+		// 委托给 EditController 更新控制器/VR/EntryType 下拉框
+		_editController.ApplyLanguage();
 
-		// Refresh controller combo
-		int csIdx = listControllerSupport.SelectedIndex;
-		listControllerSupport.Items.Clear();
-		listControllerSupport.Items.Add(Strings.MainWindow_Controller_None);
-		listControllerSupport.Items.Add(Strings.MainWindow_Controller_Partial);
-		listControllerSupport.Items.Add(Strings.MainWindow_Controller_Full);
-		if (csIdx >= 0 && csIdx < listControllerSupport.Items.Count)
-			listControllerSupport.SelectedIndex = csIdx;
+		// 委托给 GameListManager 更新筛选器菜单
+		_listManager.ApplyLanguageToFilters();
 
-		// Refresh VR combo
-		int vrIdx = listVR.SelectedIndex;
-		listVR.Items.Clear();
-		listVR.Items.Add(Strings.MainWindow_VR_Default);
-		listVR.Items.Add(Strings.MainWindow_VR_Removed);
-		if (vrIdx >= 0 && vrIdx < listVR.Items.Count)
-			listVR.SelectedIndex = vrIdx;
-
-		_isSettingUpEntry = false;
-
-		// Refresh filter menu items
-		foreach (object item in filterSelectorMenu.Items)
-		{
-			if (item is ToolStripMenuItem menuItem)
-			{
-				if (menuItem.Tag is ShowEntriesMode mode)
-				{
-					switch (mode)
-					{
-						case ShowEntriesMode.All:
-							menuItem.Text = Strings.MainWindow_Filter_All;
-							break;
-						case ShowEntriesMode.OnlyModified:
-							menuItem.Text = Strings.MainWindow_Filter_OnlyModified;
-							break;
-						case ShowEntriesMode.OnlyUnmodified:
-							menuItem.Text = Strings.MainWindow_Filter_OnlyUnmodified;
-							break;
-					}
-				}
-				else if (menuItem.Tag is AppInfoEntryType entryType)
-				{
-					menuItem.Text = I18n.GetEnumDisplayName(entryType);
-				}
-			}
-		}
-
-		// Refresh entry type combo display (items are enum values, Format event handles translation)
-		listEntryType.Refresh();
-
-		// Promoted label/button text
+		// 更新标签和按钮文本
 		lblName.Text = Strings.MainWindow_LabelName;
 		lblSortAs.Text = Strings.MainWindow_LabelSortAs;
 		lblControllerSupport.Text = Strings.MainWindow_LabelControllerSupport;
@@ -951,43 +231,28 @@ internal class MainWindow : Form
 		toolTips.SetToolTip(btnShortcuts, Strings.Tooltip_Shortcuts);
 		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
 
-		// Refresh status bar
 		UpdateStatusBar();
-
-		ClearDisplayNameCache();
-		Setup();
+		_listManager.ClearDisplayNameCache();
+		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
 
-	private void OnBtnEditLaunch_Click(object sender, EventArgs e)
+	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
 	{
-		var appInfoEntry = GetSelectedEntry();
-		if (appInfoEntry == null) return;
-		using LaunchEditor launchEditor = new LaunchEditor(appInfoEntry.Launches.Items, appInfoEntry.InstallPath, appInfoEntry.Name);
-		if (launchEditor.ShowDialog(this) == DialogResult.OK)
+		I18n.LanguageChanged -= OnLanguageChanged;
+		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
+		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
+		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); }
+		if (SteamData.NeedsSave)
 		{
-			appInfoEntry.Launches = new LaunchTable(launchEditor.LaunchItems);
-		}
-	}
-
-	private void OnBtnSettings_Click(object sender, EventArgs e)
-	{
-		using (var dlg = new SettingsDlg()) dlg.ShowDialog(this);
-		SteamData.UseCompleted = Settings.Default.EnableCompleted;
-		SteamData.UseHidden = Settings.Default.EnableHidden;
-	}
-
-	private void OnCheckCompleted_CheckedChanged(object sender, EventArgs e)
-	{
-		if (!_isSettingUpEntry)
-		{
-			var entry = GetSelectedEntry();
-			if (entry == null) return;
-			if (_snapshotValues.TryGetValue("completed", out var prevVal) && prevVal is int prevCompleted)
+			switch (MessageBox.Show(Strings.Msg_UnsavedChanges, Strings.Msg_SaveFirst, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))
 			{
-				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_completed" }, PropertyType.Int32, prevCompleted);
+			case DialogResult.Yes:
+				SteamData.Save();
+				break;
+			case DialogResult.Cancel:
+				e.Cancel = true;
+				break;
 			}
-			entry.IsCompleted = checkCompleted.Checked;
-			appSelection.Invalidate();
 		}
 	}
 
@@ -997,25 +262,17 @@ internal class MainWindow : Form
 		{
 			e.Handled = true;
 			e.SuppressKeyPress = true;
-			try
-			{
-				SteamData.Save();
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
-			}
+			try { SteamData.Save(); }
+			catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
 			return;
 		}
-
 		if (e.Control && e.KeyCode == Keys.Z)
 		{
 			e.Handled = true;
 			e.SuppressKeyPress = true;
-			PerformUndo();
+			_editController.PerformUndo();
 			return;
 		}
-
 		if (e.Control && e.KeyCode == Keys.F)
 		{
 			if (appFilterText.Focused) return;
@@ -1025,7 +282,6 @@ internal class MainWindow : Form
 			appFilterText.SelectAll();
 			return;
 		}
-
 		if (e.Control && e.KeyCode == Keys.Enter)
 		{
 			e.Handled = true;
@@ -1033,7 +289,6 @@ internal class MainWindow : Form
 			OnBtnSaveApply_Click(sender, EventArgs.Empty);
 			return;
 		}
-
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
@@ -1045,131 +300,35 @@ internal class MainWindow : Form
 		}
 	}
 
-	private void PerformUndo()
+	// --- 对话框打开 ---
+
+	private void OnBtnEditLaunch_Click(object sender, EventArgs e)
 	{
-		if (!_undoManager.CanUndo) return;
-
-		var record = _undoManager.Pop();
-
-		// 如果撤销的游戏不是当前选中的，切换到该游戏
-		if (GetSelectedEntry() != record.Entry)
-		{
-			int idx = _entries.IndexOf(record.Entry);
-			if (idx >= 0)
-			{
-				appSelection.SelectedIndex = idx;
-			}
-		}
-
-		_isSettingUpEntry = true;
-
-		// 判断恢复的值是否等于原始值
-		var origType = record.Entry.GetOriginalPropertyType(record.PropertyPath);
-		var origValue = record.Entry.GetOriginalPropertyValue(record.PropertyPath);
-		bool isOriginal = origType == record.Type && Equals(record.PreviousValue, origValue);
-
-		if (isOriginal)
-		{
-			// 恢复到原始值：用 RevertModifiedProperty 从 Changes 中移除该属性
-			record.Entry.RevertModifiedProperty(record.PropertyPath);
-			InvalidateDisplayName(record.Entry);
-		}
-		else
-		{
-			// 恢复到中间值：用 SetPropertyValue 更新属性并保留 Changes 记录
-			record.Entry.SetPropertyValue(record.Type, record.PreviousValue, record.PropertyPath);
-			InvalidateDisplayName(record.Entry);
-		}
-
-		_isSettingUpEntry = false;
-		Setup();
-
-		// 刷新游戏列表显示（修改标记等）
-		if (appSelection.SelectedIndex >= 0)
-		{
-			Rectangle itemRect = appSelection.GetItemRectangle(appSelection.SelectedIndex);
-			appSelection.Invalidate(itemRect);
-		}
+		var entry = _listManager.GetSelectedEntry();
+		if (entry == null) return;
+		using LaunchEditor launchEditor = new LaunchEditor(entry.Launches.Items, entry.InstallPath, entry.Name);
+		if (launchEditor.ShowDialog(this) == DialogResult.OK)
+			entry.Launches = new LaunchTable(launchEditor.LaunchItems);
 	}
 
-	private void appSelection_KeyPress(object sender, KeyPressEventArgs e)
+	private void OnBtnSettings_Click(object sender, EventArgs e)
 	{
-		e.Handled = true;
-		appSearchTerm.Append(e.KeyChar);
-		appSearchTermTimer.Stop();
-		appSearchTermTimer.Start();
-		string text = appSearchTerm.ToString();
-		int num = appSelection.SelectedIndex;
-		if (text.Length == 1)
-		{
-			num++;
-		}
-		for (int i = 0; i < _entries.Count; i++)
-		{
-			int num2 = (num + i) % _entries.Count;
-			if (GetDisplayName(_entries[num2]).StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
-			{
-				appSelection.SelectedIndex = num2;
-				break;
-			}
-		}
+		using (var dlg = new SettingsDlg()) dlg.ShowDialog(this);
+		SteamData.UseCompleted = Settings.Default.EnableCompleted;
+		SteamData.UseHidden = Settings.Default.EnableHidden;
 	}
 
 	private void OnBtnRevert_Click(object sender, EventArgs e)
 	{
-		var appInfoEntry = GetSelectedEntry();
-		if (appInfoEntry == null) return;
-		try
-		{
-			SteamData.AppInfoData.RevertEntry(appInfoEntry);
-			ResortEntry(appInfoEntry);
-			ClearDisplayNameCache();
-			int idx2 = _entries.IndexOf(appInfoEntry);
-			if (idx2 >= 0) appSelection.SelectedIndex = idx2;
-			Setup();
-		}
-		catch (NotImplementedException)
-		{
-			if (MessageBox.Show(this, string.Format(Strings.Msg_FailedRevert, appInfoEntry.ToString()), Strings.Msg_FailedRevertTitle, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
-			{
-				SteamData.AppInfoData.RemoveEntry(appInfoEntry);
-				RefreshGameList();
-			}
-		}
-	}
-
-	private void UpdateGlossaryForEntry(IAppInfoEntry entry, string previousName)
-	{
-		try
-		{
-			// Get original (unmodified) name from OriginalData or base_name
-			string originalName = null;
-			if (entry.Modification?.OriginalData != null)
-			{
-				using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
-				var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
-				originalName = props.GetPropertyValue<string>(null, "appinfo", "common", "name");
-			}
-			if (string.IsNullOrWhiteSpace(originalName))
-				originalName = entry.GetPropertyValue<string>(null, "appinfo", "steam_edit", "base_name");
-			if (string.IsNullOrWhiteSpace(originalName))
-				originalName = previousName;
-
-			TranslationGlossary.UpdateEntry(entry.ID, originalName, entry.Name);
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("Glossary update failed for {0:X8}: {1}", entry.ID, ex.Message);
-		}
+		_editController.RevertEntry(_listManager.GetSelectedEntry());
 	}
 
 	private void OnBtnSearch_Click(object sender, EventArgs e)
 	{
-		var entry = GetSelectedEntry();
+		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		string gameName = entry.Name;
 		if (string.IsNullOrWhiteSpace(gameName)) return;
-
 		string lang = Settings.Default.AiTargetLanguage switch
 		{
 			"zh-CN" => "中文名",
@@ -1191,7 +350,7 @@ internal class MainWindow : Form
 
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)
 	{
-		var entry = GetSelectedEntry();
+		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		string originalName = entry.Name;
 		if (string.IsNullOrWhiteSpace(originalName)) return;
@@ -1214,26 +373,21 @@ internal class MainWindow : Form
 			{
 				BeginInvoke(() =>
 				{
-					var currentEntry = GetSelectedEntry();
+					var currentEntry = _listManager.GetSelectedEntry();
 					if (currentEntry == null) return;
 					string previousName = currentEntry.Name;
-					_isSettingUpEntry = true;
-					try
+					textGameName.Text = translated;
+					currentEntry.Name = translated;
+					_listManager.InvalidateDisplayName(currentEntry);
+					_editController.UpdateGlossaryForEntry(currentEntry, previousName);
+					if (!currentEntry.HasSortAs)
 					{
-						textGameName.Text = translated;
-						currentEntry.Name = translated;
-						InvalidateDisplayName(currentEntry);
-						UpdateGlossaryForEntry(currentEntry, previousName);
-						if (!currentEntry.HasSortAs)
-						{
-							_refreshingGamesListAfterEdit = true;
-							ResortEntry(currentEntry);
-							_refreshingGamesListAfterEdit = false;
-							textSortAs.Text = currentEntry.SortAs;
-						}
-						appSelection.Invalidate(appSelection.GetItemRectangle(appSelection.SelectedIndex));
+						_listManager.RefreshingAfterEdit = true;
+						_listManager.ResortEntry(currentEntry);
+						_listManager.RefreshingAfterEdit = false;
+						textSortAs.Text = currentEntry.SortAs;
 					}
-					finally { _isSettingUpEntry = false; }
+					_listManager.InvalidateItem(currentEntry);
 					Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
 				});
 			}
@@ -1265,16 +419,12 @@ internal class MainWindow : Form
 			return;
 		}
 
-		// Get current filtered entries
 		var entriesToTranslate = new List<IAppInfoEntry>();
-		foreach (IAppInfoEntry entry in _entries)
+		foreach (IAppInfoEntry entry in _ctx.Entries)
 		{
-			// Skip entries where name has been modified
 			if (entry.IsModified && entry.Modification?.Changes != null &&
 				entry.Modification.Changes.HasProperty("appinfo", "common", "name"))
-			{
 				continue;
-			}
 			if (string.IsNullOrWhiteSpace(entry.Name)) continue;
 			entriesToTranslate.Add(entry);
 		}
@@ -1290,167 +440,77 @@ internal class MainWindow : Form
 		using var dlg = new BatchTranslateDialog(entriesToTranslate, targetLang);
 		dlg.ShowDialog(this);
 
-		// Refresh the list to reflect changes
-		appSelection.Invalidate();
-		Setup();
-	}
-
-	private void OnBtnSave_Click(object sender, EventArgs e)
-	{
-		try
-		{
-			SteamData.Save();
-		}
-		catch (Exception ex)
-		{
-			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
-		}
-	}
-
-	private void OnBtnSaveApply_Click(object sender, EventArgs e)
-	{
-		try
-		{
-			SteamData.Save();
-		}
-		catch (Exception ex)
-		{
-			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
-			return;
-		}
-		try
-		{
-			SteamData.Apply();
-		}
-		catch (Exception ex2)
-		{
-			MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.ToString()));
-		}
-	}
-
-	private void OnBtnSaveApplyRestart_Click(object sender, EventArgs e)
-	{
-		try
-		{
-			SteamData.SaveAndRestartSteam(restartAlways: true);
-		}
-		catch (Exception ex)
-		{
-			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString()));
-		}
-	}
-
-	private void OnListControllerSupport_SelectedIndexChanged(object sender, EventArgs e)
-	{
-		if (!_isSettingUpEntry)
-		{
-			var entry = GetSelectedEntry();
-			if (entry == null) return;
-			int idx = listControllerSupport.SelectedIndex;
-			string rawValue = (idx >= 0 && idx < ControllerRawValues.Length) ? ControllerRawValues[idx] : "none";
-			if (_snapshotValues.TryGetValue("controller", out var prevVal) && prevVal is string prevController)
-			{
-				_undoManager.Push(entry, new[] { "appinfo", "common", "controller_support" }, PropertyType.String, prevController);
-			}
-			entry.SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
-		}
+		_listManager.InvalidateAll();
+		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
 
 	private void OnBtnBatchReplace_Click(object sender, EventArgs e)
 	{
-		if (_entries == null || _entries.Count == 0) return;
-		using var dialog = new BatchReplaceDialog(_entries);
+		if (_ctx.Entries == null || _ctx.Entries.Count == 0) return;
+		using var dialog = new BatchReplaceDialog(_ctx.Entries);
 		if (dialog.ShowDialog(this) == DialogResult.OK)
 		{
 			int replaced = dialog.ReplaceAll();
 			if (replaced > 0)
 			{
-				ClearDisplayNameCache();
-				SortEntries();
-				Setup();
+				_listManager.ClearDisplayNameCache();
+				_listManager.SortEntries();
+				_editController.LoadEntry(_listManager.GetSelectedEntry());
 			}
 		}
 	}
 
-	private void SetEntryVR(IAppInfoEntry entry, bool remove)
+	private void OnBtnSave_Click(object sender, EventArgs e)
 	{
-		if (remove)
-		{
-			int propertyValue = entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport");
-			if (propertyValue != int.MaxValue)
-			{
-				entry.SetPropertyValue(PropertyType.Int32, propertyValue, "appinfo", "steam_edit", "base_openvrsupport");
-				entry.SetPropertyValue(PropertyType.Int32, 0, "appinfo", "common", "openvrsupport");
-			}
-		}
-		else
-		{
-			int propertyValue2 = entry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
-			if (propertyValue2 != int.MaxValue)
-			{
-				entry.SetPropertyValue(PropertyType.Int32, propertyValue2, "appinfo", "common", "openvrsupport");
-				entry.SetPropertyValue(PropertyType.Int32, int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
-			}
-		}
+		try { SteamData.Save(); }
+		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
 	}
 
-	private void OnListVR_SelectedIndexChanged(object sender, EventArgs e)
+	private void OnBtnSaveApply_Click(object sender, EventArgs e)
 	{
-		if (!_isSettingUpEntry)
-		{
-			var entry = GetSelectedEntry();
-			if (entry == null) return;
-			if (_snapshotValues.TryGetValue("vr", out var prevVal) && prevVal is int prevVR)
-			{
-				_undoManager.Push(entry, new[] { "appinfo", "common", "openvrsupport" }, PropertyType.Int32, prevVR);
-				if (_snapshotValues.TryGetValue("vr_base", out var prevBaseVal) && prevBaseVal is int prevBase)
-				{
-					_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "base_openvrsupport" }, PropertyType.Int32, prevBase);
-				}
-			}
-			SetEntryVR(entry, listVR.SelectedIndex != 0);
-		}
+		try { SteamData.Save(); }
+		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); return; }
+		try { SteamData.Apply(); }
+		catch (Exception ex2) { MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.ToString())); }
 	}
 
-	private void OnFilterSelectorMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e)
+	private void OnBtnSaveApplyRestart_Click(object sender, EventArgs e)
 	{
-		if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
-		{
-			e.Cancel = true;
-		}
+		try { SteamData.SaveAndRestartSteam(restartAlways: true); }
+		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
 	}
 
-	private void OnFilter_CheckedChanged(object sender, EventArgs e)
+	private void OnHelp_Click(object sender, EventArgs e)
 	{
-		ToolStripMenuItem obj = sender as ToolStripMenuItem;
-		AppInfoEntryType appInfoEntryType = (AppInfoEntryType)obj.Tag;
-		if (obj.Checked)
-		{
-			_currentFilters |= appInfoEntryType;
-		}
-		else
-		{
-			_currentFilters &= ~appInfoEntryType;
-		}
-		Settings.Default.Filters = _currentFilters;
-		Settings.Default.Save();
-		RefreshGameList();
+		using (var dlg = new About()) dlg.ShowDialog(this);
 	}
 
-	private void OnFilter_ShowEntriesModeChanged(object sender, EventArgs e)
+	private void OnBtnShortcuts_Click(object sender, EventArgs e)
 	{
-		ShowEntriesMode showEntriesMode = (ShowEntriesMode)(sender as ToolStripMenuItem).Tag;
-		foreach (object item in filterSelectorMenu.Items)
-		{
-			if (item is ToolStripMenuItem toolStripMenuItem && toolStripMenuItem.Tag is ShowEntriesMode)
-			{
-				ShowEntriesMode showEntriesMode2 = (ShowEntriesMode)toolStripMenuItem.Tag;
-				toolStripMenuItem.Checked = showEntriesMode2 == showEntriesMode;
-			}
-		}
-		Settings.Default.FiltersShowEntries = showEntriesMode;
-		Settings.Default.Save();
-		RefreshGameList();
+		using var dlg = new Form();
+		dlg.Text = Strings.Shortcuts_Title;
+		dlg.StartPosition = FormStartPosition.CenterParent;
+		dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+		dlg.MaximizeBox = false;
+		dlg.MinimizeBox = false;
+		dlg.ShowInTaskbar = false;
+		dlg.ClientSize = new Size(320, 240);
+		var lbl = new Label();
+		lbl.Dock = DockStyle.Fill;
+		lbl.Font = new Font("Consolas", 9f);
+		lbl.AutoSize = false;
+		lbl.Padding = new Padding(12);
+		lbl.Text = Strings.Shortcuts_Content;
+		var btnClose = new Button();
+		btnClose.Text = Strings.About_BtnClose;
+		btnClose.Dock = DockStyle.Bottom;
+		btnClose.Height = 30;
+		btnClose.Click += (_, _) => dlg.Close();
+		dlg.AcceptButton = btnClose;
+		dlg.CancelButton = btnClose;
+		dlg.Controls.Add(lbl);
+		dlg.Controls.Add(btnClose);
+		dlg.ShowDialog(this);
 	}
 
 	private void OnFilterSelectorMenu_Click(object sender, EventArgs e)
@@ -1481,124 +541,6 @@ internal class MainWindow : Form
 		}
 	}
 
-	private void OnSortSelectorMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e)
-	{
-		if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
-			e.Cancel = true;
-	}
-
-	private void OnSortField_Click(object sender, EventArgs e)
-	{
-		if (sender is not ToolStripMenuItem item || item.Tag is not string field) return;
-		Settings.Default.SortField = field;
-		Settings.Default.Save();
-		foreach (var obj in sortSelectorMenu.Items)
-		{
-			if (obj is ToolStripMenuItem mi && mi.Tag is string && mi != item) mi.Checked = false;
-		}
-		item.Checked = true;
-		SortEntries();
-	}
-
-	private void OnSortDirection_Click(object sender, EventArgs e)
-	{
-		if (sender is not ToolStripMenuItem item || item.Tag is not bool descending) return;
-		Settings.Default.SortDescending = descending;
-		Settings.Default.Save();
-		foreach (var obj in sortSelectorMenu.Items)
-		{
-			if (obj is ToolStripMenuItem mi && mi.Tag is bool && mi != item) mi.Checked = false;
-		}
-		item.Checked = true;
-		SortEntries();
-	}
-
-	private void OnAppFilterText_TextChanged(object sender, EventArgs e)
-	{
-		_filterDebounceTimer.Stop();
-		_filterDebounceTimer.Start();
-	}
-
-	private void OnAppSelection_SizeChanged(object sender, EventArgs e)
-	{
-		appSelection.Invalidate();
-	}
-
-	private void OnHelp_Click(object sender, EventArgs e)
-	{
-		using (var dlg = new About()) dlg.ShowDialog(this);
-	}
-
-	private void OnBtnShortcuts_Click(object sender, EventArgs e)
-	{
-		using var dlg = new Form();
-		dlg.Text = Strings.Shortcuts_Title;
-		dlg.StartPosition = FormStartPosition.CenterParent;
-		dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
-		dlg.MaximizeBox = false;
-		dlg.MinimizeBox = false;
-		dlg.ShowInTaskbar = false;
-		dlg.ClientSize = new Size(320, 240);
-
-		var lbl = new Label();
-		lbl.Dock = DockStyle.Fill;
-		lbl.Font = new Font("Consolas", 9f);
-		lbl.AutoSize = false;
-		lbl.Padding = new Padding(12);
-		lbl.Text = Strings.Shortcuts_Content;
-
-		var btnClose = new Button();
-		btnClose.Text = Strings.About_BtnClose;
-		btnClose.Dock = DockStyle.Bottom;
-		btnClose.Height = 30;
-		btnClose.Click += (_, _) => dlg.Close();
-
-		dlg.AcceptButton = btnClose;
-		dlg.CancelButton = btnClose;
-		dlg.Controls.Add(lbl);
-		dlg.Controls.Add(btnClose);
-		dlg.ShowDialog(this);
-	}
-
-	private void appSelection_MouseMove(object sender, MouseEventArgs e)
-	{
-		Point p = appSelection.PointToClient(Control.MousePosition);
-		int num = appSelection.IndexFromPoint(p);
-		if (num >= 0 && num < appSelection.Items.Count)
-		{
-			if (appSelection_LastHoverI != num)
-			{
-				IAppInfoEntry entry = _entries[num];
-				appSelection_LastHoverI = num;
-				toolTips.Active = false;
-				toolTips.SetToolTip(appSelection, GetEntryToolTip(entry));
-				toolTips.Active = true;
-			}
-		}
-		else
-		{
-			toolTips.SetToolTip(appSelection, null);
-			appSelection_LastHoverI = -1;
-		}
-	}
-
-	private void appSelection_MouseLeave(object sender, EventArgs e)
-	{
-		appSelection_LastHoverI = -1;
-	}
-
-	private string GetEntryToolTip(IAppInfoEntry entry)
-	{
-		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.AppendFormat("{0}: {1}", entry.ID, entry.Name);
-		string propertyValue = entry.GetPropertyValue<string>(null, new string[3] { "appinfo", "common", "oslist" });
-		if (propertyValue != null)
-		{
-			stringBuilder.AppendFormat(" [{0}]", propertyValue);
-		}
-		return stringBuilder.ToString();
-	}
-
 	private void panel1_Paint(object sender, PaintEventArgs e)
 	{
 		float dpiX = e.Graphics.DpiX;
@@ -1607,7 +549,7 @@ internal class MainWindow : Form
 		Size size = new Size((int)(150f * num), (int)(150f * num));
 		Point location = new Point(panel1.ClientSize - size);
 		Rectangle destRect = new Rectangle(location, size);
-		e.Graphics.DrawImage(Resources.logo1, destRect, 0, 0, logo.Width, logo.Height, GraphicsUnit.Pixel, _bgLogoAttributes);
+		e.Graphics.DrawImage(Resources.logo1, destRect, 0, 0, logo.Width, logo.Height, GraphicsUnit.Pixel, _listManager.BgLogoAttributes);
 	}
 
 	private void MainWindow_Move(object sender, EventArgs e)
@@ -1629,47 +571,6 @@ internal class MainWindow : Form
 		}
 	}
 
-	private void listEntryType_SelectedIndexChanged(object sender, EventArgs e)
-	{
-		if (!_isSettingUpEntry)
-		{
-			var entry = GetSelectedEntry();
-			if (entry == null) return;
-			if (_snapshotValues.TryGetValue("type", out var prevVal) && prevVal is string prevType)
-			{
-				_undoManager.Push(entry, new[] { "appinfo", "common", "type" }, PropertyType.String, prevType);
-			}
-			entry.Type = (AppInfoEntryType)listEntryType.SelectedItem;
-			RefreshGameList();
-		}
-	}
-
-	private void textGameName_ClearXClicked(object sender, HandledEventArgs e)
-	{
-		e.Handled = true;
-		var entry = GetSelectedEntry();
-		if (entry == null) return;
-		entry.RevertModifiedProperty("appinfo", "common", "name");
-		InvalidateDisplayName(entry);
-		_refreshingGamesListAfterEdit = true;
-		RefreshGameList();
-		_refreshingGamesListAfterEdit = false;
-		Setup();
-	}
-
-	private void textSortAs_ClearXClicked(object sender, HandledEventArgs e)
-	{
-		e.Handled = true;
-		var appInfoEntry = GetSelectedEntry();
-		if (appInfoEntry == null) return;
-		appInfoEntry.RevertModifiedProperty("appinfo", "common", "sortas");
-		InvalidateDisplayName(appInfoEntry);
-		_refreshingGamesListAfterEdit = true;
-		ResortEntry(appInfoEntry);
-		_refreshingGamesListAfterEdit = false;
-		Setup();
-	}
-
 	private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
 	{
 		Settings.Default.MainWindowSplitter = splitContainer1.SplitterDistance;
@@ -1679,20 +580,8 @@ internal class MainWindow : Form
 	{
 		if (disposing)
 		{
-			if (components != null)
-			{
-				components.Dispose();
-			}
-			if (_boldAppSelectionFont != null)
-			{
-				_boldAppSelectionFont.Dispose();
-			}
-			if (_hiddenAppSelectionFont != null)
-			{
-				_hiddenAppSelectionFont.Dispose();
-			}
-			_filterDebounceTimer?.Dispose();
-			_statusBarDebounceTimer?.Dispose();
+			_listManager?.Dispose();
+			components?.Dispose();
 		}
 		base.Dispose(disposing);
 	}
@@ -1815,7 +704,6 @@ internal class MainWindow : Form
 		this.btnTranslate.Text = "AI Translate";
 		this.btnTranslate.UseVisualStyleBackColor = true;
 		this.btnTranslate.Click += new System.EventHandler(OnBtnTranslate_Click);
-		// btnBatchTranslate
 		this.btnBatchTranslate.Name = "btnBatchTranslate";
 		this.btnBatchTranslate.Size = new System.Drawing.Size(130, 34);
 		this.btnBatchTranslate.TabIndex = 3;
@@ -1823,7 +711,6 @@ internal class MainWindow : Form
 		this.toolTips.SetToolTip(this.btnBatchTranslate, "Batch translate all filtered games");
 		this.btnBatchTranslate.UseVisualStyleBackColor = true;
 		this.btnBatchTranslate.Click += new System.EventHandler(OnBtnBatchTranslate_Click);
-		// btnBatchReplace
 		this.btnBatchReplace = new System.Windows.Forms.Button();
 		this.btnBatchReplace.Name = "btnBatchReplace";
 		this.btnBatchReplace.Size = new System.Drawing.Size(130, 34);
@@ -1911,8 +798,6 @@ internal class MainWindow : Form
 		this.checkCompleted.TabIndex = 3;
 		this.checkCompleted.Text = "Completed";
 		this.checkCompleted.UseVisualStyleBackColor = false;
-		this.checkCompleted.CheckedChanged += new System.EventHandler(OnCheckCompleted_CheckedChanged);
-		this.checkCompleted.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.checkHidden.AutoSize = true;
 		this.checkHidden.BackColor = System.Drawing.Color.Transparent;
 		this.checkHidden.Location = new System.Drawing.Point(58, 59);
@@ -1921,30 +806,21 @@ internal class MainWindow : Form
 		this.checkHidden.TabIndex = 2;
 		this.checkHidden.Text = "Hidden";
 		this.checkHidden.UseVisualStyleBackColor = false;
-		this.checkHidden.CheckedChanged += new System.EventHandler(OnCheckHidden_CheckedChanged);
-		this.checkHidden.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.listControllerSupport.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 		this.listControllerSupport.FormattingEnabled = true;
 		this.listControllerSupport.Location = new System.Drawing.Point(155, 89);
 		this.listControllerSupport.Name = "listControllerSupport";
 		this.listControllerSupport.Size = new System.Drawing.Size(121, 21);
 		this.listControllerSupport.TabIndex = 5;
-		this.listControllerSupport.SelectedIndexChanged += new System.EventHandler(OnListControllerSupport_SelectedIndexChanged);
-		this.listControllerSupport.KeyDown += new System.Windows.Forms.KeyEventHandler(OnGeneric_KeyDown);
-		this.listControllerSupport.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.listVR.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 		this.listVR.FormattingEnabled = true;
 		this.listVR.Location = new System.Drawing.Point(155, 123);
 		this.listVR.Name = "listVR";
 		this.listVR.Size = new System.Drawing.Size(71, 21);
 		this.listVR.TabIndex = 7;
-		this.listVR.SelectedIndexChanged += new System.EventHandler(OnListVR_SelectedIndexChanged);
-		this.listVR.KeyDown += new System.Windows.Forms.KeyEventHandler(OnGeneric_KeyDown);
-		this.listVR.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.filterSelectorMenu.Name = "filterSelectorMenu";
 		this.filterSelectorMenu.ShowCheckMargin = true;
 		this.filterSelectorMenu.Size = new System.Drawing.Size(83, 4);
-		this.filterSelectorMenu.Closing += new System.Windows.Forms.ToolStripDropDownClosingEventHandler(OnFilterSelectorMenu_Closing);
 		this.filterSelector.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.filterSelector.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 		this.filterSelector.Image = SteamEdit.Properties.Resources.filter;
@@ -1955,13 +831,11 @@ internal class MainWindow : Form
 		this.filterSelector.TabIndex = 0;
 		this.filterSelector.UseVisualStyleBackColor = true;
 		this.filterSelector.Click += new System.EventHandler(OnFilterSelectorMenu_Click);
-		// Sort selector
 		this.sortSelectorMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
 		this.sortSelector = new System.Windows.Forms.Button();
 		this.sortSelectorMenu.Name = "sortSelectorMenu";
 		this.sortSelectorMenu.ShowCheckMargin = true;
 		this.sortSelectorMenu.Size = new System.Drawing.Size(83, 4);
-		this.sortSelectorMenu.Closing += new System.Windows.Forms.ToolStripDropDownClosingEventHandler(OnSortSelectorMenu_Closing);
 		this.sortSelector.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.sortSelector.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 		this.sortSelector.Text = "↕";
@@ -1998,12 +872,6 @@ internal class MainWindow : Form
 		this.appSelection.Name = "appSelection";
 		this.appSelection.Size = new System.Drawing.Size(221, 274);
 		this.appSelection.TabIndex = 2;
-		this.appSelection.DrawItem += new System.Windows.Forms.DrawItemEventHandler(OnAppSelection_DrawItem);
-		this.appSelection.SelectedIndexChanged += new System.EventHandler(OnAppSelection_SelectedIndexChanged);
-		this.appSelection.SizeChanged += new System.EventHandler(OnAppSelection_SizeChanged);
-		this.appSelection.KeyPress += new System.Windows.Forms.KeyPressEventHandler(appSelection_KeyPress);
-		this.appSelection.MouseLeave += new System.EventHandler(appSelection_MouseLeave);
-		this.appSelection.MouseMove += new System.Windows.Forms.MouseEventHandler(appSelection_MouseMove);
 		this.appFilterText.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.appFilterText.AutoClearX = true;
 		this.appFilterText.ClearXVisible = false;
@@ -2011,7 +879,6 @@ internal class MainWindow : Form
 		this.appFilterText.Name = "appFilterText";
 		this.appFilterText.Size = new System.Drawing.Size(169, 20);
 		this.appFilterText.TabIndex = 1;
-		this.appFilterText.TextChanged += new System.EventHandler(OnAppFilterText_TextChanged);
 		this.panel1.AutoScroll = true;
 		this.panel1.Controls.Add(this.listEntryType);
 		this.panel1.Controls.Add(this.textGameName);
@@ -2038,8 +905,6 @@ internal class MainWindow : Form
 		this.listEntryType.Name = "listEntryType";
 		this.listEntryType.Size = new System.Drawing.Size(79, 21);
 		this.listEntryType.TabIndex = 4;
-		this.listEntryType.SelectedIndexChanged += new System.EventHandler(listEntryType_SelectedIndexChanged);
-		this.listEntryType.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.textGameName.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.textGameName.AutoClearX = false;
 		this.textGameName.ClearXVisible = true;
@@ -2047,9 +912,6 @@ internal class MainWindow : Form
 		this.textGameName.Name = "textGameName";
 		this.textGameName.Size = new System.Drawing.Size(386, 20);
 		this.textGameName.TabIndex = 0;
-		this.textGameName.ClearXClicked += new System.ComponentModel.HandledEventHandler(textGameName_ClearXClicked);
-		this.textGameName.TextChanged += new System.EventHandler(OnTextGameName_TextChanged);
-		this.textGameName.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.textSortAs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.textSortAs.AutoClearX = false;
 		this.textSortAs.ClearXVisible = true;
@@ -2057,9 +919,6 @@ internal class MainWindow : Form
 		this.textSortAs.Name = "textSortAs";
 		this.textSortAs.Size = new System.Drawing.Size(386, 20);
 		this.textSortAs.TabIndex = 1;
-		this.textSortAs.ClearXClicked += new System.ComponentModel.HandledEventHandler(textSortAs_ClearXClicked);
-		this.textSortAs.TextChanged += new System.EventHandler(OnTextSortAs_TextChanged);
-		this.textSortAs.Enter += new System.EventHandler(OnEditControl_Enter);
 		this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayoutPanel3.AutoSize = true;
 		this.flowLayoutPanel3.Controls.Add(this.btnShortcuts);
