@@ -271,7 +271,8 @@ internal class SettingsDlg : Form
         btnAnalyzeRules.Text = Strings.Msg_AnalyzingRules;
         try
         {
-            string rules = await AiTranslator.AnalyzeTranslationRulesAsync(glossaryContent);
+            string currentSystemPrompt = textCustomSystemPrompt.Text;
+            string rules = await AiTranslator.AnalyzeTranslationRulesAsync(glossaryContent, currentSystemPrompt);
             if (!string.IsNullOrWhiteSpace(rules))
             {
                 textTranslationRules.Text = rules;

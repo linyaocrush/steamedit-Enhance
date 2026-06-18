@@ -213,7 +213,7 @@ Rules:
 	}
 
 	public static async Task<string> AnalyzeTranslationRulesAsync(
-		string glossaryJsonContent, CancellationToken cancellationToken = default)
+		string glossaryJsonContent, string customSystemPrompt = null, CancellationToken cancellationToken = default)
 	{
 		string apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
 		string apiKey = Settings.Default.AiApiKey;
@@ -227,6 +227,20 @@ Rules:
 		string model = Settings.Default.AiModel;
 		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
 
+		string systemPromptSection = "";
+		if (!string.IsNullOrWhiteSpace(customSystemPrompt))
+		{
+			systemPromptSection = @"
+
+The user's current system prompt already contains the following instructions/rules:
+---
+" + customSystemPrompt + @"
+---
+
+IMPORTANT: Do NOT summarize or repeat any rules that are already covered in the system prompt above. Only output NEW rules that are NOT already mentioned. If all observed patterns are already covered by the system prompt, output ""(No new rules found)"".
+";
+		}
+
 		string analysisPrompt = @"You are a translation style analyst. Analyze the following game name translation pairs and summarize the translation rules/patterns the user follows.
 
 Output a concise list of rules in English. Focus on:
@@ -235,7 +249,8 @@ Output a concise list of rules in English. Focus on:
 - Terminology consistency patterns
 - Any recurring translation conventions
 
-Do NOT list individual translations. Only output generalized rules. Keep the output under 500 words.
+Do NOT list individual translations. Only output generalized rules. Keep the output under 500 words."
++ systemPromptSection + @"
 
 Translation pairs:
 " + glossaryJsonContent;
