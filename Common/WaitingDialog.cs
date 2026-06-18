@@ -15,7 +15,7 @@ internal class WaitingDialog : Form
 	private bool _cancelled;
 	private bool _pumpingMessages;
 
-	private IContainer components;
+	private IContainer components = null!;
 
 	private Label message;
 

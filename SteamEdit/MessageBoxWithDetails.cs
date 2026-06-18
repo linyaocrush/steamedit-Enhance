@@ -10,7 +10,7 @@ public class MessageBoxWithDetails : Form
 {
 	private const string DetailsFormat = "Details {0}";
 
-	private IContainer components;
+	private IContainer components = null!;
 
 	private Button btnClose;
 

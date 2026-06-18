@@ -10,7 +10,7 @@ namespace SteamEdit;
 
 public class About : Form
 {
-	private IContainer components;
+	private IContainer components = null!;
 
 	private Label lblVersion;
 

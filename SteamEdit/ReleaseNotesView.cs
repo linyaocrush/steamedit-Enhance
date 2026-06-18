@@ -10,7 +10,7 @@ namespace SteamEdit;
 
 public class ReleaseNotesView : Form
 {
-	private IContainer components;
+	private IContainer components = null!;
 
 	private TextBox textView;
 

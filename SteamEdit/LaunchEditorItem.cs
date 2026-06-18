@@ -17,7 +17,7 @@ internal class LaunchEditorItem : UserControl
 
 	private Control _oldParent;
 
-	private IContainer components;
+	private IContainer components = null!;
 
 	private TextBox txtExec;
 

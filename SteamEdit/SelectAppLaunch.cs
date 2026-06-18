@@ -12,7 +12,7 @@ namespace SteamEdit;
 
 internal class SelectAppLaunch : Form
 {
-	private IContainer components;
+	private IContainer components = null!;
 
 	private ComboBox appSelection;
 

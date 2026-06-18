@@ -16,7 +16,7 @@ internal class LaunchEditor : Form
 
 	private string _gameName;
 
-	private IContainer components;
+	private IContainer components = null!;
 
 	private FlowLayoutPanel flowLayout;
 
