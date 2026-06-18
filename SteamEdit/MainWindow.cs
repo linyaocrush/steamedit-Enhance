@@ -706,13 +706,14 @@ internal class MainWindow : Form
 		{
 			return;
 		}
-		IAppInfoEntry appInfoEntry = appSelection.SelectedItem as IAppInfoEntry;
+		IAppInfoEntry appInfoEntry = GetSelectedEntry();
 		if (appInfoEntry == null) return;
 		if (textGameName.Text != appInfoEntry.Name)
 		{
 			string previousName = appInfoEntry.Name;
 			_undoManager.Push(appInfoEntry, new[] { "appinfo", "common", "name" }, PropertyType.String, previousName);
 			appInfoEntry.Name = textGameName.Text;
+			InvalidateDisplayName(appInfoEntry);
 			UpdateGlossaryForEntry(appInfoEntry, previousName);
 			if (!appInfoEntry.HasSortAs)
 			{
@@ -733,12 +734,13 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			IAppInfoEntry appInfoEntry = appSelection.SelectedItem as IAppInfoEntry;
+			IAppInfoEntry appInfoEntry = GetSelectedEntry();
 			if (appInfoEntry == null) return;
 			if (textSortAs.Text != appInfoEntry.SortAs)
 			{
 				_undoManager.Push(appInfoEntry, new[] { "appinfo", "common", "sortas" }, PropertyType.String, appInfoEntry.SortAs);
 				appInfoEntry.SortAs = textSortAs.Text;
+				InvalidateDisplayName(appInfoEntry);
 				_refreshingGamesListAfterEdit = true;
 				ResortEntry(appInfoEntry);
 				_refreshingGamesListAfterEdit = false;
@@ -752,7 +754,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			var entry = GetSelectedEntry();
+			if (entry == null) return;
 			if (_snapshotValues.TryGetValue("hidden", out var prevVal) && prevVal is int prevHidden)
 			{
 				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_hidden" }, PropertyType.Int32, prevHidden);
@@ -934,7 +937,8 @@ internal class MainWindow : Form
 
 	private void OnBtnEditLaunch_Click(object sender, EventArgs e)
 	{
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		var appInfoEntry = GetSelectedEntry();
+		if (appInfoEntry == null) return;
 		using LaunchEditor launchEditor = new LaunchEditor(appInfoEntry.Launches.Items, appInfoEntry.InstallPath, appInfoEntry.Name);
 		if (launchEditor.ShowDialog(this) == DialogResult.OK)
 		{
@@ -953,7 +957,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			var entry = GetSelectedEntry();
+			if (entry == null) return;
 			if (_snapshotValues.TryGetValue("completed", out var prevVal) && prevVal is int prevCompleted)
 			{
 				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_completed" }, PropertyType.Int32, prevCompleted);
@@ -1069,11 +1074,13 @@ internal class MainWindow : Form
 
 	private void OnBtnRevert_Click(object sender, EventArgs e)
 	{
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		var appInfoEntry = GetSelectedEntry();
+		if (appInfoEntry == null) return;
 		try
 		{
 			SteamData.AppInfoData.RevertEntry(appInfoEntry);
 			ResortEntry(appInfoEntry);
+			ClearDisplayNameCache();
 			appSelection.SelectedItem = appInfoEntry;
 			Setup();
 		}
@@ -1114,7 +1121,8 @@ internal class MainWindow : Form
 
 	private void OnBtnSearch_Click(object sender, EventArgs e)
 	{
-		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		var entry = GetSelectedEntry();
+		if (entry == null) return;
 		string gameName = entry.Name;
 		if (string.IsNullOrWhiteSpace(gameName)) return;
 
@@ -1139,7 +1147,8 @@ internal class MainWindow : Form
 
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)
 	{
-		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		var entry = GetSelectedEntry();
+		if (entry == null) return;
 		string originalName = entry.Name;
 		if (string.IsNullOrWhiteSpace(originalName)) return;
 
@@ -1161,13 +1170,15 @@ internal class MainWindow : Form
 			{
 				BeginInvoke(() =>
 				{
-					if (appSelection.SelectedItem is not IAppInfoEntry currentEntry) return;
+					var currentEntry = GetSelectedEntry();
+					if (currentEntry == null) return;
 					string previousName = currentEntry.Name;
 					_isSettingUpEntry = true;
 					try
 					{
 						textGameName.Text = translated;
 						currentEntry.Name = translated;
+						InvalidateDisplayName(currentEntry);
 						UpdateGlossaryForEntry(currentEntry, previousName);
 						if (!currentEntry.HasSortAs)
 						{
@@ -1289,7 +1300,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			var entry = GetSelectedEntry();
+			if (entry == null) return;
 			int idx = listControllerSupport.SelectedIndex;
 			string rawValue = (idx >= 0 && idx < ControllerRawValues.Length) ? ControllerRawValues[idx] : "none";
 			if (_snapshotValues.TryGetValue("controller", out var prevVal) && prevVal is string prevController)
@@ -1369,7 +1381,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			var entry = GetSelectedEntry();
+			if (entry == null) return;
 			if (_snapshotValues.TryGetValue("vr", out var prevVal) && prevVal is int prevVR)
 			{
 				_undoManager.Push(entry, new[] { "appinfo", "common", "openvrsupport" }, PropertyType.Int32, prevVR);
@@ -1587,7 +1600,8 @@ internal class MainWindow : Form
 	{
 		if (!_isSettingUpEntry)
 		{
-			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			var entry = GetSelectedEntry();
+			if (entry == null) return;
 			if (_snapshotValues.TryGetValue("type", out var prevVal) && prevVal is string prevType)
 			{
 				_undoManager.Push(entry, new[] { "appinfo", "common", "type" }, PropertyType.String, prevType);
@@ -1600,8 +1614,10 @@ internal class MainWindow : Form
 	private void textGameName_ClearXClicked(object sender, HandledEventArgs e)
 	{
 		e.Handled = true;
-		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		var entry = GetSelectedEntry();
+		if (entry == null) return;
 		entry.RevertModifiedProperty("appinfo", "common", "name");
+		InvalidateDisplayName(entry);
 		_refreshingGamesListAfterEdit = true;
 		RefreshGameList();
 		_refreshingGamesListAfterEdit = false;
@@ -1611,8 +1627,10 @@ internal class MainWindow : Form
 	private void textSortAs_ClearXClicked(object sender, HandledEventArgs e)
 	{
 		e.Handled = true;
-		if (appSelection.SelectedItem is not IAppInfoEntry appInfoEntry) return;
+		var appInfoEntry = GetSelectedEntry();
+		if (appInfoEntry == null) return;
 		appInfoEntry.RevertModifiedProperty("appinfo", "common", "sortas");
+		InvalidateDisplayName(appInfoEntry);
 		_refreshingGamesListAfterEdit = true;
 		ResortEntry(appInfoEntry);
 		_refreshingGamesListAfterEdit = false;
