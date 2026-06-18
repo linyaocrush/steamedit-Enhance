@@ -607,6 +607,7 @@ internal class MainWindow : Form
 		if (textGameName.Text != appInfoEntry.Name)
 		{
 			string previousName = appInfoEntry.Name;
+			_undoManager.Push(appInfoEntry, new[] { "appinfo", "common", "name" }, PropertyType.String, previousName);
 			appInfoEntry.Name = textGameName.Text;
 			UpdateGlossaryForEntry(appInfoEntry, previousName);
 			if (!appInfoEntry.HasSortAs)
@@ -632,6 +633,7 @@ internal class MainWindow : Form
 			if (appInfoEntry == null) return;
 			if (textSortAs.Text != appInfoEntry.SortAs)
 			{
+				_undoManager.Push(appInfoEntry, new[] { "appinfo", "common", "sortas" }, PropertyType.String, appInfoEntry.SortAs);
 				appInfoEntry.SortAs = textSortAs.Text;
 				_refreshingGamesListAfterEdit = true;
 				ResortEntry(appInfoEntry);
@@ -647,6 +649,10 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			if (_snapshotValues.TryGetValue("hidden_type", out var prevVal) && prevVal is string prevType)
+			{
+				_undoManager.Push(entry, new[] { "appinfo", "common", "type" }, PropertyType.String, prevType);
+			}
 			entry.IsHidden = checkHidden.Checked;
 			appSelection.Invalidate();
 		}
@@ -844,6 +850,10 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			if (_snapshotValues.TryGetValue("completed_name", out var prevVal) && prevVal is string prevName)
+			{
+				_undoManager.Push(entry, new[] { "appinfo", "common", "name" }, PropertyType.String, prevName);
+			}
 			entry.IsCompleted = checkCompleted.Checked;
 			appSelection.Invalidate();
 		}
@@ -1125,6 +1135,10 @@ internal class MainWindow : Form
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
 			int idx = listControllerSupport.SelectedIndex;
 			string rawValue = (idx >= 0 && idx < ControllerRawValues.Length) ? ControllerRawValues[idx] : "none";
+			if (_snapshotValues.TryGetValue("controller", out var prevVal) && prevVal is string prevController)
+			{
+				_undoManager.Push(entry, new[] { "appinfo", "common", "controller_support" }, PropertyType.String, prevController);
+			}
 			entry.SetPropertyValue(PropertyType.String, rawValue, "appinfo", "common", "controller_support");
 		}
 	}
@@ -1199,6 +1213,10 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			if (_snapshotValues.TryGetValue("vr", out var prevVal) && prevVal is int prevVR)
+			{
+				_undoManager.Push(entry, new[] { "appinfo", "common", "openvrsupport" }, PropertyType.Int32, prevVR);
+			}
 			SetEntryVR(entry, listVR.SelectedIndex != 0);
 		}
 	}
@@ -1409,6 +1427,10 @@ internal class MainWindow : Form
 		if (!_isSettingUpEntry)
 		{
 			if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+			if (_snapshotValues.TryGetValue("type", out var prevVal) && prevVal is string prevType)
+			{
+				_undoManager.Push(entry, new[] { "appinfo", "common", "type" }, PropertyType.String, prevType);
+			}
 			entry.Type = (AppInfoEntryType)listEntryType.SelectedItem;
 			RefreshGameList();
 		}
