@@ -21,5 +21,6 @@
     <RootNamespace />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="SteamEditTests\**" />
   </ItemGroup>
 </Project>

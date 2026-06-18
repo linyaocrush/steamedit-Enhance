@@ -51,7 +51,7 @@ internal static class PropertyTableIO
 	{
 		byte[] bytes = Encoding.Unicode.GetBytes(str);
 		writer.Write(bytes);
-		writer.Write((byte)0);
+		writer.Write((ushort)0);
 	}
 
 	private static string ReadWideString_0x07564429(BinaryReader reader, IList<string> stringTable)
