@@ -609,7 +609,7 @@ internal class SettingsDlg : Form
         this.label6.Text = "AppInfo Path (requires restart)";
         // lblAutoStart
         this.lblAutoStart.AutoSize = true;
-        this.lblAutoStart.Margin = new System.Windows.Forms.Padding(6, 5, 6, 6);
+        this.lblAutoStart.Margin = new System.Windows.Forms.Padding(6);
         this.lblAutoStart.Name = "lblAutoStart";
         this.lblAutoStart.TabIndex = 13;
         this.lblAutoStart.Text = "Start on Boot";
@@ -620,6 +620,7 @@ internal class SettingsDlg : Form
         this.checkAutoStart.TabIndex = 14;
         this.toolTip.SetToolTip(this.checkAutoStart, "Add SteamEdit to Windows startup registry");
         this.checkAutoStart.UseVisualStyleBackColor = true;
+        this.checkAutoStart.Anchor = System.Windows.Forms.AnchorStyles.None;
         this.checkAutoStart.CheckedChanged += new System.EventHandler(checkAutoStart_CheckedChanged);
         // checkAutoStartAutoFix
         this.checkAutoStartAutoFix.AutoSize = true;
@@ -630,6 +631,7 @@ internal class SettingsDlg : Form
         this.checkAutoStartAutoFix.Text = "autofix";
         this.toolTip.SetToolTip(this.checkAutoStartAutoFix, "Auto-apply pending changes on startup (autofix)");
         this.checkAutoStartAutoFix.UseVisualStyleBackColor = true;
+        this.checkAutoStartAutoFix.Anchor = System.Windows.Forms.AnchorStyles.None;
         this.checkAutoStartAutoFix.CheckedChanged += new System.EventHandler(checkAutoStartAutoFix_CheckedChanged);
         // checkAutoStartForceStart
         this.checkAutoStartForceStart.AutoSize = true;
@@ -640,6 +642,7 @@ internal class SettingsDlg : Form
         this.checkAutoStartForceStart.Text = "forcestart";
         this.toolTip.SetToolTip(this.checkAutoStartForceStart, "Also restart Steam after applying changes (forcestart). Requires autofix.");
         this.checkAutoStartForceStart.UseVisualStyleBackColor = true;
+        this.checkAutoStartForceStart.Anchor = System.Windows.Forms.AnchorStyles.None;
         this.checkAutoStartForceStart.CheckedChanged += new System.EventHandler(checkAutoStartForceStart_CheckedChanged);
         // panelAutoStartSub
         this.panelAutoStartSub.Controls.Add(this.checkAutoStart);
