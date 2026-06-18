@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Xml;
 using SteamEdit.Data;
 
@@ -18,6 +20,12 @@ internal class Settings
 
 	private bool _isDirty;
 	private bool _suppressDirtyTracking;
+
+	private static readonly JsonSerializerOptions _jsonOptions = new()
+	{
+		WriteIndented = true,
+		Converters = { new JsonStringEnumConverter() }
+	};
 
 	[DefaultValue(true)]
 	public bool EnableCompleted
@@ -482,5 +490,15 @@ internal class Settings
 			}
 		}
 		return result;
+	}
+
+	private string GetJsonFilePath()
+	{
+		return Path.Combine(AppHelper.GetAppDirectory(), "Settings.json");
+	}
+
+	private string GetXmlFilePath()
+	{
+		return Path.Combine(AppHelper.GetAppDirectory(), "Settings.xml");
 	}
 }
