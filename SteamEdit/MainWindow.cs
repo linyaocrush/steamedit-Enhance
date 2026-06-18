@@ -1797,7 +1797,7 @@ internal class MainWindow : Form
 		flowLayoutPanel.WrapContents = false;
 		this.btnEditLaunch.Location = new System.Drawing.Point(3, 3);
 		this.btnEditLaunch.Name = "btnEditLaunch";
-		this.btnEditLaunch.Size = new System.Drawing.Size(75, 34);
+		this.btnEditLaunch.Size = new System.Drawing.Size(90, 34);
 		this.btnEditLaunch.TabIndex = 0;
 		this.btnEditLaunch.Text = "Edit Launch";
 		this.btnEditLaunch.UseVisualStyleBackColor = true;
