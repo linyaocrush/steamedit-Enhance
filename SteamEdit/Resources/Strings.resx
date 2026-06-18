@@ -372,11 +372,11 @@
   <data name="About_LabelModifiedBy" xml:space="preserve">
     <value>Modified by:</value>
   </data>
-  <data name="About_AppName" xml:space="preserve">
-    <value>SteamEdit</value>
+  <data name="About_LabelEnhanced" xml:space="preserve">
+    <value>Enhanced ver:</value>
   </data>
-  <data name="About_ReleaseNotes" xml:space="preserve">
-    <value>Release Notes</value>
+  <data name="About_AppName" xml:space="preserve">
+    <value>steamedit-Enhance</value>
   </data>
   <data name="About_BtnClose" xml:space="preserve">
     <value>Close</value>

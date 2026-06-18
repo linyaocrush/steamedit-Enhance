@@ -372,11 +372,11 @@
   <data name="About_LabelModifiedBy" xml:space="preserve">
     <value>修改者：</value>
   </data>
-  <data name="About_AppName" xml:space="preserve">
-    <value>SteamEdit</value>
+  <data name="About_LabelEnhanced" xml:space="preserve">
+    <value>增强版：</value>
   </data>
-  <data name="About_ReleaseNotes" xml:space="preserve">
-    <value>版本说明</value>
+  <data name="About_AppName" xml:space="preserve">
+    <value>steamedit-Enhance</value>
   </data>
   <data name="About_BtnClose" xml:space="preserve">
     <value>关闭</value>

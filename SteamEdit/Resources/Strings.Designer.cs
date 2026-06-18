@@ -152,8 +152,8 @@ namespace SteamEdit {
         internal static string About_LabelWebsite => ResourceManager.GetString("About_LabelWebsite", resourceCulture);
         internal static string About_LabelAuthor => ResourceManager.GetString("About_LabelAuthor", resourceCulture);
         internal static string About_LabelModifiedBy => ResourceManager.GetString("About_LabelModifiedBy", resourceCulture);
+        internal static string About_LabelEnhanced => ResourceManager.GetString("About_LabelEnhanced", resourceCulture);
         internal static string About_AppName => ResourceManager.GetString("About_AppName", resourceCulture);
-        internal static string About_ReleaseNotes => ResourceManager.GetString("About_ReleaseNotes", resourceCulture);
         internal static string About_BtnClose => ResourceManager.GetString("About_BtnClose", resourceCulture);
         internal static string Msg_UnsavedChanges => ResourceManager.GetString("Msg_UnsavedChanges", resourceCulture);
         internal static string Msg_SaveFirst => ResourceManager.GetString("Msg_SaveFirst", resourceCulture);
