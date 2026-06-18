@@ -764,10 +764,10 @@ internal class MainWindow : Form
 	private void OnAppSelection_DrawItem(object sender, DrawItemEventArgs e)
 	{
 		e.DrawBackground();
-		if (e.Index >= 0)
+		if (e.Index >= 0 && e.Index < _entries.Count)
 		{
-			IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.Items[e.Index];
-			string text = appInfoEntry.ToString();
+			IAppInfoEntry appInfoEntry = _entries[e.Index];
+			string text = GetDisplayName(appInfoEntry);
 			text = text.Replace("&", "&&");
 			Color foreColor = appSelection.ForeColor;
 			Font font = _defaultAppSelectionFont;
@@ -1055,10 +1055,10 @@ internal class MainWindow : Form
 		{
 			num++;
 		}
-		for (int i = 0; i < appSelection.Items.Count; i++)
+		for (int i = 0; i < _entries.Count; i++)
 		{
-			int num2 = (num + i) % appSelection.Items.Count;
-			if (appSelection.Items[num2].ToString().StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
+			int num2 = (num + i) % _entries.Count;
+			if (GetDisplayName(_entries[num2]).StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
 			{
 				appSelection.SelectedIndex = num2;
 				break;
