@@ -229,4 +229,3 @@ steamedit/
 - Original download: [https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
 - This project only involves a technical migration (.NET Framework → .NET 10) and UI localization
 - **If there is any infringement, please [submit an Issue](../../issues) to request removal**
-```
