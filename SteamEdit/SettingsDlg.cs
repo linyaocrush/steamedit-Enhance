@@ -609,7 +609,7 @@ internal class SettingsDlg : Form
         this.label6.Text = "AppInfo Path (requires restart)";
         // lblAutoStart
         this.lblAutoStart.AutoSize = true;
-        this.lblAutoStart.Margin = new System.Windows.Forms.Padding(6);
+        this.lblAutoStart.Margin = new System.Windows.Forms.Padding(6, 5, 6, 6);
         this.lblAutoStart.Name = "lblAutoStart";
         this.lblAutoStart.TabIndex = 13;
         this.lblAutoStart.Text = "Start on Boot";
