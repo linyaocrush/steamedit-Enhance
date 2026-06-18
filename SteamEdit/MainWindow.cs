@@ -313,7 +313,8 @@ internal class MainWindow : Form
 	private void OnEditControl_Enter(object sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
-		if (appSelection.SelectedItem is not IAppInfoEntry entry) return;
+		var entry = GetSelectedEntry();
+		if (entry == null) return;
 
 		string key = null;
 		object value = null;
@@ -672,7 +673,7 @@ internal class MainWindow : Form
 		}
 		_isSettingUpEntry = true;
 		_snapshotValues.Clear();
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry appInfoEntry = GetSelectedEntry();
 		if (appInfoEntry != null)
 		{
 			textGameName.Text = appInfoEntry.Name;
