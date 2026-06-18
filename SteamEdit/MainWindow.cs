@@ -1026,6 +1026,7 @@ internal class MainWindow : Form
 
 		if (e.Control && e.KeyCode == Keys.F)
 		{
+			if (appFilterText.Focused) return;
 			e.Handled = true;
 			e.SuppressKeyPress = true;
 			appFilterText.Focus();
@@ -1593,6 +1594,8 @@ internal class MainWindow : Form
 
 		var lbl = new Label();
 		lbl.Dock = DockStyle.Fill;
+		lbl.Font = new Font("Consolas", 9f);
+		lbl.AutoSize = false;
 		lbl.Padding = new Padding(12);
 		lbl.Text = Strings.Shortcuts_Content;
 
@@ -1740,6 +1743,8 @@ internal class MainWindow : Form
 			{
 				_hiddenAppSelectionFont.Dispose();
 			}
+			_filterDebounceTimer?.Dispose();
+			_statusBarDebounceTimer?.Dispose();
 		}
 		base.Dispose(disposing);
 	}
