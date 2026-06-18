@@ -1021,6 +1021,23 @@ internal class MainWindow : Form
 			return;
 		}
 
+		if (e.Control && e.KeyCode == Keys.F)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			appFilterText.Focus();
+			appFilterText.SelectAll();
+			return;
+		}
+
+		if (e.Control && e.KeyCode == Keys.Enter)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			OnBtnSaveApply_Click(sender, EventArgs.Empty);
+			return;
+		}
+
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
