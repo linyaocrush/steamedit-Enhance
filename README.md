@@ -75,14 +75,20 @@ steamedit-Enhance 是一款 Windows 桌面应用，用于编辑 Steam 本地的 
 | 改进 | 说明 |
 |:---|:---|
 | **属性查找加速** | PropertyTable 使用并行 Dictionary，属性查找从 O(n) 降至 O(1)。 |
+| **哈希缓存** | `PropertyTable.GetHashCode` 缓存哈希值，仅在属性变更时重算。 |
+| **术语库反向索引** | `TranslationGlossary.FindTranslatedByOriginalName` 从 O(n) 线性扫描优化为 O(1) 字典查找。 |
+| **属性移除优化** | `PropertyTable.RemoveProperty` 利用字典定位，避免字符串比较循环。 |
 | **缓冲日志写入** | 用 `StreamWriter`（每 20 行自动刷新）替代 `File.AppendAllLines`，减少磁盘 I/O。启动时清除旧日志，仅保留当前会话。 |
 | **代码重构** | 提取 `AppInfoBase<TEntry>` 泛型基类统一三个 AppInfo 版本；`PropertyTableIO` 委托注入消除六段重复类型 switch；`Mods` 读取器合并（V4/V5/V6 → 单一方法）；`LocalizableForm` 基类消除 11 个窗体的 i18n 样板代码——总计消除 ~1000+ 行重复代码。 |
 | **统一路径解析** | 将启动路径逻辑合并到单一方法，移除三处独立实现。 |
 | **排序预计算** | 归一化排序键预先计算，避免 O(n log n) 排序中的重复字符串处理。 |
-| **资源管理** | `IDisposable` 资源（如 SHA1）正确释放，消除内存泄漏。 |
+| **资源管理** | `IDisposable` 资源（如 SHA1）正确释放，消除内存泄漏。注册 `ProcessExit` 事件确保日志文件在进程退出时关闭。 |
 | **空引用防护** | 在 9+ 个事件处理器中添加 null 检查，防止列表为空时崩溃。 |
 | **异常捕获缩窄** | 将 4 处空 `catch {}` 缩窄为只捕获预期异常类型（`ExternalException`、`ArgumentException`），避免吞掉致命异常。 |
 | **UI 布局修复** | 自启动区域使用 `FlowLayoutPanel`，中文文本不再与相邻控件重叠。 |
+| **架构分层** | 进程管理提取到 `SteamProcessManager`；`EditController` 与 `GameListManager` 解耦（44→20 处直接调用）；`AppInfoEntryType` 移至 Common 层消除反向依赖；`WaitingDialog` 移至 UI 层。 |
+| **防御性校验** | 二进制解析添加 count/dataSize/index 上限检查和递归深度限制（最大 32 层）。AI 翻译响应添加内容类型校验。`Settings.SaveJson` 添加 null 检查。 |
+| **DRY 重构** | `AiTranslator` 提取 `CallChatCompletionAsync` 消除 ~80 行重复代码；`PropertyTableIO` Mods 格式委托 0x00000000。 |
 
 ---
 
@@ -205,6 +211,7 @@ steamedit/
 │   ├── EditController.cs         # 属性编辑/撤销/还原
 │   ├── GameDataContext.cs        # 共享数据容器
 │   ├── LocalizableForm.cs        # i18n 窗体基类
+│   ├── WaitingDialog.cs          # 异步等待对话框
 │   ├── LaunchEditor.cs           # 启动配置编辑器
 │   ├── SettingsDlg.cs            # 设置对话框
 │   ├── I18n.cs                   # 语言管理器
@@ -214,8 +221,9 @@ steamedit/
 │       └── Strings.zh-TW.resx    # 繁体中文翻译
 ├── SteamEdit.Data/               # 核心数据模型与 I/O
 │   ├── SteamData.cs              # 数据加载/保存/应用
+│   ├── SteamProcessManager.cs    # Steam 进程管理（检测/关闭/启动）
 │   ├── AppInfoFactory.cs         # 版本分发工厂
-│   ├── PropertyTable.cs          # 属性表（Dictionary 优化）
+│   ├── PropertyTable.cs          # 属性表（Dictionary 优化 + 哈希缓存）
 │   ├── PropertyTableIO.cs        # 属性表序列化（委托注入统一三种格式）
 │   ├── ModifiedEntry.cs          # 修改条目（含 GetOriginalName）
 │   └── Mods.cs                   # mods.dat 读写
@@ -227,14 +235,25 @@ steamedit/
 │   └── AppInfo_0x07564429.cs     # 最新格式
 ├── Common/                       # 共享工具
 │   ├── Settings.cs               # 用户设置（JSON 序列化 + 脏标记）
-│   ├── Log.cs                    # 缓冲日志
+│   ├── Log.cs                    # 缓冲日志（ProcessExit 自动关闭）
 │   ├── AiTranslator.cs           # AI 翻译器（OpenAI 兼容 API）
-│   ├── TranslationGlossary.cs    # 术语缓存（glossary.json）
-│   └── AppHelper.cs              # 路径与参数辅助
-├── SteamEditTests/               # MSTest 单元测试
+│   ├── TranslationGlossary.cs    # 术语缓存（glossary.json + 反向索引）
+│   ├── AppHelper.cs              # 路径与参数辅助
+│   └── AppInfoEntryType.cs       # 条目类型枚举（Flags）
+├── SteamEditTests/               # MSTest 单元测试（120 个测试）
 │   ├── PropertyTableTests.cs     # PropertyTable：15 个测试
 │   ├── ModsTests.cs              # Mods 二进制格式：5 个测试
-│   └── SettingsTests.cs          # Settings JSON 序列化：4 个测试
+│   ├── SettingsTests.cs          # Settings JSON 序列化：4 个测试
+│   ├── BinaryParsingHardeningTests.cs  # 二进制边界校验：18 个测试
+│   ├── StringTitleComparerTests.cs     # 自然排序：8 个测试
+│   ├── UndoManagerTests.cs       # 撤销栈：8 个测试
+│   ├── AppHelperTests.cs         # CLI 参数解析：13 个测试
+│   ├── TranslationGlossaryTests.cs     # 术语缓存：6 个测试
+│   ├── ModifiedEntryTests.cs     # 变更覆盖层：17 个测试
+│   ├── PropertyTableIOTests.cs   # 二进制序列化：8 个测试
+│   ├── AppInfoFactoryTests.cs    # 版本分发：3 个测试
+│   ├── LaunchTableTests.cs       # 启动配置：6 个测试
+│   └── AppInfoEntryTests.cs      # Entry 属性操作：10 个测试
 └── SteamEdit.csproj              # 项目文件
 ```
 
