@@ -66,6 +66,9 @@ internal static class PropertyTableIO
 	private static string ReadWideString_0x07564429(BinaryReader reader, IList<string> stringTable)
 	{
 		uint index = reader.ReadUInt32();
+		if (index >= (uint)stringTable.Count)
+			throw new InvalidDataException(
+				$"String table index {index} out of range (table size={stringTable.Count}). File may be corrupted.");
 		return stringTable[(int)index];
 	}
 

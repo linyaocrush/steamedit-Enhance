@@ -153,6 +153,46 @@ public class BinaryParsingHardeningTests
         finally { File.Delete(tempFile); }
     }
 
+    [TestMethod]
+    public void ReadWideString_0x07564429_IndexOutOfBounds_ThrowsInvalidDataException()
+    {
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write((byte)PropertyType.WString); // property type
+            bw.Write((uint)0); // name index = 0 (valid)
+            bw.Write((uint)5); // value index = 5 — OUT OF RANGE (only 3 entries)
+            bw.Write((byte)8); // end of table
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+        string[] stringTable = { "name1", "name2", "name3" };
+
+        Assert.ThrowsException<InvalidDataException>(
+            () => PropertyTableIO.ReadPropertyTable_0x07564429(br, stringTable));
+    }
+
+    [TestMethod]
+    public void ReadWideString_0x07564429_MaxUIntIndex_ThrowsInvalidDataException()
+    {
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write((byte)PropertyType.WString);
+            bw.Write((uint)0); // name index
+            bw.Write((uint)0xFFFFFFFF); // max uint
+            bw.Write((byte)8);
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+        string[] stringTable = { "name1" };
+
+        Assert.ThrowsException<InvalidDataException>(
+            () => PropertyTableIO.ReadPropertyTable_0x07564429(br, stringTable));
+    }
+
     private class TestAppInfo : IAppInfo
     {
         private readonly System.Collections.Generic.List<IAppInfoEntry> _entries = new();
