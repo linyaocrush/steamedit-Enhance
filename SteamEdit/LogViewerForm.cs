@@ -68,7 +68,14 @@ internal class LogViewerForm : Form
 				txtLog.Text = "Log file not found: " + logPath;
 				return;
 			}
-			string[] lines = File.ReadAllLines(logPath);
+			string[] lines;
+			using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+			using (var sr = new StreamReader(fs))
+			{
+				var allLines = new System.Collections.Generic.List<string>();
+				while (!sr.EndOfStream) allLines.Add(sr.ReadLine() ?? "");
+				lines = allLines.ToArray();
+			}
 			int start = Math.Max(0, lines.Length - 200);
 			txtLog.Lines = new ArraySegment<string>(lines, start, lines.Length - start).ToArray();
 			txtLog.SelectionStart = txtLog.TextLength;
