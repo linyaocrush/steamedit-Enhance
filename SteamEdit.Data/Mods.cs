@@ -48,6 +48,11 @@ internal class Mods
 	private void ReadEntries(BinaryReader reader, List<ModifiedEntry> modEntries, int version)
 	{
 		int count = reader.ReadInt32();
+		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
+		if (count < 0 || count > 100_000)
+			throw new InvalidDataException($"Mods entry count {count} is out of valid range.");
+		if (count > remaining / 8)
+			throw new InvalidDataException($"Mods entry count {count} exceeds available stream data.");
 		for (int i = 0; i < count; i++)
 		{
 			ModifiedEntry entry = new ModifiedEntry(reader.ReadInt32());
