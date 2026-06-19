@@ -616,7 +616,7 @@ internal class Settings
 				{
 					result = (T)Enum.Parse(typeof(T), root[name].InnerText);
 				}
-				catch (Exception)
+				catch (Exception ex) when (ex is ArgumentException or OverflowException)
 				{
 				}
 			}
