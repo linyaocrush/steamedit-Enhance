@@ -8,7 +8,7 @@ using SteamEdit.Properties;
 
 namespace SteamEdit;
 
-public class About : Form
+public class About : LocalizableForm
 {
 	private IContainer components = null!;
 
@@ -25,19 +25,11 @@ public class About : Form
 	public About()
 	{
 		InitializeComponent();
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 		linkWebsite.Text = Resources.WebsiteUrl;
 		lblVersion.Text = "v" + Application.ProductVersion;
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		Text = Strings.About_Title;
 		var panel = Controls.Find("panel1", true).FirstOrDefault() as Panel;
@@ -82,7 +74,6 @@ public class About : Form
 
 	protected override void Dispose(bool disposing)
 	{
-		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

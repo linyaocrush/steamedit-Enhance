@@ -10,7 +10,7 @@ using SteamEdit.Data;
 
 namespace SteamEdit;
 
-internal class LaunchEditor : Form
+internal class LaunchEditor : LocalizableForm
 {
 	private string _baseDir;
 
@@ -36,8 +36,6 @@ internal class LaunchEditor : Form
 	public LaunchEditor(IEnumerable<LaunchItem> items, string baseDir, string gameName)
 	{
 		InitializeComponent();
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 		DoubleBuffered = true;
 		_baseDir = baseDir;
 		_gameName = gameName;
@@ -49,13 +47,7 @@ internal class LaunchEditor : Form
 		}
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		Text = Strings.LaunchEditor_Title;
 		lblInstallPath.Text = Strings.LaunchEditor_LabelInstallPath;
@@ -185,7 +177,6 @@ internal class LaunchEditor : Form
 
 	protected override void Dispose(bool disposing)
 	{
-		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

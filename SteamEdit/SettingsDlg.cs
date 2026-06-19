@@ -9,7 +9,7 @@ using SteamEdit.Properties;
 
 namespace SteamEdit;
 
-internal class SettingsDlg : Form
+internal class SettingsDlg : LocalizableForm
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValueName = "SteamEdit-Enhance";
@@ -377,17 +377,7 @@ internal class SettingsDlg : Form
         }
     }
 
-    private void OnLanguageChanged(object sender, EventArgs e)
-    {
-        if (InvokeRequired)
-        {
-            BeginInvoke(new Action(ApplyLanguage));
-            return;
-        }
-        ApplyLanguage();
-    }
-
-    private void ApplyLanguage()
+    protected override void ApplyLanguage()
     {
         Text = Strings.Settings_Title;
         tabGeneral.Text = Strings.Settings_TabGeneral;
@@ -431,18 +421,6 @@ internal class SettingsDlg : Form
         toolTip.SetToolTip(checkAutoStartForceStart, Strings.Tooltip_AutoStartForceStart);
         toolTip.SetToolTip(textAiApiUrl, Strings.Tooltip_AiApiUrl);
         toolTip.SetToolTip(textAiApiKey, Strings.Tooltip_AiApiKey);
-    }
-
-    protected override void OnLoad(EventArgs e)
-    {
-        base.OnLoad(e);
-        I18n.LanguageChanged += OnLanguageChanged;
-    }
-
-    protected override void OnFormClosing(FormClosingEventArgs e)
-    {
-        I18n.LanguageChanged -= OnLanguageChanged;
-        base.OnFormClosing(e);
     }
 
     protected override void Dispose(bool disposing)

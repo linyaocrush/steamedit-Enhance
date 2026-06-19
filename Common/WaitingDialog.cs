@@ -7,7 +7,7 @@ using SteamEdit;
 
 namespace Common;
 
-internal class WaitingDialog : Form
+internal class WaitingDialog : LocalizableForm
 {
 	public delegate bool WaitWhileDelegate();
 
@@ -48,17 +48,9 @@ internal class WaitingDialog : Form
 	{
 		InitializeComponent();
 		Message = message;
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		Text = Strings.WaitingDialog_Title;
 		btnCancel.Text = Strings.WaitingDialog_Cancel;
@@ -112,7 +104,6 @@ internal class WaitingDialog : Form
 
 	protected override void Dispose(bool disposing)
 	{
-		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

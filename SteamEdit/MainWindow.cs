@@ -11,7 +11,7 @@ using SteamEdit.Properties;
 
 namespace SteamEdit;
 
-internal class MainWindow : Form
+internal class MainWindow : LocalizableForm
 {
 	private string _originalTitle;
 
@@ -178,8 +178,6 @@ internal class MainWindow : Form
 		SteamData_OnNeedsSaveOrApply(null, null);
 		_listManager.RefreshGameList();
 		appSelection.Select();
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 	}
 
 	private void UpdateStatusBar()
@@ -187,17 +185,7 @@ internal class MainWindow : Form
 		_listManager.UpdateStatusBar();
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired)
-		{
-			BeginInvoke(new Action(ApplyLanguage));
-			return;
-		}
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		_originalTitle = Strings.MainWindow_Title;
 		Text = _originalTitle;
@@ -248,7 +236,6 @@ internal class MainWindow : Form
 
 	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
 	{
-		I18n.LanguageChanged -= OnLanguageChanged;
 		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
 		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); }

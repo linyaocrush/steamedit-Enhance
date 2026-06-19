@@ -8,7 +8,7 @@ using SteamEdit.Data;
 
 namespace SteamEdit;
 
-internal class BatchReplaceDialog : Form
+internal class BatchReplaceDialog : LocalizableForm
 {
     private readonly IReadOnlyList<IAppInfoEntry> _entries;
     private IContainer components;
@@ -37,18 +37,10 @@ internal class BatchReplaceDialog : Form
         InitializeComponent();
         _debounceTimer = new Timer { Interval = 200 };
         _debounceTimer.Tick += (_, _) => { _debounceTimer.Stop(); UpdatePreview(); };
-        I18n.LanguageChanged += OnLanguageChanged;
-        ApplyLanguage();
         UpdatePreview();
     }
 
-    private void OnLanguageChanged(object sender, EventArgs e)
-    {
-        if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-        ApplyLanguage();
-    }
-
-    private void ApplyLanguage()
+    protected override void ApplyLanguage()
     {
         Text = Strings.BatchReplace_Title;
         lblFind.Text = Strings.BatchReplace_Find;
@@ -66,7 +58,6 @@ internal class BatchReplaceDialog : Form
 
     protected override void Dispose(bool disposing)
     {
-        I18n.LanguageChanged -= OnLanguageChanged;
         if (disposing)
         {
             _debounceTimer.Dispose();

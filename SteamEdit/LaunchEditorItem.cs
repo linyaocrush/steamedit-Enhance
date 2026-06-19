@@ -9,7 +9,7 @@ using SteamEdit.Properties;
 
 namespace SteamEdit;
 
-internal class LaunchEditorItem : UserControl
+internal class LaunchEditorItem : LocalizableUserControl
 {
 	private string _gameName;
 
@@ -60,18 +60,10 @@ internal class LaunchEditorItem : UserControl
 		_gameName = gameName;
 		_isFirst = isFirst;
 		InitializeComponent();
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 		Set(info);
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		lblExecutable.Text = Strings.LaunchEditorItem_LabelExecutable;
 		lblLabel.Text = Strings.LaunchEditorItem_LabelLabel;
@@ -198,7 +190,6 @@ internal class LaunchEditorItem : UserControl
 
 	protected override void Dispose(bool disposing)
 	{
-		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

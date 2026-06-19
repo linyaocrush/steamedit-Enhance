@@ -10,7 +10,7 @@ using SteamEdit.Data;
 
 namespace SteamEdit;
 
-internal class SelectAppLaunch : Form
+internal class SelectAppLaunch : LocalizableForm
 {
 	private IContainer components = null!;
 
@@ -27,8 +27,6 @@ internal class SelectAppLaunch : Form
 	public SelectAppLaunch()
 	{
 		InitializeComponent();
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 		List<IAppInfoEntry> list = new List<IAppInfoEntry>(SteamData.AppInfoData.Entries.Where((IAppInfoEntry ent) => ent.Type == AppInfoEntryType.Game));
 		list.Sort((IAppInfoEntry a, IAppInfoEntry b) => StringTitleComparer.CompareStrings(a.ToString(), b.ToString()));
 		appSelection.BeginUpdate();
@@ -40,13 +38,7 @@ internal class SelectAppLaunch : Form
 		Set(null, null);
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		Text = Strings.SelectAppLaunch_Title;
 		lblLaunchItem.Text = Strings.SelectAppLaunch_LabelLaunchItem;
@@ -106,7 +98,6 @@ internal class SelectAppLaunch : Form
 
 	protected override void Dispose(bool disposing)
 	{
-		I18n.LanguageChanged -= OnLanguageChanged;
 		if (disposing && components != null)
 		{
 			components.Dispose();

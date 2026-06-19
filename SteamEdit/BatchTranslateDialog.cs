@@ -10,7 +10,7 @@ using SteamEdit.Data;
 
 namespace SteamEdit;
 
-internal class BatchTranslateDialog : Form
+internal class BatchTranslateDialog : LocalizableForm
 {
     private IContainer components;
     private Label lblProgress;
@@ -39,17 +39,9 @@ internal class BatchTranslateDialog : Form
         _entries = entries;
         _targetLanguage = targetLanguage;
         InitializeComponent();
-        I18n.LanguageChanged += OnLanguageChanged;
-        ApplyLanguage();
     }
 
-    private void OnLanguageChanged(object sender, EventArgs e)
-    {
-        if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-        ApplyLanguage();
-    }
-
-    private void ApplyLanguage()
+    protected override void ApplyLanguage()
     {
         Text = Strings.BatchTranslate_Title;
         btnPause.Text = _isPaused ? Strings.BatchTranslate_Resume : Strings.BatchTranslate_Pause;
@@ -198,7 +190,6 @@ internal class BatchTranslateDialog : Form
 
     protected override void Dispose(bool disposing)
     {
-        I18n.LanguageChanged -= OnLanguageChanged;
         _cts?.Dispose();
         _pauseEvent?.Dispose();
         if (disposing && components != null)

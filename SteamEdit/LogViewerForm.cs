@@ -5,33 +5,19 @@ using Common;
 
 namespace SteamEdit;
 
-internal class LogViewerForm : Form
+internal class LogViewerForm : LocalizableForm
 {
 	private TextBox txtLog;
 
 	public LogViewerForm()
 	{
 		InitializeComponent();
-		I18n.LanguageChanged += OnLanguageChanged;
-		ApplyLanguage();
 		LoadLog();
 	}
 
-	private void OnLanguageChanged(object sender, EventArgs e)
-	{
-		if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
-		ApplyLanguage();
-	}
-
-	private void ApplyLanguage()
+	protected override void ApplyLanguage()
 	{
 		Text = Strings.LogViewer_Title;
-	}
-
-	protected override void Dispose(bool disposing)
-	{
-		I18n.LanguageChanged -= OnLanguageChanged;
-		base.Dispose(disposing);
 	}
 
 	private void InitializeComponent()
