@@ -96,44 +96,53 @@ internal static class PropertyTableIO
 		writer.Write(color.B);
 	}
 
-	public static PropertyTable ReadPropertyTable_0x00000000(BinaryReader reader)
+	// ── Core read/write with delegate injection ──
+
+	private static PropertyTable ReadPropertyTableCore(
+		BinaryReader reader,
+		Func<BinaryReader, string> readName,
+		Func<BinaryReader, string> readWString)
 	{
 		PropertyTable propertyTable = new PropertyTable();
 		PropertyType propertyType;
 		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
 		{
-			string name = ReadString_0x00000000(reader);
+			string name = readName(reader);
 			propertyTable.AddPropertyValue(value: propertyType switch
 			{
-				PropertyType.Table => ReadPropertyTable_0x00000000(reader), 
-				PropertyType.String => ReadString_0x00000000(reader), 
-				PropertyType.WString => ReadWideString_0x00000000(reader), 
-				PropertyType.Int32 => reader.ReadInt32(), 
-				PropertyType.Uint64 => reader.ReadUInt64(), 
-				PropertyType.Float => reader.ReadSingle(), 
-				PropertyType.Color => ReadColor_0x00000000(reader), 
-				_ => throw new NotImplementedException("The property type " + propertyType.ToString() + " has not been implemented."), 
+				PropertyType.Table => ReadPropertyTableCore(reader, readName, readWString),
+				PropertyType.String => ReadString_0x00000000(reader),
+				PropertyType.WString => readWString(reader),
+				PropertyType.Int32 => reader.ReadInt32(),
+				PropertyType.Uint64 => reader.ReadUInt64(),
+				PropertyType.Float => reader.ReadSingle(),
+				PropertyType.Color => ReadColor_0x00000000(reader),
+				_ => throw new NotImplementedException("The property type " + propertyType.ToString() + " has not been implemented."),
 			}, name: name, type: propertyType);
 		}
 		return propertyTable;
 	}
 
-	public static void WritePropertyTable_0x00000000(BinaryWriter writer, PropertyTable table)
+	private static void WritePropertyTableCore(
+		BinaryWriter writer,
+		PropertyTable table,
+		Action<BinaryWriter, string> writeName,
+		Action<BinaryWriter, string> writeWString)
 	{
 		foreach (Property property in table.Properties)
 		{
 			writer.Write((byte)property.PropertyType);
-			WriteString_0x00000000(writer, property.Name);
+			writeName(writer, property.Name);
 			switch (property.PropertyType)
 			{
 			case PropertyType.Table:
-				WritePropertyTable_0x00000000(writer, (PropertyTable)property.Value);
+				WritePropertyTableCore(writer, (PropertyTable)property.Value, writeName, writeWString);
 				break;
 			case PropertyType.String:
 				WriteString_0x00000000(writer, (string)property.Value);
 				break;
 			case PropertyType.WString:
-				WriteWideString_0x00000000(writer, (string)property.Value);
+				writeWString(writer, (string)property.Value);
 				break;
 			case PropertyType.Int32:
 				writer.Write((int)property.Value);
@@ -153,6 +162,14 @@ internal static class PropertyTableIO
 		}
 		writer.Write((byte)8);
 	}
+
+	// ── Public API: thin wrappers ──
+
+	public static PropertyTable ReadPropertyTable_0x00000000(BinaryReader reader)
+		=> ReadPropertyTableCore(reader, ReadString_0x00000000, ReadWideString_0x00000000);
+
+	public static void WritePropertyTable_0x00000000(BinaryWriter writer, PropertyTable table)
+		=> WritePropertyTableCore(writer, table, WriteString_0x00000000, WriteWideString_0x00000000);
 
 	public static byte[] WritePropertyTable_0x00000000(PropertyTable table)
 	{
@@ -162,62 +179,10 @@ internal static class PropertyTableIO
 	}
 
 	public static PropertyTable ReadPropertyTable_0x07564429(BinaryReader reader, IList<string> stringTable)
-	{
-		PropertyTable propertyTable = new PropertyTable();
-		PropertyType propertyType;
-		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
-		{
-			string name = ReadWideString_0x07564429(reader, stringTable);
-			propertyTable.AddPropertyValue(value: propertyType switch
-			{
-				PropertyType.Table => ReadPropertyTable_0x07564429(reader, stringTable), 
-				PropertyType.String => ReadString_0x00000000(reader), 
-				PropertyType.WString => ReadWideString_0x07564429(reader, stringTable), 
-				PropertyType.Int32 => reader.ReadInt32(), 
-				PropertyType.Uint64 => reader.ReadUInt64(), 
-				PropertyType.Float => reader.ReadSingle(), 
-				PropertyType.Color => ReadColor_0x00000000(reader), 
-				_ => throw new NotImplementedException("The property type " + propertyType.ToString() + " has not been implemented."), 
-			}, name: name, type: propertyType);
-		}
-		return propertyTable;
-	}
+		=> ReadPropertyTableCore(reader, r => ReadWideString_0x07564429(r, stringTable), r => ReadWideString_0x07564429(r, stringTable));
 
 	public static void WritePropertyTable_0x07564429(BinaryWriter writer, PropertyTable table, List<string> stringTable, Dictionary<string, uint> stringLookup)
-	{
-		foreach (Property property in table.Properties)
-		{
-			writer.Write((byte)property.PropertyType);
-			WriteWideString_0x07564429(writer, property.Name, stringTable, stringLookup);
-			switch (property.PropertyType)
-			{
-			case PropertyType.Table:
-				WritePropertyTable_0x07564429(writer, (PropertyTable)property.Value, stringTable, stringLookup);
-				break;
-			case PropertyType.String:
-				WriteString_0x00000000(writer, (string)property.Value);
-				break;
-			case PropertyType.WString:
-				WriteWideString_0x07564429(writer, (string)property.Value, stringTable, stringLookup);
-				break;
-			case PropertyType.Int32:
-				writer.Write((int)property.Value);
-				break;
-			case PropertyType.Uint64:
-				writer.Write((ulong)property.Value);
-				break;
-			case PropertyType.Float:
-				writer.Write((float)property.Value);
-				break;
-			case PropertyType.Color:
-				WriteColor_0x00000000(writer, (Color)property.Value);
-				break;
-			default:
-				throw new NotImplementedException("The value type " + property.PropertyType.ToString() + " has not been implemented.");
-			}
-		}
-		writer.Write((byte)8);
-	}
+		=> WritePropertyTableCore(writer, table, (w, s) => WriteWideString_0x07564429(w, s, stringTable, stringLookup), (w, s) => WriteWideString_0x07564429(w, s, stringTable, stringLookup));
 
 	public static byte[] WritePropertyTable_0x07564429(PropertyTable table, List<string> stringTable, Dictionary<string, uint> stringLookup)
 	{
@@ -227,62 +192,10 @@ internal static class PropertyTableIO
 	}
 
 	public static PropertyTable ReadPropertyTable_Mods(BinaryReader reader)
-	{
-		PropertyTable propertyTable = new PropertyTable();
-		PropertyType propertyType;
-		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
-		{
-			string name = ReadString_0x00000000(reader);
-			propertyTable.AddPropertyValue(value: propertyType switch
-			{
-				PropertyType.Table => ReadPropertyTable_Mods(reader),
-				PropertyType.String => ReadString_0x00000000(reader), 
-				PropertyType.WString => ReadWideString_0x00000000(reader), 
-				PropertyType.Int32 => reader.ReadInt32(), 
-				PropertyType.Uint64 => reader.ReadUInt64(), 
-				PropertyType.Float => reader.ReadSingle(), 
-				PropertyType.Color => ReadColor_0x00000000(reader), 
-				_ => throw new NotImplementedException("The property type " + propertyType.ToString() + " has not been implemented."), 
-			}, name: name, type: propertyType);
-		}
-		return propertyTable;
-	}
+		=> ReadPropertyTableCore(reader, ReadString_0x00000000, ReadWideString_0x00000000);
 
 	public static void WritePropertyTable_Mods(BinaryWriter writer, PropertyTable table)
-	{
-		foreach (Property property in table.Properties)
-		{
-			writer.Write((byte)property.PropertyType);
-			WriteString_0x00000000(writer, property.Name);
-			switch (property.PropertyType)
-			{
-			case PropertyType.Table:
-				WritePropertyTable_Mods(writer, (PropertyTable)property.Value);
-				break;
-			case PropertyType.String:
-				WriteString_0x00000000(writer, (string)property.Value);
-				break;
-			case PropertyType.WString:
-				WriteWideString_0x00000000(writer, (string)property.Value);
-				break;
-			case PropertyType.Int32:
-				writer.Write((int)property.Value);
-				break;
-			case PropertyType.Uint64:
-				writer.Write((ulong)property.Value);
-				break;
-			case PropertyType.Float:
-				writer.Write((float)property.Value);
-				break;
-			case PropertyType.Color:
-				WriteColor_0x00000000(writer, (Color)property.Value);
-				break;
-			default:
-				throw new NotImplementedException("The value type " + property.PropertyType.ToString() + " has not been implemented.");
-			}
-		}
-		writer.Write((byte)8);
-	}
+		=> WritePropertyTableCore(writer, table, WriteString_0x00000000, WriteWideString_0x00000000);
 
 	public static byte[] WritePropertyTable_Mods(PropertyTable table)
 	{
