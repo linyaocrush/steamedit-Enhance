@@ -37,10 +37,10 @@ internal class GameListManager : IDisposable
 	private bool _refreshingGamesListAfterEdit;
 
 	public event EventHandler<IAppInfoEntry> SelectedEntryChanged;
-	public event EventHandler? ContextMenuCopyName;
-	public event EventHandler? ContextMenuCopyAppId;
-	public event EventHandler? ContextMenuOpenInSteam;
-	public event EventHandler? ContextMenuOpenInSteamDB;
+	public event EventHandler ContextMenuCopyName;
+	public event EventHandler ContextMenuCopyAppId;
+	public event EventHandler ContextMenuOpenInSteam;
+	public event EventHandler ContextMenuOpenInSteamDB;
 
 	public GameListManager(
 		GameDataContext ctx,

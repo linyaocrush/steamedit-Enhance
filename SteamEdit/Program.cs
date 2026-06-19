@@ -149,7 +149,7 @@ internal static class Program
                     Log.WriteLine("Changes detected, applying!");
                     bool shouldRestart = flag2 || SteamProcessManager.IsSteamRunning();
                     if (shouldRestart)
-                        SteamProcessManager.KillSteam((msg, waitWhile) =>
+                        SteamProcessManager.KillSteam(SteamEdit.Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
                         {
                             using var dlg = new WaitingDialog(msg);
                             dlg.ShowAndWait(() => waitWhile());

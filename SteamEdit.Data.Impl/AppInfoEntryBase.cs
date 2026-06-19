@@ -101,7 +101,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (!_cachedHasSortAs.HasValue)
 			{
-				_cachedHasSortAs = _properties.HasProperty(AppInfoPaths.SortAs) && _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs).Length > 0;
+				var sortAs = _properties.HasProperty(AppInfoPaths.SortAs) ? _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs) : null;
+				_cachedHasSortAs = sortAs != null && sortAs.Length > 0;
 			}
 			return _cachedHasSortAs.Value;
 		}
@@ -114,7 +115,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			if (_cachedSortAs == null)
 			{
 				_cachedSortAs = _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs);
-				if (_cachedSortAs.Length == 0)
+				if (_cachedSortAs == null || _cachedSortAs.Length == 0)
 				{
 					_cachedSortAs = Name;
 				}
@@ -249,37 +250,35 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		this.Modified?.Invoke(this, EventArgs.Empty);
 	}
 
-	public PropertyType? GetOriginalPropertyType(params string[] PropertyPath)
+	/// <summary>
+	/// 从原始数据中遍历路径，返回包含目标属性的父表。
+	/// </summary>
+	private PropertyTable TraverseToParent(string[] propertyPath)
 	{
-		if (_modifications?.OriginalData == null || PropertyPath.Length == 0) return null;
+		if (_modifications?.OriginalData == null || propertyPath.Length == 0) return null;
 		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
 		var table = PropertyTableIO.ReadPropertyTable_Mods(reader);
-		// 遍历路径到达父表
-		foreach (var key in PropertyPath.Take(PropertyPath.Length - 1))
+		foreach (var key in propertyPath.Take(propertyPath.Length - 1))
 		{
 			var prop = table[key];
 			if (prop == null) return null;
 			table = prop.GetValue<PropertyTable>();
 			if (table == null) return null;
 		}
-		var target = table[PropertyPath.Last()];
+		return table;
+	}
+
+	public PropertyType? GetOriginalPropertyType(params string[] PropertyPath)
+	{
+		var table = TraverseToParent(PropertyPath);
+		var target = table?[PropertyPath.Last()];
 		return target?.PropertyType;
 	}
 
 	public object GetOriginalPropertyValue(params string[] PropertyPath)
 	{
-		if (_modifications?.OriginalData == null || PropertyPath.Length == 0) return null;
-		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
-		var table = PropertyTableIO.ReadPropertyTable_Mods(reader);
-		// 遍历路径到达父表
-		foreach (var key in PropertyPath.Take(PropertyPath.Length - 1))
-		{
-			var prop = table[key];
-			if (prop == null) return null;
-			table = prop.GetValue<PropertyTable>();
-			if (table == null) return null;
-		}
-		return table.GetPropertyAsObject(PropertyPath.Last());
+		var table = TraverseToParent(PropertyPath);
+		return table?.GetPropertyAsObject(PropertyPath.Last());
 	}
 
 	protected ModifiedEntry ModificationsCreate()

@@ -96,7 +96,10 @@ internal class BatchTranslateDialog : LocalizableForm
             }
 
             // Build context from VDF metadata
-            string context = AiTranslator.BuildContext(entry);
+            string context = AiTranslator.BuildContext(
+                entry.GetPropertyValue<string>(null, AppInfoPaths.Developers),
+                entry.GetPropertyValue<string>(null, AppInfoPaths.Publishers),
+                entry.GetPropertyValue<string>(null, AppInfoPaths.Type));
 
             try
             {

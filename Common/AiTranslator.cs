@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using SteamEdit.Data;
 
 namespace Common;
 
@@ -222,16 +221,11 @@ Rules:
 		return result;
 	}
 
-	public static string BuildContext(IAppInfoEntry entry)
+	public static string BuildContext(string developer, string publisher, string type)
 	{
 		var parts = new List<string>();
-		string developer = entry.GetPropertyValue<string>(null, AppInfoPaths.Developers);
 		if (!string.IsNullOrWhiteSpace(developer)) parts.Add("Developer: " + developer);
-
-		string publisher = entry.GetPropertyValue<string>(null, AppInfoPaths.Publishers);
 		if (!string.IsNullOrWhiteSpace(publisher)) parts.Add("Publisher: " + publisher);
-
-		string type = entry.GetPropertyValue<string>(null, AppInfoPaths.Type);
 		if (!string.IsNullOrWhiteSpace(type)) parts.Add("Type: " + type);
 
 		return parts.Count > 0 ? string.Join("\n", parts) : null;

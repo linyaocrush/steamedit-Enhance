@@ -112,14 +112,14 @@ internal class MainWindow : LocalizableForm
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null)
 				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"steam://nav/games/details/{entry.ID}", UseShellExecute = true }); }
-				catch (Exception ex) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
+				catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 		_listManager.ContextMenuOpenInSteamDB += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null)
 				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"https://steamdb.info/app/{entry.ID}/", UseShellExecute = true }); }
-				catch (Exception ex) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
+				catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 
 		// 创建编辑控制器
@@ -367,7 +367,10 @@ internal class MainWindow : LocalizableForm
 		try
 		{
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
-			string context = AiTranslator.BuildContext(entry);
+			string context = AiTranslator.BuildContext(
+				entry.GetPropertyValue<string>(null, AppInfoPaths.Developers),
+				entry.GetPropertyValue<string>(null, AppInfoPaths.Publishers),
+				entry.GetPropertyValue<string>(null, AppInfoPaths.Type));
 			string translated = await AiTranslator.TranslateWithContextAsync(
 				originalName, targetLang, context,
 				Settings.Default.AiCustomSystemPrompt,
@@ -472,7 +475,7 @@ internal class MainWindow : LocalizableForm
 	{
 		try
 		{
-			SteamProcessManager.KillSteam((msg, waitWhile) =>
+			SteamProcessManager.KillSteam(Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
 			{
 				using var dlg = new WaitingDialog(msg);
 				dlg.ShowAndWait(() => waitWhile());
