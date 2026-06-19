@@ -31,6 +31,7 @@ internal static class Log
 	{
 		lock (_syncObj)
 		{
+			if (_writer == null) return;
 			foreach (string line in lines)
 			{
 				_writer.WriteLine(line);
