@@ -97,6 +97,37 @@ internal class MainWindow : Form
 			btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 		};
 
+		_listManager.ContextMenuCopyName += (_, _) =>
+		{
+			var entry = _listManager.GetSelectedEntry();
+			if (entry != null) Clipboard.SetText(entry.Name);
+		};
+		_listManager.ContextMenuCopyAppId += (_, _) =>
+		{
+			var entry = _listManager.GetSelectedEntry();
+			if (entry != null) Clipboard.SetText(entry.ID.ToString());
+		};
+		_listManager.ContextMenuOpenInSteam += (_, _) =>
+		{
+			var entry = _listManager.GetSelectedEntry();
+			if (entry != null)
+				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+				{
+					FileName = $"steam://nav/games/details/{entry.ID}",
+					UseShellExecute = true
+				});
+		};
+		_listManager.ContextMenuOpenInSteamDB += (_, _) =>
+		{
+			var entry = _listManager.GetSelectedEntry();
+			if (entry != null)
+				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+				{
+					FileName = $"https://steamdb.info/app/{entry.ID}/",
+					UseShellExecute = true
+				});
+		};
+
 		// 创建编辑控制器
 		_editController = new EditController(
 			_ctx, _listManager, textGameName, textSortAs,
