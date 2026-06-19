@@ -39,6 +39,13 @@ internal static class AiTranslator
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
 		}
 
+		var contentType = response.Content.Headers.ContentType?.MediaType;
+		if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+		{
+			Log.WriteLine("AI: Unexpected content type: {0}", contentType);
+			throw new Exception($"Expected JSON response but got {contentType}");
+		}
+
 		var models = new List<string>();
 		using var doc = JsonDocument.Parse(responseBody);
 		if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
@@ -167,6 +174,13 @@ Rules:
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
 		}
 
+		var contentType = response.Content.Headers.ContentType?.MediaType;
+		if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+		{
+			Log.WriteLine("AI: Unexpected content type: {0}", contentType);
+			throw new Exception($"Expected JSON response but got {contentType}");
+		}
+
 		using var doc = JsonDocument.Parse(responseBody);
 		string result = null;
 
@@ -285,6 +299,13 @@ Translation pairs:
 		{
 			Log.WriteLine("AI: Analysis failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+		}
+
+		var contentType = response.Content.Headers.ContentType?.MediaType;
+		if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+		{
+			Log.WriteLine("AI: Unexpected content type: {0}", contentType);
+			throw new Exception($"Expected JSON response but got {contentType}");
 		}
 
 		using var doc = JsonDocument.Parse(responseBody);
