@@ -164,10 +164,7 @@ internal class EditController
 		try
 		{
 			SteamData.AppInfoData.RevertEntry(entry);
-			_listManager.ResortEntry(entry);
-			_listManager.ClearDisplayNameCache();
-			int idx = _ctx.Entries.IndexOf(entry);
-			if (idx >= 0) _listManager.SelectIndex(idx);
+			_listManager.NotifyEntryReverted(entry);
 			LoadEntry(entry);
 		}
 		catch (NotImplementedException)
@@ -340,7 +337,7 @@ internal class EditController
 		if (_snapshotValues.TryGetValue("hidden", out var prev) && prev is int p)
 			_undoManager.Push(entry, AppInfoPaths.IsHidden, PropertyType.Int32, p);
 		entry.IsHidden = _checkHidden.Checked;
-		_listManager.InvalidateAll();
+		_listManager.NotifyStatusChanged();
 	}
 
 	private void OnCheckCompleted_CheckedChanged(object sender, EventArgs e)
@@ -351,7 +348,7 @@ internal class EditController
 		if (_snapshotValues.TryGetValue("completed", out var prev) && prev is int p)
 			_undoManager.Push(entry, AppInfoPaths.IsCompleted, PropertyType.Int32, p);
 		entry.IsCompleted = _checkCompleted.Checked;
-		_listManager.InvalidateAll();
+		_listManager.NotifyStatusChanged();
 	}
 
 	private void OnListControllerSupport_SelectedIndexChanged(object sender, EventArgs e)
