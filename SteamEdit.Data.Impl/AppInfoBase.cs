@@ -50,6 +50,8 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 		{
 			TEntry item = (TEntry)entry;
 			_entries.Remove(item);
+			_entryLookup?.Remove((uint)item.ID);
+			_cachedEntries = null;
 		}
 	}
 
