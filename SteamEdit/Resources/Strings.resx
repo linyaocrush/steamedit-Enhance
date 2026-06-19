@@ -572,6 +572,24 @@ Page Down   Next game</value>
   <data name="BatchReplace_PreviewResult" xml:space="preserve">
     <value>Result</value>
   </data>
+  <data name="ContextMenu_CopyName" xml:space="preserve">
+    <value>Copy Name</value>
+  </data>
+  <data name="ContextMenu_CopyAppId" xml:space="preserve">
+    <value>Copy App ID</value>
+  </data>
+  <data name="ContextMenu_OpenInSteam" xml:space="preserve">
+    <value>Open in Steam</value>
+  </data>
+  <data name="ContextMenu_OpenInSteamDB" xml:space="preserve">
+    <value>Open in SteamDB</value>
+  </data>
+  <data name="About_ViewLog" xml:space="preserve">
+    <value>View Log</value>
+  </data>
+  <data name="LogViewer_Title" xml:space="preserve">
+    <value>Log Viewer</value>
+  </data>
   <data name="Tooltip_BatchReplace" xml:space="preserve">
     <value>Batch find and replace game names</value>
   </data>

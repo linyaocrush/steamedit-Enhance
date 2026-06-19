@@ -572,6 +572,24 @@ Page Down   下一个游戏</value>
   <data name="BatchReplace_PreviewResult" xml:space="preserve">
     <value>替换结果</value>
   </data>
+  <data name="ContextMenu_CopyName" xml:space="preserve">
+    <value>复制名称</value>
+  </data>
+  <data name="ContextMenu_CopyAppId" xml:space="preserve">
+    <value>复制 App ID</value>
+  </data>
+  <data name="ContextMenu_OpenInSteam" xml:space="preserve">
+    <value>在 Steam 中打开</value>
+  </data>
+  <data name="ContextMenu_OpenInSteamDB" xml:space="preserve">
+    <value>在 SteamDB 中打开</value>
+  </data>
+  <data name="About_ViewLog" xml:space="preserve">
+    <value>查看日志</value>
+  </data>
+  <data name="LogViewer_Title" xml:space="preserve">
+    <value>日志查看器</value>
+  </data>
   <data name="Tooltip_BatchReplace" xml:space="preserve">
     <value>批量查找替换游戏名称</value>
   </data>

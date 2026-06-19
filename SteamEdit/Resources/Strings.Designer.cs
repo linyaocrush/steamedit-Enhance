@@ -213,6 +213,13 @@ namespace SteamEdit {
         internal static string BatchReplace_PreviewOriginal => ResourceManager.GetString("BatchReplace_PreviewOriginal", resourceCulture);
         internal static string BatchReplace_PreviewResult => ResourceManager.GetString("BatchReplace_PreviewResult", resourceCulture);
 
+        internal static string ContextMenu_CopyName => ResourceManager.GetString("ContextMenu_CopyName", resourceCulture);
+        internal static string ContextMenu_CopyAppId => ResourceManager.GetString("ContextMenu_CopyAppId", resourceCulture);
+        internal static string ContextMenu_OpenInSteam => ResourceManager.GetString("ContextMenu_OpenInSteam", resourceCulture);
+        internal static string ContextMenu_OpenInSteamDB => ResourceManager.GetString("ContextMenu_OpenInSteamDB", resourceCulture);
+        internal static string About_ViewLog => ResourceManager.GetString("About_ViewLog", resourceCulture);
+        internal static string LogViewer_Title => ResourceManager.GetString("LogViewer_Title", resourceCulture);
+
         internal static string Tooltip_BatchReplace => ResourceManager.GetString("Tooltip_BatchReplace", resourceCulture);
         internal static string MainWindow_BatchReplace => ResourceManager.GetString("MainWindow_BatchReplace", resourceCulture);
     }

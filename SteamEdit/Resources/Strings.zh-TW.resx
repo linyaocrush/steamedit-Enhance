@@ -428,6 +428,24 @@ Page Down   下一個遊戲</value>
   <data name="BatchReplace_PreviewResult" xml:space="preserve">
     <value>替換結果</value>
   </data>
+  <data name="ContextMenu_CopyName" xml:space="preserve">
+    <value>複製名稱</value>
+  </data>
+  <data name="ContextMenu_CopyAppId" xml:space="preserve">
+    <value>複製 App ID</value>
+  </data>
+  <data name="ContextMenu_OpenInSteam" xml:space="preserve">
+    <value>在 Steam 中開啟</value>
+  </data>
+  <data name="ContextMenu_OpenInSteamDB" xml:space="preserve">
+    <value>在 SteamDB 中開啟</value>
+  </data>
+  <data name="About_ViewLog" xml:space="preserve">
+    <value>查看日誌</value>
+  </data>
+  <data name="LogViewer_Title" xml:space="preserve">
+    <value>日誌檢視器</value>
+  </data>
   <data name="Sort_Title" xml:space="preserve">
     <value>排序</value>
   </data>
