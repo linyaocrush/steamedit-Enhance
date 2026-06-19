@@ -47,6 +47,7 @@ SteamEdit is a Windows desktop application that edits Steam's local `appinfo.vdf
 | **Custom Sorting** | Sort games by Name or App ID, with ascending/descending toggle. Sort preference is persisted. |
 | **Batch Find & Replace** | Supports plain text and regular expressions with case-sensitivity toggle. Shows live match count. |
 | **Translation Rules** | AI analyzes the glossary to automatically derive translation rules, which are then applied to future translations for consistent style. |
+| **Crash Logging** | Unhandled exceptions generate a timestamped `crash-*.log` file with system info and full stack trace. Dialog shows the file path with "Close" (continue) or "Exit" options. |
 
 ---
 
@@ -56,7 +57,7 @@ SteamEdit is a Windows desktop application that edits Steam's local `appinfo.vdf
 |:---|:---|
 | **Property Lookup Speed** | PropertyTable now uses a parallel Dictionary, reducing property lookup from O(n) to O(1). |
 | **Buffered Log Writing** | Replaced `File.AppendAllLines` with `StreamWriter` (auto-flush every 20 lines) to cut disk I/O. Old logs are cleared on startup; only the current session's log is kept. |
-| **Code Refactoring** | Extracted a common base class for three `AppInfoEntry` versions, eliminating ~800 lines of duplicated code. |
+| **Code Refactoring** | Extracted `AppInfoBase<TEntry>` generic base class for three `AppInfoEntry` versions; `PropertyTableIO` delegate injection to unify six duplicated type switches; `Mods` reader consolidation (V4/V5/V6 → single method); `LocalizableForm` base class for i18n boilerplate — eliminating ~1000+ lines of duplicated code total. |
 | **Unified Path Resolution** | Consolidated startup path logic into a single method, removing three separate implementations. |
 | **Sort Precomputation** | Normalized sort keys are precomputed, avoiding repeated string processing during O(n log n) sorting. |
 | **Resource Management** | `IDisposable` resources (e.g., SHA1) are properly released, eliminating memory leaks. |
