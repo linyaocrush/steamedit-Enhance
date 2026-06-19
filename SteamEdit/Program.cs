@@ -228,13 +228,56 @@ internal static class Program
         }
     }
 
+    private static string WriteCrashFile(Exception ex)
+    {
+        try
+        {
+            string dir = AppHelper.GetAppDirectory();
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string path = Path.Combine(dir, $"crash-{timestamp}.log");
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== SteamEdit Crash Report ===");
+            sb.AppendLine($"时间: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"操作系统: {Environment.OSVersion}");
+            sb.AppendLine($".NET 版本: {Environment.Version}");
+            sb.AppendLine($"命令行: {Environment.CommandLine}");
+            sb.AppendLine();
+            sb.AppendLine("=== 异常信息 ===");
+            sb.AppendLine(ex.ToString());
+
+            File.WriteAllText(path, sb.ToString());
+            return path;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        MessageBoxWithDetails.Show(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, e.ExceptionObject.ToString());
+        var ex = e.ExceptionObject as Exception;
+        string crashPath = ex != null ? WriteCrashFile(ex) : null;
+        string details = e.ExceptionObject.ToString();
+        if (crashPath != null)
+        {
+            details = $"{Strings.CrashDialog_SavedTo}\r\n{crashPath}\r\n\r\n{details}";
+        }
+        MessageBoxWithDetails.ShowWithExit(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, details);
     }
 
     private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
     {
-        MessageBoxWithDetails.Show(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, e.Exception.ToString());
+        string crashPath = WriteCrashFile(e.Exception);
+        string details = e.Exception.ToString();
+        if (crashPath != null)
+        {
+            details = $"{Strings.CrashDialog_SavedTo}\r\n{crashPath}\r\n\r\n{details}";
+        }
+        if (MessageBoxWithDetails.ShowWithExit(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, details))
+        {
+            Environment.Exit(1);
+        }
     }
 }
