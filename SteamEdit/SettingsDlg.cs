@@ -12,7 +12,7 @@ namespace SteamEdit;
 internal class SettingsDlg : Form
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string RunValueName = "SteamEdit";
+    private const string RunValueName = "SteamEdit-Enhance";
 
     private IContainer components;
 
@@ -360,6 +360,7 @@ internal class SettingsDlg : Form
                 if (autoFix) args += " -autofix";
                 if (forceStart) args += " -forcestart";
                 key.SetValue(RunValueName, $"\"{exePath}\"{args}");
+                key.DeleteValue("SteamEdit", throwOnMissingValue: false);
             }
             else
             {
