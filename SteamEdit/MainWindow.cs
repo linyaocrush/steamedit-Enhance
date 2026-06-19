@@ -177,13 +177,6 @@ internal class MainWindow : Form
 			splitContainer1.SplitterDistance = Settings.Default.MainWindowSplitter;
 		SteamData_OnNeedsSaveOrApply(null, null);
 		_listManager.RefreshGameList();
-		ReleaseNotesView releaseNotesView = new ReleaseNotesView();
-		if (releaseNotesView.FillNotes(Settings.Default.ShownVersion))
-		{
-			releaseNotesView.Show(this);
-			Settings.Default.ShownVersion = releaseNotesView.ShownVersion;
-			Settings.Default.Save();
-		}
 		appSelection.Select();
 		I18n.LanguageChanged += OnLanguageChanged;
 		ApplyLanguage();

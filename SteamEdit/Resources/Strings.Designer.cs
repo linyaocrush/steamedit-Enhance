@@ -131,7 +131,6 @@ namespace SteamEdit {
         internal static string SelectAppLaunch_LabelLaunchItem => ResourceManager.GetString("SelectAppLaunch_LabelLaunchItem", resourceCulture);
         internal static string SelectAppLaunch_BtnOK => ResourceManager.GetString("SelectAppLaunch_BtnOK", resourceCulture);
         internal static string SelectAppLaunch_BtnCancel => ResourceManager.GetString("SelectAppLaunch_BtnCancel", resourceCulture);
-        internal static string ReleaseNotesView_Title => ResourceManager.GetString("ReleaseNotesView_Title", resourceCulture);
         internal static string MessageBoxWithDetails_BtnClose => ResourceManager.GetString("MessageBoxWithDetails_BtnClose", resourceCulture);
         internal static string MessageBoxWithDetails_BtnCopyClipboard => ResourceManager.GetString("MessageBoxWithDetails_BtnCopyClipboard", resourceCulture);
         internal static string WaitingDialog_Title => ResourceManager.GetString("WaitingDialog_Title", resourceCulture);
