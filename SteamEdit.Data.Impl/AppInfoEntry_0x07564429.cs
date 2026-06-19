@@ -19,29 +19,6 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 		}
 	}
 
-	public override bool Revert()
-	{
-		if (_modifications != null)
-		{
-			if (_modifications.OriginalData == null)
-			{
-				throw new NotImplementedException();
-			}
-			using (BinaryReader reader = new BinaryReader(new MemoryStream(_modifications.OriginalData)))
-			{
-				_properties = PropertyTableIO.ReadPropertyTable_Mods(reader);
-			}
-			if (_properties != null)
-			{
-				ClearCachedProps();
-				_modifications = null;
-				RaiseModified();
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public static AppInfoEntry_0x07564429 FromReader(BinaryReader reader, IList<string> stringTable)
 	{
 		int num = reader.ReadInt32();

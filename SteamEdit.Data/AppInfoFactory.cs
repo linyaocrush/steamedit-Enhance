@@ -15,10 +15,10 @@ internal static class AppInfoFactory
 		uint num = binaryReader.ReadUInt32();
 		return num switch
 		{
-			123094055u => AppInfo_0x07564427.Load(binaryReader), 
-			123094056u => AppInfo_0x07564428.Load(binaryReader), 
-			123094057u => AppInfo_0x07564429.Load(binaryReader), 
-			_ => throw new UnknownAppInfoVersionException(path, num), 
+			AppInfo_0x07564427.MagicNumberValue => AppInfo_0x07564427.Load(binaryReader),
+			AppInfo_0x07564428.MagicNumberValue => AppInfo_0x07564428.Load(binaryReader),
+			AppInfo_0x07564429.MagicNumberValue => AppInfo_0x07564429.Load(binaryReader),
+			_ => throw new UnknownAppInfoVersionException(path, num),
 		};
 	}
 }
