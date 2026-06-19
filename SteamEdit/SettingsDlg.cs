@@ -221,6 +221,7 @@ internal class SettingsDlg : Form
         }
         catch (Exception ex)
         {
+            Log.WriteLine("FetchModels: Exception: {0}", ex);
             MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
@@ -261,6 +262,7 @@ internal class SettingsDlg : Form
         }
         catch (Exception ex)
         {
+            Log.WriteLine("AnalyzeRules: File read exception: {0}", ex);
             MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
@@ -284,6 +286,7 @@ internal class SettingsDlg : Form
         }
         catch (Exception ex)
         {
+            Log.WriteLine("AnalyzeRules: Exception: {0}", ex);
             MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
