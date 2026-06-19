@@ -381,6 +381,30 @@ Page Down   下一個遊戲</value>
   <data name="Msg_SaveFailed" xml:space="preserve">
     <value>儲存時發生錯誤：{0}</value>
   </data>
+  <data name="Msg_ApplyFailed" xml:space="preserve">
+    <value>套用失敗：&#10;{0}</value>
+  </data>
+  <data name="Msg_MakeItMatch" xml:space="preserve">
+    <value>請確保選擇正確的檔案</value>
+  </data>
+  <data name="Msg_MakeItMatchTitle" xml:space="preserve">
+    <value>檔案不匹配</value>
+  </data>
+  <data name="Msg_SelectAppInfoTitle" xml:space="preserve">
+    <value>選擇 appinfo.vdf</value>
+  </data>
+  <data name="Msg_UnknownVersion" xml:space="preserve">
+    <value>未知的 appinfo 版本：{0}</value>
+  </data>
+  <data name="Msg_LoadFailed" xml:space="preserve">
+    <value>載入失敗：{0}</value>
+  </data>
+  <data name="Msg_UnhandledException" xml:space="preserve">
+    <value>發生未處理的異常：{0}</value>
+  </data>
+  <data name="Msg_UnhandledExceptionTitle" xml:space="preserve">
+    <value>未處理的異常</value>
+  </data>
   <data name="Msg_AiNotConfigured" xml:space="preserve">
     <value>尚未設定 AI 翻譯。請先在設定中填入 API 位址和金鑰。</value>
   </data>
@@ -392,6 +416,30 @@ Page Down   下一個遊戲</value>
   </data>
   <data name="Tooltip_BatchTranslate" xml:space="preserve">
     <value>批次翻譯所有篩選後的遊戲</value>
+  </data>
+  <data name="BatchTranslate_Title" xml:space="preserve">
+    <value>批次翻譯</value>
+  </data>
+  <data name="BatchTranslate_Progress" xml:space="preserve">
+    <value>進度：{0}/{1}</value>
+  </data>
+  <data name="BatchTranslate_Current" xml:space="preserve">
+    <value>正在翻譯：{0}</value>
+  </data>
+  <data name="BatchTranslate_Stats" xml:space="preserve">
+    <value>✅ 成功: {0}   ⏭ 跳過: {1}   ❌ 失敗: {2}</value>
+  </data>
+  <data name="BatchTranslate_Pause" xml:space="preserve">
+    <value>暫停</value>
+  </data>
+  <data name="BatchTranslate_Resume" xml:space="preserve">
+    <value>繼續</value>
+  </data>
+  <data name="BatchTranslate_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="BatchTranslate_Close" xml:space="preserve">
+    <value>關閉</value>
   </data>
 
   <!-- Settings extra -->
@@ -413,6 +461,21 @@ Page Down   下一個遊戲</value>
   <data name="Settings_ClearRules" xml:space="preserve">
     <value>清除規則</value>
   </data>
+  <data name="Tooltip_CustomSystemPrompt" xml:space="preserve">
+    <value>自訂系統提示詞</value>
+  </data>
+  <data name="Tooltip_CustomUserMessage" xml:space="preserve">
+    <value>自訂使用者訊息</value>
+  </data>
+  <data name="Tooltip_TranslationRules" xml:space="preserve">
+    <value>翻譯規則</value>
+  </data>
+  <data name="Msg_NoGlossaryData" xml:space="preserve">
+    <value>沒有詞彙表資料</value>
+  </data>
+  <data name="Msg_AnalyzingRules" xml:space="preserve">
+    <value>分析中...</value>
+  </data>
   <data name="MainWindow_BatchTranslate" xml:space="preserve">
     <value>批次翻譯</value>
   </data>
@@ -421,6 +484,36 @@ Page Down   下一個遊戲</value>
   </data>
   <data name="Tooltip_BatchReplace" xml:space="preserve">
     <value>批次尋找和取代遊戲名稱</value>
+  </data>
+  <data name="BatchReplace_Title" xml:space="preserve">
+    <value>批次尋找和取代</value>
+  </data>
+  <data name="BatchReplace_Find" xml:space="preserve">
+    <value>尋找：</value>
+  </data>
+  <data name="BatchReplace_Replace" xml:space="preserve">
+    <value>取代：</value>
+  </data>
+  <data name="BatchReplace_CaseSensitive" xml:space="preserve">
+    <value>區分大小寫</value>
+  </data>
+  <data name="BatchReplace_Regex" xml:space="preserve">
+    <value>正規表達式模式</value>
+  </data>
+  <data name="BatchReplace_MatchCount" xml:space="preserve">
+    <value>已匹配：{0} 個遊戲</value>
+  </data>
+  <data name="BatchReplace_BtnReplaceAll" xml:space="preserve">
+    <value>全部取代</value>
+  </data>
+  <data name="BatchReplace_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="BatchReplace_InvalidRegex" xml:space="preserve">
+    <value>無效的正規表達式：{0}</value>
+  </data>
+  <data name="BatchReplace_ConfirmReplace" xml:space="preserve">
+    <value>確認取代 {1} 個遊戲中的 {0} 處？</value>
   </data>
   <data name="BatchReplace_PreviewOriginal" xml:space="preserve">
     <value>原始名稱</value>
@@ -449,6 +542,18 @@ Page Down   下一個遊戲</value>
   <data name="Sort_Title" xml:space="preserve">
     <value>排序</value>
   </data>
+  <data name="Sort_ByName" xml:space="preserve">
+    <value>按名稱</value>
+  </data>
+  <data name="Sort_ById" xml:space="preserve">
+    <value>按 App ID</value>
+  </data>
+  <data name="Sort_Ascending" xml:space="preserve">
+    <value>升序</value>
+  </data>
+  <data name="Sort_Descending" xml:space="preserve">
+    <value>降序</value>
+  </data>
   <data name="Enum_Game" xml:space="preserve">
     <value>遊戲</value>
   </data>
@@ -469,5 +574,25 @@ Page Down   下一個遊戲</value>
   </data>
   <data name="Enum_Hardware" xml:space="preserve">
     <value>硬體</value>
+  </data>
+  <data name="Enum_Music" xml:space="preserve">
+    <value>音樂</value>
+  </data>
+  <data name="Enum_Guide" xml:space="preserve">
+    <value>指南</value>
+  </data>
+  <data name="Enum_Config" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="Enum_Beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="Enum_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+
+  <!-- SteamData -->
+  <data name="SteamData_WaitingForClose" xml:space="preserve">
+    <value>等待 Steam 關閉...</value>
   </data>
 </root>

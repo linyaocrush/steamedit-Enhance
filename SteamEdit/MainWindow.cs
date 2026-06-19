@@ -100,32 +100,26 @@ internal class MainWindow : Form
 		_listManager.ContextMenuCopyName += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) Clipboard.SetText(entry.Name);
+			if (entry != null) try { Clipboard.SetText(entry.Name); } catch { }
 		};
 		_listManager.ContextMenuCopyAppId += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) Clipboard.SetText(entry.ID.ToString());
+			if (entry != null) try { Clipboard.SetText(entry.ID.ToString()); } catch { }
 		};
 		_listManager.ContextMenuOpenInSteam += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null)
-				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-				{
-					FileName = $"steam://nav/games/details/{entry.ID}",
-					UseShellExecute = true
-				});
+				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"steam://nav/games/details/{entry.ID}", UseShellExecute = true }); }
+				catch (Exception ex) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 		_listManager.ContextMenuOpenInSteamDB += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null)
-				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-				{
-					FileName = $"https://steamdb.info/app/{entry.ID}/",
-					UseShellExecute = true
-				});
+				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"https://steamdb.info/app/{entry.ID}/", UseShellExecute = true }); }
+				catch (Exception ex) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 
 		// 创建编辑控制器
