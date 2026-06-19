@@ -290,6 +290,14 @@ internal class MainWindow : Form
 			_editController.PerformUndo();
 			return;
 		}
+		if (e.Control && e.KeyCode == Keys.C && !appFilterText.Focused)
+		{
+			var entry = _listManager.GetSelectedEntry();
+			if (entry != null) { try { Clipboard.SetText(entry.Name); } catch { } }
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			return;
+		}
 		if (e.Control && e.KeyCode == Keys.F)
 		{
 			if (appFilterText.Focused) return;
