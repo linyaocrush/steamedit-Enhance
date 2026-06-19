@@ -206,7 +206,7 @@ public class About : Form
 		btnViewLog.Size = new System.Drawing.Size(101, 23);
 		btnViewLog.Text = "View Log";
 		btnViewLog.UseVisualStyleBackColor = true;
-		btnViewLog.Click += (_, _) => new LogViewerForm().ShowDialog(this);
+		btnViewLog.Click += (_, _) => { using var f = new LogViewerForm(); f.ShowDialog(this); };
 		// Close button
 		button.DialogResult = System.Windows.Forms.DialogResult.Cancel;
 		button.Location = new System.Drawing.Point(241, 157);
