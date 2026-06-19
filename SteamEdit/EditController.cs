@@ -187,16 +187,12 @@ internal class EditController
 		{
 			_textGameName.Text = translated;
 			entry.Name = translated;
-			_listManager.InvalidateDisplayName(entry);
+			_listManager.NotifyEntryEdited(entry);
 			UpdateGlossaryForEntry(entry, previousName);
 			if (!entry.HasSortAs)
 			{
-				_listManager.RefreshingAfterEdit = true;
-				_listManager.ResortEntry(entry);
-				_listManager.RefreshingAfterEdit = false;
 				_textSortAs.Text = entry.SortAs;
 			}
-			_listManager.InvalidateItem(entry);
 		}
 		finally { _isSettingUpEntry = false; }
 	}
@@ -308,19 +304,15 @@ internal class EditController
 			string prev = entry.Name;
 			_undoManager.Push(entry, AppInfoPaths.Name, PropertyType.String, prev);
 			entry.Name = _textGameName.Text;
-			_listManager.InvalidateDisplayName(entry);
+			_listManager.NotifyEntryEdited(entry);
 			UpdateGlossaryForEntry(entry, prev);
 			if (!entry.HasSortAs)
 			{
-				_listManager.RefreshingAfterEdit = true;
-				_listManager.ResortEntry(entry);
-				_listManager.RefreshingAfterEdit = false;
 				bool wasSettingUp = _isSettingUpEntry;
 				_isSettingUpEntry = true;
 				_textSortAs.Text = entry.SortAs;
 				_isSettingUpEntry = wasSettingUp;
 			}
-			_listManager.InvalidateItem(entry);
 		}
 	}
 
@@ -333,10 +325,7 @@ internal class EditController
 		{
 			_undoManager.Push(entry, AppInfoPaths.SortAs, PropertyType.String, entry.SortAs);
 			entry.SortAs = _textSortAs.Text;
-			_listManager.InvalidateDisplayName(entry);
-			_listManager.RefreshingAfterEdit = true;
-			_listManager.ResortEntry(entry);
-			_listManager.RefreshingAfterEdit = false;
+			_listManager.NotifyEntryEdited(entry);
 			int idx = _ctx.Entries.IndexOf(entry);
 			if (idx >= 0) _listManager.SelectIndex(idx);
 			_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
@@ -408,10 +397,8 @@ internal class EditController
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		entry.RevertModifiedProperty(AppInfoPaths.Name);
-		_listManager.InvalidateDisplayName(entry);
-		_listManager.RefreshingAfterEdit = true;
+		_listManager.NotifyEntryEdited(entry);
 		_listManager.RefreshGameList();
-		_listManager.RefreshingAfterEdit = false;
 		LoadEntry(entry);
 	}
 
@@ -421,10 +408,7 @@ internal class EditController
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		entry.RevertModifiedProperty(AppInfoPaths.SortAs);
-		_listManager.InvalidateDisplayName(entry);
-		_listManager.RefreshingAfterEdit = true;
-		_listManager.ResortEntry(entry);
-		_listManager.RefreshingAfterEdit = false;
+		_listManager.NotifyEntryEdited(entry);
 		LoadEntry(entry);
 	}
 }
