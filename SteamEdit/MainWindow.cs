@@ -100,12 +100,12 @@ internal class MainWindow : Form
 		_listManager.ContextMenuCopyName += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) try { Clipboard.SetText(entry.Name); } catch { }
+			if (entry != null) try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { }
 		};
 		_listManager.ContextMenuCopyAppId += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) try { Clipboard.SetText(entry.ID.ToString()); } catch { }
+			if (entry != null) try { Clipboard.SetText(entry.ID.ToString()); } catch (System.Runtime.InteropServices.ExternalException) { }
 		};
 		_listManager.ContextMenuOpenInSteam += (_, _) =>
 		{
@@ -286,7 +286,7 @@ internal class MainWindow : Form
 		if (e.Control && e.KeyCode == Keys.C && !appFilterText.Focused)
 		{
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) { try { Clipboard.SetText(entry.Name); } catch { } }
+			if (entry != null) { try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { } }
 			e.Handled = true;
 			e.SuppressKeyPress = true;
 			return;

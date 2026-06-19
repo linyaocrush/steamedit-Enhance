@@ -512,7 +512,7 @@ internal class Settings
 			if (targetType.IsEnum)
 			{
 				try { return Enum.Parse(targetType, str); }
-				catch { return null; }
+				catch (ArgumentException) { return null; }
 			}
 			return null;
 		}
