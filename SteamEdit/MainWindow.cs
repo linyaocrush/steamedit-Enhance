@@ -470,7 +470,13 @@ internal class MainWindow : LocalizableForm
 
 	private void OnBtnSaveApplyRestart_Click(object sender, EventArgs e)
 	{
-		try { SteamData.SaveAndRestartSteam(restartAlways: true); }
+		try
+		{
+			SteamProcessManager.KillSteam();
+			SteamData.Save();
+			SteamData.Apply();
+			SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
+		}
 		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
 	}
 

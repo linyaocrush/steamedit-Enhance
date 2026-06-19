@@ -147,12 +147,18 @@ internal static class Program
                 if (SteamData.NeedsApply)
                 {
                     Log.WriteLine("Changes detected, applying!");
-                    SteamData.SaveAndRestartSteam(flag2);
+                    bool shouldRestart = flag2 || SteamProcessManager.IsSteamRunning();
+                    if (shouldRestart)
+                        SteamProcessManager.KillSteam();
+                    SteamData.Save();
+                    SteamData.Apply();
+                    if (shouldRestart)
+                        SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
                     Log.WriteLine("Appcache updated");
                 }
                 else if (flag2)
                 {
-                    SteamData.EnsureSteamRunning(focusIfRunning: true);
+                    SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
                 }
                 else
                 {
