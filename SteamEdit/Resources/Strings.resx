@@ -600,4 +600,12 @@ Page Down   Next game</value>
   <data name="MainWindow_BatchReplace" xml:space="preserve">
     <value>Find &amp; Replace</value>
   </data>
+
+  <!-- Crash Dialog -->
+  <data name="CrashDialog_ExitButton" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="CrashDialog_SavedTo" xml:space="preserve">
+    <value>Crash log saved to:</value>
+  </data>
 </root>

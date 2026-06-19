@@ -600,4 +600,10 @@ Page Down   下一个游戏</value>
   <data name="MainWindow_BatchReplace" xml:space="preserve">
     <value>查找替换</value>
   </data>
+  <data name="CrashDialog_ExitButton" xml:space="preserve">
+    <value>退出程序</value>
+  </data>
+  <data name="CrashDialog_SavedTo" xml:space="preserve">
+    <value>崩溃日志已保存到：</value>
+  </data>
 </root>

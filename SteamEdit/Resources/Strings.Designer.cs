@@ -223,5 +223,8 @@ namespace SteamEdit {
         internal static string MainWindow_BatchReplace => ResourceManager.GetString("MainWindow_BatchReplace", resourceCulture);
         internal static string Settings_TabGeneral => ResourceManager.GetString("Settings_TabGeneral", resourceCulture);
         internal static string Settings_TabAi => ResourceManager.GetString("Settings_TabAi", resourceCulture);
+
+        internal static string CrashDialog_ExitButton => ResourceManager.GetString("CrashDialog_ExitButton", resourceCulture);
+        internal static string CrashDialog_SavedTo => ResourceManager.GetString("CrashDialog_SavedTo", resourceCulture);
     }
 }

@@ -593,4 +593,10 @@ Page Down   下一個遊戲</value>
   <data name="SteamData_WaitingForClose" xml:space="preserve">
     <value>等待 Steam 關閉...</value>
   </data>
+  <data name="CrashDialog_ExitButton" xml:space="preserve">
+    <value>退出程式</value>
+  </data>
+  <data name="CrashDialog_SavedTo" xml:space="preserve">
+    <value>崩潰日誌已儲存到：</value>
+  </data>
 </root>
