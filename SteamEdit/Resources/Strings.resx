@@ -42,7 +42,7 @@
 
   <!-- MainWindow -->
   <data name="MainWindow_Title" xml:space="preserve">
-    <value>SteamEdit</value>
+    <value>SteamEdit-Enhance</value>
   </data>
   <data name="MainWindow_UnsavedSuffix" xml:space="preserve">
     <value> [unsaved]</value>
