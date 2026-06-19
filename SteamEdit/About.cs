@@ -14,6 +14,8 @@ public class About : Form
 
 	private Label lblVersion;
 
+	private Button btnViewLog;
+
 	private LinkLabel linkWebsite;
 
 	private LinkLabel linkModified;
@@ -49,6 +51,8 @@ public class About : Form
 			if (lbl3 != null) lbl3.Text = Strings.About_LabelWebsite;
 			var btnClose = panel.Controls.Find("btnClose", true).FirstOrDefault() as Button;
 			if (btnClose != null) btnClose.Text = Strings.About_BtnClose;
+			var btnViewLogCtrl = panel.Controls.Find("btnViewLog", true).FirstOrDefault() as Button;
+			if (btnViewLogCtrl != null) btnViewLogCtrl.Text = Strings.About_ViewLog;
 			var lblModifiedPrefix = panel.Controls.Find("labelModifiedPrefix", true).FirstOrDefault();
 			if (lblModifiedPrefix != null) lblModifiedPrefix.Text = Strings.About_LabelModifiedBy;
 			var lblEnhancePrefix = panel.Controls.Find("labelEnhancePrefix", true).FirstOrDefault();
@@ -195,9 +199,17 @@ public class About : Form
 		this.linkWebsite.TabStop = true;
 		this.linkWebsite.Text = "[url]";
 		this.linkWebsite.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(linkWebsite_LinkClicked);
+		// View Log button
+		this.btnViewLog = new System.Windows.Forms.Button();
+		btnViewLog.Location = new System.Drawing.Point(10, 157);
+		btnViewLog.Name = "btnViewLog";
+		btnViewLog.Size = new System.Drawing.Size(101, 23);
+		btnViewLog.Text = "View Log";
+		btnViewLog.UseVisualStyleBackColor = true;
+		btnViewLog.Click += (_, _) => new LogViewerForm().ShowDialog(this);
 		// Close button
 		button.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-		button.Location = new System.Drawing.Point(131, 157);
+		button.Location = new System.Drawing.Point(241, 157);
 		button.Margin = new System.Windows.Forms.Padding(2);
 		button.Name = "btnClose";
 		button.Size = new System.Drawing.Size(101, 23);
@@ -217,6 +229,7 @@ public class About : Form
 		panel.Controls.Add(label2);
 		panel.Controls.Add(this.linkWebsite);
 		panel.Controls.Add(label3);
+		panel.Controls.Add(btnViewLog);
 		panel.Controls.Add(button);
 		panel.Dock = System.Windows.Forms.DockStyle.Fill;
 		panel.Location = new System.Drawing.Point(0, 0);
