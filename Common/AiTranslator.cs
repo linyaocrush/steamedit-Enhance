@@ -39,6 +39,13 @@ internal static class AiTranslator
 			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
 		}
 
+		var contentType = response.Content.Headers.ContentType?.MediaType;
+		if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+		{
+			Log.WriteLine("AI: Unexpected content type: {0}", contentType);
+			throw new Exception($"Expected JSON response but got {contentType}");
+		}
+
 		var models = new List<string>();
 		using var doc = JsonDocument.Parse(responseBody);
 		if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
@@ -74,12 +81,11 @@ Rules:
 
 	public const string DefaultUserMessage = "{game_name}";
 
-	public static async Task<string> TranslateWithContextAsync(
-		string gameName,
-		string targetLanguage,
-		string context = null,
-		string customSystemPrompt = null,
-		string customUserMessage = null,
+	private static async Task<string> CallChatCompletionAsync(
+		string systemPrompt,
+		string userMessage,
+		int maxTokens = 4096,
+		float temperature = 0.1f,
 		CancellationToken cancellationToken = default)
 	{
 		string apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
@@ -94,6 +100,78 @@ Rules:
 		string model = Settings.Default.AiModel;
 		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
 
+		string requestBody = JsonSerializer.Serialize(new
+		{
+			model,
+			messages = new[]
+			{
+				new { role = "system", content = systemPrompt },
+				new { role = "user", content = userMessage }
+			},
+			max_tokens = maxTokens,
+			temperature
+		});
+
+		Log.WriteLine("AI: Requesting {0}", apiUrl);
+
+		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
+		if (!string.IsNullOrWhiteSpace(apiKey))
+			request.Headers.Add("Authorization", $"Bearer {apiKey}");
+		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+		using var response = await _httpClient.SendAsync(request, cancellationToken);
+		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+		Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
+
+		if (!response.IsSuccessStatusCode)
+		{
+			Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
+			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+		}
+
+		var ct = response.Content.Headers.ContentType?.MediaType;
+		if (ct != null && !ct.Contains("json", StringComparison.OrdinalIgnoreCase))
+		{
+			Log.WriteLine("AI: Unexpected content type: {0}", ct);
+			throw new Exception($"Expected JSON response but got {ct}");
+		}
+
+		using var doc = JsonDocument.Parse(responseBody);
+		string result = null;
+
+		try
+		{
+			var choices = doc.RootElement.GetProperty("choices");
+			if (choices.GetArrayLength() > 0)
+			{
+				var choice = choices[0];
+				if (choice.TryGetProperty("message", out var message))
+				{
+					result = message.GetProperty("content").GetString();
+				}
+				else if (choice.TryGetProperty("text", out var text))
+				{
+					result = text.GetString();
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
+		}
+
+		return result?.Trim() ?? "";
+	}
+
+	public static async Task<string> TranslateWithContextAsync(
+		string gameName,
+		string targetLanguage,
+		string context = null,
+		string customSystemPrompt = null,
+		string customUserMessage = null,
+		CancellationToken cancellationToken = default)
+	{
 		string langDisplay = targetLanguage switch
 		{
 			"zh-CN" => "Simplified Chinese",
@@ -135,63 +213,10 @@ Rules:
 			userMessage += "\n\nContext:\n" + context;
 		}
 
-		Log.WriteLine("AI: Translating \"{0}\" -> {1} (model={2})", gameName, targetLanguage, model);
+		Log.WriteLine("AI: Translating \"{0}\" -> {1}", gameName, targetLanguage);
 
-		string requestBody = JsonSerializer.Serialize(new
-		{
-			model,
-			messages = new[]
-			{
-				new { role = "system", content = systemPrompt },
-				new { role = "user", content = userMessage }
-			},
-			max_tokens = 4096,
-			temperature = 0.1
-		});
-
-		Log.WriteLine("AI: Requesting {0}", apiUrl);
-
-		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
-		if (!string.IsNullOrWhiteSpace(apiKey))
-			request.Headers.Add("Authorization", $"Bearer {apiKey}");
-		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-		using var response = await _httpClient.SendAsync(request, cancellationToken);
-		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-		Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
-
-		if (!response.IsSuccessStatusCode)
-		{
-			Log.WriteLine("AI: Translation failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
-			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
-		}
-
-		using var doc = JsonDocument.Parse(responseBody);
-		string result = null;
-
-		try
-		{
-			var choices = doc.RootElement.GetProperty("choices");
-			if (choices.GetArrayLength() > 0)
-			{
-				var choice = choices[0];
-				if (choice.TryGetProperty("message", out var message))
-				{
-					result = message.GetProperty("content").GetString();
-				}
-				else if (choice.TryGetProperty("text", out var text))
-				{
-					result = text.GetString();
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
-		}
-
-		result = result?.Trim().Trim('"', '\'', '\n', '\r') ?? "";
+		string result = await CallChatCompletionAsync(systemPrompt, userMessage, 4096, 0.1f, cancellationToken);
+		result = result.Trim('"', '\'', '\n', '\r');
 		Log.WriteLine("AI: Result: \"{0}\"", result);
 
 		return result;
@@ -215,18 +240,6 @@ Rules:
 	public static async Task<string> AnalyzeTranslationRulesAsync(
 		string glossaryJsonContent, string customSystemPrompt = null, CancellationToken cancellationToken = default)
 	{
-		string apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
-		string apiKey = Settings.Default.AiApiKey;
-
-		if (string.IsNullOrWhiteSpace(apiUrl))
-			throw new InvalidOperationException("AI API URL is not configured.");
-
-		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
-			apiUrl += "/chat/completions";
-
-		string model = Settings.Default.AiModel;
-		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
-
 		string systemPromptSection = "";
 		if (!string.IsNullOrWhiteSpace(customSystemPrompt))
 		{
@@ -257,57 +270,12 @@ IMPORTANT: Start your response directly with the first rule (e.g., ""- Brand nam
 Translation pairs:
 " + glossaryJsonContent;
 
-		Log.WriteLine("AI: Analyzing translation rules, model={0}", model);
+		Log.WriteLine("AI: Analyzing translation rules");
 
-		string requestBody = JsonSerializer.Serialize(new
-		{
-			model,
-			messages = new[]
-			{
-				new { role = "system", content = "You are a translation style analyst. Output ONLY the rules as a bullet list. Do NOT include any preamble, greeting, introduction, or concluding remarks. Start directly with the first rule." },
-				new { role = "user", content = analysisPrompt }
-			},
-			max_tokens = 4096,
-			temperature = 0.3
-		});
+		string result = await CallChatCompletionAsync(
+			"You are a translation style analyst. Output ONLY the rules as a bullet list. Do NOT include any preamble, greeting, introduction, or concluding remarks. Start directly with the first rule.",
+			analysisPrompt, 4096, 0.3f, cancellationToken);
 
-		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
-		if (!string.IsNullOrWhiteSpace(apiKey))
-			request.Headers.Add("Authorization", $"Bearer {apiKey}");
-		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-		using var response = await _httpClient.SendAsync(request, cancellationToken);
-		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-		Log.WriteLine("AI: Analysis response {0}", (int)response.StatusCode);
-
-		if (!response.IsSuccessStatusCode)
-		{
-			Log.WriteLine("AI: Analysis failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
-			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
-		}
-
-		using var doc = JsonDocument.Parse(responseBody);
-		string result = null;
-
-		try
-		{
-			var choices = doc.RootElement.GetProperty("choices");
-			if (choices.GetArrayLength() > 0)
-			{
-				var choice = choices[0];
-				if (choice.TryGetProperty("message", out var message))
-				{
-					result = message.GetProperty("content").GetString();
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("AI: Failed to parse analysis response: {0}", ex.Message);
-		}
-
-		result = result?.Trim() ?? "";
 		Log.WriteLine("AI: Translation rules analysis complete, length={0}", result.Length);
 		return result;
 	}

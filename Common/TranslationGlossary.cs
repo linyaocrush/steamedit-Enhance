@@ -29,6 +29,7 @@ internal class GlossaryData
 internal static class TranslationGlossary
 {
 	private static GlossaryData _data;
+	private static Dictionary<string, string> _originalToTranslated = new(StringComparer.OrdinalIgnoreCase);
 	private static string _filePath;
 	private static readonly object _lock = new();
 
@@ -61,6 +62,17 @@ internal static class TranslationGlossary
 				Log.WriteLine("Glossary: File not found, will create on first sync");
 				_data = new GlossaryData();
 			}
+			RebuildIndex();
+		}
+	}
+
+	private static void RebuildIndex()
+	{
+		_originalToTranslated = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		foreach (var kv in _data.Entries)
+		{
+			if (!string.IsNullOrWhiteSpace(kv.Value.Original))
+				_originalToTranslated[kv.Value.Original] = kv.Value.Translated;
 		}
 	}
 
@@ -83,6 +95,7 @@ internal static class TranslationGlossary
 						Original = entry.OriginalName,
 						Translated = entry.TranslatedName
 					};
+					_originalToTranslated[entry.OriginalName] = entry.TranslatedName;
 					changed = true;
 				}
 			}
@@ -109,6 +122,7 @@ internal static class TranslationGlossary
 				Original = originalName,
 				Translated = translatedName
 			};
+			_originalToTranslated[originalName] = translatedName;
 			Save();
 		}
 		Log.WriteLine("Glossary: Updated {0} -> \"{1}\"", key, translatedName);
@@ -136,15 +150,8 @@ internal static class TranslationGlossary
 		if (string.IsNullOrWhiteSpace(originalName)) return null;
 		lock (_lock)
 		{
-			foreach (var kv in _data.Entries)
-			{
-				if (string.Equals(kv.Value.Original, originalName, StringComparison.OrdinalIgnoreCase))
-				{
-					return kv.Value.Translated;
-				}
-			}
+			return _originalToTranslated.TryGetValue(originalName, out var translated) ? translated : null;
 		}
-		return null;
 	}
 
 	private static void Save()

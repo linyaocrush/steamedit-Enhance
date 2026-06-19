@@ -549,7 +549,8 @@ internal class Settings
 
 	private void SaveJson(string path)
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(path));
+		string dir = Path.GetDirectoryName(path);
+		if (dir != null) Directory.CreateDirectory(dir);
 		var dict = new Dictionary<string, string>();
 		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
 		foreach (PropertyInfo prop in properties)

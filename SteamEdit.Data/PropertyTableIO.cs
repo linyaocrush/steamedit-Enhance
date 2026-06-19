@@ -205,15 +205,11 @@ internal static class PropertyTableIO
 	}
 
 	public static PropertyTable ReadPropertyTable_Mods(BinaryReader reader)
-		=> ReadPropertyTableCore(reader, ReadString_0x00000000, ReadWideString_0x00000000);
+		=> ReadPropertyTable_0x00000000(reader);
 
 	public static void WritePropertyTable_Mods(BinaryWriter writer, PropertyTable table)
-		=> WritePropertyTableCore(writer, table, WriteString_0x00000000, WriteWideString_0x00000000);
+		=> WritePropertyTable_0x00000000(writer, table);
 
 	public static byte[] WritePropertyTable_Mods(PropertyTable table)
-	{
-		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
-		WritePropertyTable_Mods(binaryWriter, table);
-		return ((MemoryStream)binaryWriter.BaseStream).ToArray();
-	}
+		=> WritePropertyTable_0x00000000(table);
 }

@@ -10,6 +10,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 {
 	private List<Property> _properties = new List<Property>();
 	private Dictionary<string, Property> _propertyMap = new Dictionary<string, Property>(StringComparer.Ordinal);
+	private int _hashCode;
+	private bool _hashCodeDirty = true;
 
 	public int Count => _properties.Count;
 
@@ -140,6 +142,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		Property item = new Property(name, type, value);
 		_properties.Add(item);
 		_propertyMap[name] = item;
+		_hashCodeDirty = true;
 	}
 
 	public bool SetPropertyValue(string name, PropertyType type, object value)
@@ -154,6 +157,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
 		property.Value = value;
+		_hashCodeDirty = true;
 		return result;
 	}
 
@@ -182,12 +186,12 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public void RemoveProperty(string name)
 	{
-		for (int i = _properties.Count - 1; i >= 0; i--)
+		if (_propertyMap.TryGetValue(name, out var prop))
 		{
-			if (_properties[i].Name == name)
-				_properties.RemoveAt(i);
+			_properties.Remove(prop);
+			_propertyMap.Remove(name);
+			_hashCodeDirty = true;
 		}
-		_propertyMap.Remove(name);
 	}
 
 	public void RemoveProperty(params string[] propertyPath)
@@ -226,6 +230,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	{
 		_properties.Clear();
 		_propertyMap.Clear();
+		_hashCodeDirty = true;
 	}
 
 	public PropertyTable()
@@ -254,12 +259,17 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public override int GetHashCode()
 	{
-		int num = GetType().GetHashCode();
-		foreach (Property property in _properties)
+		if (_hashCodeDirty)
 		{
-			num ^= property.GetHashCode();
+			int num = GetType().GetHashCode();
+			foreach (Property property in _properties)
+			{
+				num ^= property.GetHashCode();
+			}
+			_hashCode = num;
+			_hashCodeDirty = false;
 		}
-		return num;
+		return _hashCode;
 	}
 
 	private string ToStringInternal(int indent)
