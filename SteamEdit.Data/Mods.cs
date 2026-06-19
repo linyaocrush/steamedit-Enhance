@@ -65,6 +65,9 @@ internal class Mods
 			{
 				// V4/V5: 原始格式，跳过 36+20=60 字节的未知字段
 				int dataSize = reader.ReadInt32();
+				long dataRemaining = reader.BaseStream.Length - reader.BaseStream.Position;
+				if (dataSize < 60 || dataSize > dataRemaining)
+					throw new InvalidDataException($"Mods entry dataSize {dataSize} is out of valid range (remaining={dataRemaining}).");
 				reader.BaseStream.Seek(36L, SeekOrigin.Current);
 				entry.OriginalDataChangeNumber = reader.ReadUInt32();
 				reader.BaseStream.Seek(20L, SeekOrigin.Current);
