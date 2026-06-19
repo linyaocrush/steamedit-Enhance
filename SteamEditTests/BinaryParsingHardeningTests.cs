@@ -107,6 +107,52 @@ public class BinaryParsingHardeningTests
         finally { File.Delete(tempFile); }
     }
 
+    [TestMethod]
+    public void ReadEntries_V6_NegativeDataSize_ThrowsInvalidDataException()
+    {
+        string tempFile = Path.GetTempFileName();
+        try
+        {
+            using (var bw = new BinaryWriter(File.Create(tempFile)))
+            {
+                bw.Write(6u);    // version 6
+                bw.Write(1);     // 1 entry
+                bw.Write(12345); // appId
+                bw.Write((byte)8); // PropertyType._EndOfTable_
+                bw.Write(0u);    // OriginalDataVersion
+                bw.Write(0u);    // OriginalDataChangeNumber
+                bw.Write(-1);    // dataSize < 0 — INVALID
+            }
+
+            var appInfo = new TestAppInfo();
+            Assert.ThrowsException<InvalidDataException>(() => Mods.Load(tempFile, appInfo));
+        }
+        finally { File.Delete(tempFile); }
+    }
+
+    [TestMethod]
+    public void ReadEntries_V6_DataSizeExceedsStream_ThrowsInvalidDataException()
+    {
+        string tempFile = Path.GetTempFileName();
+        try
+        {
+            using (var bw = new BinaryWriter(File.Create(tempFile)))
+            {
+                bw.Write(6u);
+                bw.Write(1);
+                bw.Write(12345);
+                bw.Write((byte)8);
+                bw.Write(0u);
+                bw.Write(0u);
+                bw.Write(int.MaxValue); // dataSize way too large
+            }
+
+            var appInfo = new TestAppInfo();
+            Assert.ThrowsException<InvalidDataException>(() => Mods.Load(tempFile, appInfo));
+        }
+        finally { File.Delete(tempFile); }
+    }
+
     private class TestAppInfo : IAppInfo
     {
         private readonly System.Collections.Generic.List<IAppInfoEntry> _entries = new();

@@ -78,6 +78,14 @@ internal class Mods
 				// V6: 紧凑格式，无跳过
 				entry.OriginalDataChangeNumber = reader.ReadUInt32();
 				int dataSize = reader.ReadInt32();
+				if (dataSize < 0)
+					throw new InvalidDataException($"Mods entry dataSize {dataSize} is negative.");
+				if (dataSize > 0)
+				{
+					long dataRemaining = reader.BaseStream.Length - reader.BaseStream.Position;
+					if (dataSize > dataRemaining)
+						throw new InvalidDataException($"Mods entry dataSize {dataSize} exceeds available stream data (remaining={dataRemaining}).");
+				}
 				entry.OriginalData = (dataSize > 0) ? reader.ReadBytes(dataSize) : null;
 			}
 
