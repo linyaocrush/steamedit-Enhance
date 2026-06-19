@@ -37,6 +37,10 @@ internal class GameListManager : IDisposable
 	private bool _refreshingGamesListAfterEdit;
 
 	public event EventHandler<IAppInfoEntry> SelectedEntryChanged;
+	public event EventHandler? ContextMenuCopyName;
+	public event EventHandler? ContextMenuCopyAppId;
+	public event EventHandler? ContextMenuOpenInSteam;
+	public event EventHandler? ContextMenuOpenInSteamDB;
 
 	public GameListManager(
 		GameDataContext ctx,
@@ -153,7 +157,25 @@ internal class GameListManager : IDisposable
 		_appSelection.KeyPress += OnAppSelection_KeyPress;
 		_appSelection.MouseMove += OnAppSelection_MouseMove;
 		_appSelection.MouseLeave += (_, _) => _appSelectionLastHoverI = -1;
+		_appSelection.MouseDown += OnAppSelection_MouseDown;
 		_appFilterText.TextChanged += OnAppFilterText_TextChanged;
+
+		// 右键上下文菜单
+		var contextMenu = new ContextMenuStrip();
+		var miCopyName = new ToolStripMenuItem(Strings.ContextMenu_CopyName);
+		miCopyName.Click += (_, _) => ContextMenuCopyName?.Invoke(this, EventArgs.Empty);
+		var miCopyAppId = new ToolStripMenuItem(Strings.ContextMenu_CopyAppId);
+		miCopyAppId.Click += (_, _) => ContextMenuCopyAppId?.Invoke(this, EventArgs.Empty);
+		var miOpenSteam = new ToolStripMenuItem(Strings.ContextMenu_OpenInSteam);
+		miOpenSteam.Click += (_, _) => ContextMenuOpenInSteam?.Invoke(this, EventArgs.Empty);
+		var miOpenSteamDB = new ToolStripMenuItem(Strings.ContextMenu_OpenInSteamDB);
+		miOpenSteamDB.Click += (_, _) => ContextMenuOpenInSteamDB?.Invoke(this, EventArgs.Empty);
+		contextMenu.Items.Add(miCopyName);
+		contextMenu.Items.Add(miCopyAppId);
+		contextMenu.Items.Add(new ToolStripSeparator());
+		contextMenu.Items.Add(miOpenSteam);
+		contextMenu.Items.Add(miOpenSteamDB);
+		_appSelection.ContextMenuStrip = contextMenu;
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 		_sortSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 
@@ -493,6 +515,16 @@ internal class GameListManager : IDisposable
 		{
 			_toolTips.SetToolTip(_appSelection, null);
 			_appSelectionLastHoverI = -1;
+		}
+	}
+
+	private void OnAppSelection_MouseDown(object sender, MouseEventArgs e)
+	{
+		if (e.Button != MouseButtons.Right) return;
+		int idx = _appSelection.IndexFromPoint(e.Location);
+		if (idx >= 0 && idx < _appSelection.Items.Count)
+		{
+			_appSelection.SelectedIndex = idx;
 		}
 	}
 
