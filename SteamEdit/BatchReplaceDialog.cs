@@ -26,6 +26,7 @@ internal class BatchReplaceDialog : Form
     private ToolTip toolTips;
     private bool _caseSensitive;
     private bool _regexMode;
+    private readonly Timer _debounceTimer;
 
     private static readonly Color HighlightColor = Color.FromArgb(80, 70, 130, 230);
     private static readonly Color HighlightColorSelected = Color.FromArgb(120, 70, 130, 230);
@@ -34,6 +35,8 @@ internal class BatchReplaceDialog : Form
     {
         _entries = entries;
         InitializeComponent();
+        _debounceTimer = new Timer { Interval = 200 };
+        _debounceTimer.Tick += (_, _) => { _debounceTimer.Stop(); UpdatePreview(); };
         I18n.LanguageChanged += OnLanguageChanged;
         ApplyLanguage();
         UpdatePreview();
@@ -64,9 +67,10 @@ internal class BatchReplaceDialog : Form
     protected override void Dispose(bool disposing)
     {
         I18n.LanguageChanged -= OnLanguageChanged;
-        if (disposing && components != null)
+        if (disposing)
         {
-            components.Dispose();
+            _debounceTimer.Dispose();
+            components?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -133,7 +137,7 @@ internal class BatchReplaceDialog : Form
         textReplace.Name = "textReplace";
         textReplace.Size = new Size(318, 20);
         textReplace.TabIndex = 3;
-        textReplace.TextChanged += (s, e) => UpdatePreview();
+        textReplace.TextChanged += (s, e) => RestartDebounce();
 
         // lblMatchCount
         lblMatchCount.AutoSize = true;
@@ -205,9 +209,12 @@ internal class BatchReplaceDialog : Form
         PerformLayout();
     }
 
-    private void OnTextFind_TextChanged(object sender, EventArgs e)
+    private void OnTextFind_TextChanged(object sender, EventArgs e) => RestartDebounce();
+
+    private void RestartDebounce()
     {
-        UpdatePreview();
+        _debounceTimer.Stop();
+        _debounceTimer.Start();
     }
 
     private void OnBtnCaseSensitive_Click(object sender, EventArgs e)
