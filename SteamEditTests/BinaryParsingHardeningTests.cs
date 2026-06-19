@@ -298,6 +298,58 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
+    public void AppInfoEntry_0x07564427_FromReader_NegativeCount_ThrowsAppInfoLoadException()
+    {
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write(12345); // appId (non-zero, so not null)
+            bw.Write(-1);    // negative count — INVALID
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+
+        Assert.ThrowsException<AppInfoLoadException>(
+            () => AppInfoEntry_0x07564427.FromReader(br));
+    }
+
+    [TestMethod]
+    public void AppInfoEntry_0x07564428_FromReader_NegativeCount_ThrowsAppInfoLoadException()
+    {
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write(12345);
+            bw.Write(-1);
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+
+        Assert.ThrowsException<AppInfoLoadException>(
+            () => AppInfoEntry_0x07564428.FromReader(br));
+    }
+
+    [TestMethod]
+    public void AppInfoEntry_0x07564429_FromReader_NegativeCount_ThrowsAppInfoLoadException()
+    {
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write(12345);
+            bw.Write(-1);
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+
+        string[] stringTable = { "test" };
+        Assert.ThrowsException<AppInfoLoadException>(
+            () => AppInfoEntry_0x07564429.FromReader(br, stringTable));
+    }
+
+    [TestMethod]
     public void ApplyChanges_DepthExceeds32_ThrowsInvalidDataException()
     {
         // Build changes and entry tables with 33 levels of nesting
