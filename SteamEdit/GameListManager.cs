@@ -400,10 +400,17 @@ internal class GameListManager : IDisposable
 			source = _ctx.BaseEntries;
 
 		_ctx.Entries = new List<IAppInfoEntry>();
-		foreach (var ent in source)
+		if (int.TryParse(trimmed, out _))
 		{
-			if (IsFuzzyMatch(GetDisplayName(ent), patternParts))
-				_ctx.Entries.Add(ent);
+			foreach (var ent in source)
+				if (ent.ID.ToString().StartsWith(trimmed))
+					_ctx.Entries.Add(ent);
+		}
+		else
+		{
+			foreach (var ent in source)
+				if (IsFuzzyMatch(GetDisplayName(ent), patternParts))
+					_ctx.Entries.Add(ent);
 		}
 		_ctx.CurrentSearchTerm = trimmed;
 		SortEntries();
