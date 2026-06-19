@@ -16,11 +16,15 @@ public class MessageBoxWithDetails : Form
 
 	private Button btnCopy;
 
+	private Button btnExit;
+
 	private Label lblMessage;
 
 	private TextBox tbDetails;
 
-	public MessageBoxWithDetails(string message, string title, string details = null)
+	private bool _exitRequested;
+
+	public MessageBoxWithDetails(string message, string title, string details = null, bool showExitButton = false)
 	{
 		InitializeComponent();
 		I18n.LanguageChanged += OnLanguageChanged;
@@ -35,6 +39,7 @@ public class MessageBoxWithDetails : Form
 		{
 			base.Height -= tbDetails.Height + 10;
 		}
+		btnExit.Visible = showExitButton;
 		Log.WriteLine("-----------------");
 		Log.WriteLine(title);
 		Log.WriteLine(message);
@@ -44,6 +49,13 @@ public class MessageBoxWithDetails : Form
 			Log.WriteLine(details);
 		}
 		Log.WriteLine("-----------------");
+	}
+
+	public static bool ShowWithExit(string message, string title, string details)
+	{
+		var dialog = new MessageBoxWithDetails(message, title, details, showExitButton: true);
+		dialog.ShowDialog();
+		return dialog._exitRequested;
 	}
 
 	private void OnLanguageChanged(object sender, EventArgs e)
@@ -56,6 +68,7 @@ public class MessageBoxWithDetails : Form
 	{
 		btnClose.Text = Strings.MessageBoxWithDetails_BtnClose;
 		btnCopy.Text = Strings.MessageBoxWithDetails_BtnCopyClipboard;
+		if (btnExit.Visible) btnExit.Text = Strings.CrashDialog_ExitButton;
 	}
 
 	public static void Show(string message, string title, string details = null)
@@ -89,6 +102,12 @@ public class MessageBoxWithDetails : Form
 		Clipboard.SetText(tbDetails.Text);
 	}
 
+	private void btnExit_Click(object sender, EventArgs e)
+	{
+		_exitRequested = true;
+		Close();
+	}
+
 	protected override void Dispose(bool disposing)
 	{
 		I18n.LanguageChanged -= OnLanguageChanged;
@@ -103,6 +122,7 @@ public class MessageBoxWithDetails : Form
 	{
 		this.btnClose = new System.Windows.Forms.Button();
 		this.btnCopy = new System.Windows.Forms.Button();
+		this.btnExit = new System.Windows.Forms.Button();
 		this.lblMessage = new System.Windows.Forms.Label();
 		this.tbDetails = new System.Windows.Forms.TextBox();
 		base.SuspendLayout();
@@ -121,6 +141,14 @@ public class MessageBoxWithDetails : Form
 		this.btnCopy.Text = "Copy To Clipboard";
 		this.btnCopy.UseVisualStyleBackColor = true;
 		this.btnCopy.Click += new System.EventHandler(btnCopy_Click);
+		this.btnExit.Location = new System.Drawing.Point(146, 73);
+		this.btnExit.Name = "btnExit";
+		this.btnExit.Size = new System.Drawing.Size(115, 23);
+		this.btnExit.TabIndex = 7;
+		this.btnExit.Text = "Exit";
+		this.btnExit.UseVisualStyleBackColor = true;
+		this.btnExit.Visible = false;
+		this.btnExit.Click += new System.EventHandler(btnExit_Click);
 		this.lblMessage.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.lblMessage.Location = new System.Drawing.Point(12, 9);
 		this.lblMessage.Name = "lblMessage";
@@ -141,6 +169,7 @@ public class MessageBoxWithDetails : Form
 		base.Controls.Add(this.tbDetails);
 		base.Controls.Add(this.lblMessage);
 		base.Controls.Add(this.btnCopy);
+		base.Controls.Add(this.btnExit);
 		base.Controls.Add(this.btnClose);
 		base.MaximizeBox = false;
 		base.MinimizeBox = false;
