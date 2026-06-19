@@ -411,9 +411,6 @@ Page Down   下一個遊戲</value>
   <data name="Msg_NoTranslatableGames" xml:space="preserve">
     <value>沒有可翻譯的遊戲。</value>
   </data>
-  <data name="Msg_BatchTranslateComplete" xml:space="preserve">
-    <value>批次翻譯完成</value>
-  </data>
   <data name="Tooltip_BatchTranslate" xml:space="preserve">
     <value>批次翻譯所有篩選後的遊戲</value>
   </data>
@@ -571,9 +568,6 @@ Page Down   下一個遊戲</value>
   </data>
   <data name="Enum_Video" xml:space="preserve">
     <value>影片</value>
-  </data>
-  <data name="Enum_Hardware" xml:space="preserve">
-    <value>硬體</value>
   </data>
   <data name="Enum_Music" xml:space="preserve">
     <value>音樂</value>
