@@ -5,8 +5,8 @@
 <h1 align="center">steamedit-Enhance</h1>
 
 <p align="center">
-  <strong>Local Steam Library Editing Tool</strong><br/>
-  Rename games, modify sorting, manage launch configurations, AI translate game names
+  <strong>本地 Steam 游戏库编辑工具</strong><br/>
+  重命名游戏 · 修改排序 · 管理启动配置 · AI 翻译游戏名称
 </p>
 
 <p align="center">
@@ -22,220 +22,239 @@
 
 ---
 
-## About
+## 关于
 
-SteamEdit is a Windows desktop application that edits Steam's local `appinfo.vdf` file. It lets you customize display names, sorting order, hidden/completed status, launch parameters, controller support, VR settings, and more — all from your local Steam library.
+steamedit-Enhance 是一款 Windows 桌面应用，用于编辑 Steam 本地的 `appinfo.vdf` 文件。你可以自定义游戏显示名称、排序方式、隐藏/完成状态、启动参数、控制器支持、VR 设置等——所有修改仅作用于本地 Steam 游戏库。
 
-> **Original software:** [https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
+> **原创软件：** [https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
 
-> **Disclaimer:** This project is a migration and localization of the original SteamEdit. If you believe your rights are being infringed, please [submit an Issue](../../issues) and I will address it promptly.
+> **声明：** 本项目是原创 SteamEdit 的迁移和本地化版本。如认为权益受到侵犯，请 [提交 Issue](../../issues)，我会及时处理。
 
 ---
 
-## New Features (Compared to the Original)
+## 功能特性
 
-| Feature | Description |
+| 功能 | 说明 |
 |:---|:---|
-| **AI Translation** | Integrated OpenAI-compatible API for one-click game name translation. Customizable API endpoint, key, and model selection; supports fetching model lists. Automatically uses existing modifications as a glossary to maintain translation consistency. |
-| **Glossary Cache** | Modified game names are automatically cached in `glossary.json`, incrementally synced at startup, and read directly during translation — no rebuilding needed. |
-| **Web Search** | One-click browser search for game name + translated name. Supports Google, Bing, Baidu, and DuckDuckGo. |
-| **Multilingual UI** | English, Simplified Chinese, and Traditional Chinese. Switch languages in Settings without restarting. |
-| **Start with Windows** | Option to launch SteamEdit automatically on system startup. Supports `-autofix` (auto-apply changes) and `-forcestart` (restart Steam) arguments. |
-| **DPI Awareness** | PerMonitorV2 high-DPI support — no blurriness on 4K or high-resolution displays. |
-| **Asynchronous Loading** | `appinfo.vdf` loading runs asynchronously with a wait dialog, cancel option, and 30-second timeout. |
-| **Filter Debounce** | 500ms debounce on search input to avoid excessive list refreshes. |
-| **Custom Sorting** | Sort games by Name or App ID, with ascending/descending toggle. Sort preference is persisted. |
-| **Batch Find & Replace** | Supports plain text and regular expressions with case-sensitivity toggle. Shows live match count. |
-| **Translation Rules** | AI analyzes the glossary to automatically derive translation rules, which are then applied to future translations for consistent style. |
-| **Crash Logging** | Unhandled exceptions generate a timestamped `crash-*.log` file with system info and full stack trace. Dialog shows the file path with "Close" (continue) or "Exit" options. |
+| **游戏重命名** | 自定义游戏在 Steam 库中的显示名称 |
+| **排序修改** | 设置自定义排序名称，改变游戏在列表中的位置 |
+| **隐藏 / 完成** | 将游戏标记为隐藏或已完成 |
+| **启动配置** | 编辑启动可执行文件、参数和工作目录 |
+| **条目类型** | 更改游戏类型（Game、DLC、Demo 等） |
+| **控制器支持** | 设置控制器支持级别（None / Partial / Full） |
+| **VR 分类** | 设置 VR 分类（Default / Removed） |
+| **自定义排序** | 按名称或 App ID 排序，支持升序/降序切换 |
+| **批量查找替换** | 在筛选结果中使用纯文本或正则表达式替换游戏名称 |
+| **AI 翻译** | 单个或批量翻译游戏名称，支持自定义提示词和翻译规则 |
+| **Web 搜索** | 一键在浏览器中搜索游戏名称 + 翻译名称 |
+| **崩溃日志** | 未处理异常时生成带时间戳的诊断日志文件，方便排查问题 |
 
 ---
 
-## Improvements Over the Original
+## 相比原创版本的新功能
 
-| Improvement | Description |
+| 功能 | 说明 |
 |:---|:---|
-| **Property Lookup Speed** | PropertyTable now uses a parallel Dictionary, reducing property lookup from O(n) to O(1). |
-| **Buffered Log Writing** | Replaced `File.AppendAllLines` with `StreamWriter` (auto-flush every 20 lines) to cut disk I/O. Old logs are cleared on startup; only the current session's log is kept. |
-| **Code Refactoring** | Extracted `AppInfoBase<TEntry>` generic base class for three `AppInfoEntry` versions; `PropertyTableIO` delegate injection to unify six duplicated type switches; `Mods` reader consolidation (V4/V5/V6 → single method); `LocalizableForm` base class for i18n boilerplate — eliminating ~1000+ lines of duplicated code total. |
-| **Unified Path Resolution** | Consolidated startup path logic into a single method, removing three separate implementations. |
-| **Sort Precomputation** | Normalized sort keys are precomputed, avoiding repeated string processing during O(n log n) sorting. |
-| **Resource Management** | `IDisposable` resources (e.g., SHA1) are properly released, eliminating memory leaks. |
-| **Null-Reference Guards** | Added null checks in 9+ event handlers to prevent crashes when the list is empty. |
-| **UI Layout Fix** | Autostart area now uses `FlowLayoutPanel` so Chinese text no longer overlaps adjacent controls. |
+| **AI 翻译** | 集成 OpenAI 兼容 API，一键翻译游戏名称。支持自定义 API 端点、密钥和模型选择；可自动获取模型列表。自动使用已有修改作为术语库，保持翻译一致性。 |
+| **术语库缓存** | 修改过的游戏名称自动缓存到 `glossary.json`，启动时增量同步，翻译时直接读取——无需重建。 |
+| **Web 搜索** | 一键在浏览器中搜索游戏名称 + 翻译名称。支持 Google、Bing、百度、DuckDuckGo。 |
+| **多语言 UI** | 支持英文、简体中文、繁体中文。在设置中切换语言，无需重启。 |
+| **开机自启** | 支持 SteamEdit 开机自动启动。支持 `-autofix`（自动应用更改）和 `-forcestart`（重启 Steam）参数。 |
+| **DPI 感知** | PerMonitorV2 高 DPI 支持——4K 或高分辨率显示器上不会模糊。 |
+| **异步加载** | `appinfo.vdf` 异步加载，带等待对话框、取消选项和 30 秒超时。 |
+| **筛选防抖** | 搜索输入 500ms 防抖，避免频繁刷新列表。 |
+| **自定义排序** | 按名称或 App ID 排序，支持升序/降序切换。排序偏好自动持久化。 |
+| **批量查找替换** | 支持纯文本和正则表达式，带大小写敏感切换。实时显示匹配数量。 |
+| **翻译规则** | AI 分析术语库自动推导翻译规则，应用于后续翻译以保持风格一致。 |
+| **崩溃日志** | 未处理异常时生成 `crash-{时间戳}.log` 文件，包含系统信息和完整堆栈。对话框显示文件路径，可选继续或退出。 |
 
 ---
 
-## Features
+## 相比原创版本的改进
 
-| Feature | Description |
+| 改进 | 说明 |
 |:---|:---|
-| **Game Renaming** | Customize the display name of games in your Steam library |
-| **Sorting Modification** | Set a custom sort name to change the game’s position in the list |
-| **Hide / Completed** | Mark games as hidden or completed |
-| **Launch Configuration** | Edit launch executable, arguments, and working directory |
-| **Entry Type** | Change the game type (Game, DLC, Demo, etc.) |
-| **Controller Support** | Set controller support level (None / Partial / Full) |
-| **VR Category** | Set VR category (Default / Removed) |
-| **Custom Sorting** | Sort by Name or App ID, with ascending/descending toggle |
-| **Batch Find & Replace** | Replace game names in filtered results using plain text or regex, with case-sensitivity option |
-| **AI Translation** | Translate game names individually or in batch, with customizable prompt and translation rules |
+| **属性查找加速** | PropertyTable 使用并行 Dictionary，属性查找从 O(n) 降至 O(1)。 |
+| **缓冲日志写入** | 用 `StreamWriter`（每 20 行自动刷新）替代 `File.AppendAllLines`，减少磁盘 I/O。启动时清除旧日志，仅保留当前会话。 |
+| **代码重构** | 提取 `AppInfoBase<TEntry>` 泛型基类统一三个 AppInfo 版本；`PropertyTableIO` 委托注入消除六段重复类型 switch；`Mods` 读取器合并（V4/V5/V6 → 单一方法）；`LocalizableForm` 基类消除 11 个窗体的 i18n 样板代码——总计消除 ~1000+ 行重复代码。 |
+| **统一路径解析** | 将启动路径逻辑合并到单一方法，移除三处独立实现。 |
+| **排序预计算** | 归一化排序键预先计算，避免 O(n log n) 排序中的重复字符串处理。 |
+| **资源管理** | `IDisposable` 资源（如 SHA1）正确释放，消除内存泄漏。 |
+| **空引用防护** | 在 9+ 个事件处理器中添加 null 检查，防止列表为空时崩溃。 |
+| **异常捕获缩窄** | 将 4 处空 `catch {}` 缩窄为只捕获预期异常类型（`ExternalException`、`ArgumentException`），避免吞掉致命异常。 |
+| **UI 布局修复** | 自启动区域使用 `FlowLayoutPanel`，中文文本不再与相邻控件重叠。 |
 
 ---
 
-## Requirements
+## 系统要求
 
 - Windows 10 / 11 (x64)
-- Steam client installed
+- 已安装 Steam 客户端
 
-> **Self-contained build** requires no .NET runtime. **Framework-dependent build** needs [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0).
+> **独立构建** 无需 .NET 运行时。**依赖框架的构建** 需要 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)。
 
 ---
 
-## Building and Running
+## 构建和运行
 
 ```bash
-# Clone the repository
+# 克隆仓库
 git clone https://github.com/<your-username>/steamedit.git
 cd steamedit
 
-# Development build
+# 开发构建
 dotnet build SteamEdit.csproj
 
-# Run tests
+# 运行测试
 dotnet test SteamEditTests/SteamEditTests.csproj
 
-# Publish self-contained single-file EXE (~110 MB, no runtime required)
+# 运行单个测试
+dotnet test SteamEditTests/SteamEditTests.csproj --filter "FullyQualifiedName=SteamEditTests.PropertyTableTests.AddPropertyValue_CanReadBack"
+
+# 发布独立单文件 EXE（~110 MB，无需运行时）
 dotnet publish SteamEdit.csproj -c Release
 
-# Publish framework-dependent (~627 KB, requires .NET 10 Runtime)
+# 发布依赖框架版本（~650 KB，需要 .NET 10 运行时）
 dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
 
-# Run
+# 开发模式运行
 dotnet run --project SteamEdit.csproj
 ```
 
-Published output is located under `bin/Release/net10.0-windows/win-x64/publish/`.
+发布输出位于 `bin/Release/net10.0-windows/win-x64/publish/`，生成的文件名为 `steamedit-Enhance.exe`。
 
 ---
 
-## Usage
+## 使用说明
 
-### First Launch
+### 首次启动
 
-1. Run `SteamEdit.exe`
-2. The program will automatically locate the Steam installation via the registry
-3. If not found, a file dialog will appear — manually locate `appinfo.vdf`  
-   > Default path: `C:\Program Files (x86)\Steam\appcache\appinfo.vdf`
+1. 运行 `steamedit-Enhance.exe`
+2. 程序会通过注册表自动查找 Steam 安装路径
+3. 如果未找到，会弹出文件对话框——手动定位 `appinfo.vdf`
+   > 默认路径：`C:\Program Files (x86)\Steam\appcache\appinfo.vdf`
 
-### Editing Workflow
+### 编辑工作流
 
-1. Select a game from the list on the left
-2. Modify the name, sort key, controller support, and other fields on the right
-3. Click **Save** → **Apply** → **Restart Steam** for changes to take effect
+1. 从左侧列表选择一个游戏
+2. 在右侧修改名称、排序键、控制器支持等字段
+3. 点击 **保存** → **应用** → **重启 Steam** 使更改生效
 
-### AI Translation
+### AI 翻译
 
-1. Open **Settings**, enter your AI API endpoint (e.g., `https://api.openai.com/v1`) and API Key
-2. Click **Fetch Model List** to select a model, or enter the model name manually
-3. Choose the target translation language (Simplified Chinese / English)
-4. Select a game in the main window and click the **AI Translate** button — the translated name will be automatically filled in
-5. The glossary is cached to `glossary.json`; translation style will reference your previous modifications
+1. 打开 **设置**，输入 AI API 端点（如 `https://api.openai.com/v1`）和 API Key
+2. 点击 **获取模型列表** 选择模型，或手动输入模型名称
+3. 选择目标翻译语言（简体中文 / 英文）
+4. 在主窗口选择游戏，点击 **AI 翻译** 按钮——翻译名称会自动填入
+5. 术语库缓存到 `glossary.json`；翻译风格会参考你之前的修改
 
-Any service compatible with the OpenAI Chat Completions API is supported (OpenAI, Claude API proxies, local Ollama, etc.).
+任何兼容 OpenAI Chat Completions API 的服务均可使用（OpenAI、Claude API 代理、本地 Ollama 等）。
 
-### Web Search
+### Web 搜索
 
-Select a game and click **Web Search** to open a browser searching for `game name + target language`. The search engine can be changed in Settings (Google / Bing / Baidu / DuckDuckGo).
+选择游戏后点击 **Web 搜索**，会在浏览器中搜索 `游戏名称 + 目标语言`。搜索引擎可在设置中更改（Google / Bing / 百度 / DuckDuckGo）。
 
-### Command-Line Mode
+### 崩溃日志
+
+如果程序遇到未处理异常，会自动生成 `crash-{yyyy-MM-dd_HH-mm-ss}.log` 文件，包含：
+- 时间戳、操作系统版本、.NET 版本、命令行
+- 完整的异常堆栈跟踪
+
+对话框会显示日志文件路径，你可以选择"关闭"（继续运行）或"退出程序"。
+
+### 命令行模式
 
 ```bash
-# Auto-apply pending changes (no GUI)
-SteamEdit.exe -autofix
+# 自动应用待处理的更改（无 GUI）
+steamedit-Enhance.exe -autofix
 
-# Auto-apply and restart Steam
-SteamEdit.exe -autofix -forcestart
+# 自动应用并重启 Steam
+steamedit-Enhance.exe -autofix -forcestart
 ```
 
-Useful for periodic maintenance via scheduled tasks.
+适用于通过计划任务进行定期维护。
 
 ---
 
-## Internationalization
+## 国际化
 
-SteamEdit includes English, Simplified Chinese, and Traditional Chinese, managed through `.resx` resource files.
+steamedit-Enhance 包含英文、简体中文和繁体中文，通过 `.resx` 资源文件管理。
 
-### Switching Languages
+### 切换语言
 
-1. Open **Settings** (gear icon)
-2. Choose `English`, `简体中文`, or `繁體中文` from the **Language** dropdown
-3. The UI switches instantly — no restart required
+1. 打开 **设置**（齿轮图标）
+2. 在 **语言** 下拉框中选择 `English`、`简体中文` 或 `繁體中文`
+3. UI 即时切换——无需重启
 
-### Adding a New Language
+### 添加新语言
 
-1. Copy `SteamEdit/Resources/Strings.resx` to `Strings.{culture}.resx` (e.g., `Strings.ja.resx`)
-2. Translate all text inside `<value>` tags
-3. Add the corresponding option in `SettingsDlg.cs` → `comboLanguage.Items`
+1. 复制 `SteamEdit/Resources/Strings.resx` 为 `Strings.{culture}.resx`（如 `Strings.ja.resx`）
+2. 翻译所有 `<value>` 标签内的文本
+3. 在 `SettingsDlg.cs` 的 `comboLanguage.Items` 中添加对应选项
 
 ---
 
-## Project Structure
+## 项目结构
 
 ```
 steamedit/
-├── SteamEdit/                    # WinForms UI layer
-│   ├── MainWindow.cs             # Main window (layout + event routing)
-│   ├── GameListManager.cs        # Game list: search/filter/sort/ListBox
-│   ├── EditController.cs         # Property editing/undo/revert
-│   ├── GameDataContext.cs        # Shared data container
-│   ├── LaunchEditor.cs           # Launch configuration editor
-│   ├── SettingsDlg.cs            # Settings dialog
-│   ├── I18n.cs                   # Language manager
+├── SteamEdit/                    # WinForms UI 层
+│   ├── Program.cs                # 入口点 + 全局异常处理
+│   ├── MainWindow.cs             # 主窗口（布局 + 事件路由）
+│   ├── GameListManager.cs        # 游戏列表：搜索/筛选/排序/ListBox
+│   ├── EditController.cs         # 属性编辑/撤销/还原
+│   ├── GameDataContext.cs        # 共享数据容器
+│   ├── LocalizableForm.cs        # i18n 窗体基类
+│   ├── LaunchEditor.cs           # 启动配置编辑器
+│   ├── SettingsDlg.cs            # 设置对话框
+│   ├── I18n.cs                   # 语言管理器
 │   └── Resources/
-│       ├── Strings.resx          # English resources (default)
-│       ├── Strings.zh-CN.resx   # Simplified Chinese translation
-│       └── Strings.zh-TW.resx   # Traditional Chinese translation
-├── SteamEdit.Data/               # Core data model & I/O
-│   ├── SteamData.cs              # Data loading / saving / applying
-│   ├── AppInfoFactory.cs         # Version dispatch factory
-│   ├── PropertyTable.cs          # Property table (Dictionary-optimized)
-│   └── Mods.cs                   # mods.dat read/write
-├── SteamEdit.Data.Impl/          # appinfo.vdf version implementations
-│   ├── AppInfoEntryBase.cs       # Entry base class (shared logic)
-│   ├── AppInfo_0x07564427.cs     # Legacy format
-│   ├── AppInfo_0x07564428.cs     # Intermediate format
-│   └── AppInfo_0x07564429.cs     # Latest format
-├── Common/                       # Shared utilities
-│   ├── Settings.cs               # User settings (JSON serialization + dirty flag)
-│   ├── Log.cs                    # Buffered logger
-│   ├── AiTranslator.cs           # AI translator (OpenAI-compatible API)
-│   ├── TranslationGlossary.cs    # Glossary cache (glossary.json)
-│   └── AppHelper.cs              # Path & argument helpers
-├── SteamEditTests/               # MSTest unit tests
-│   ├── PropertyTableTests.cs     # PropertyTable: 15 tests
-│   ├── ModsTests.cs              # Mods binary format: 5 tests
-│   └── SettingsTests.cs          # Settings JSON serialization: 4 tests
-└── SteamEdit.csproj              # Project file
+│       ├── Strings.resx          # 英文资源（默认）
+│       ├── Strings.zh-CN.resx    # 简体中文翻译
+│       └── Strings.zh-TW.resx    # 繁体中文翻译
+├── SteamEdit.Data/               # 核心数据模型与 I/O
+│   ├── SteamData.cs              # 数据加载/保存/应用
+│   ├── AppInfoFactory.cs         # 版本分发工厂
+│   ├── PropertyTable.cs          # 属性表（Dictionary 优化）
+│   ├── PropertyTableIO.cs        # 属性表序列化（委托注入统一三种格式）
+│   ├── ModifiedEntry.cs          # 修改条目（含 GetOriginalName）
+│   └── Mods.cs                   # mods.dat 读写
+├── SteamEdit.Data.Impl/          # appinfo.vdf 版本实现
+│   ├── AppInfoBase.cs            # 容器基类（泛型，共享 Save/Find/Revert 逻辑）
+│   ├── AppInfoEntryBase.cs       # 条目基类（共享属性/修改覆盖/写入准备）
+│   ├── AppInfo_0x07564427.cs     # 旧格式
+│   ├── AppInfo_0x07564428.cs     # 中间格式
+│   └── AppInfo_0x07564429.cs     # 最新格式
+├── Common/                       # 共享工具
+│   ├── Settings.cs               # 用户设置（JSON 序列化 + 脏标记）
+│   ├── Log.cs                    # 缓冲日志
+│   ├── AiTranslator.cs           # AI 翻译器（OpenAI 兼容 API）
+│   ├── TranslationGlossary.cs    # 术语缓存（glossary.json）
+│   └── AppHelper.cs              # 路径与参数辅助
+├── SteamEditTests/               # MSTest 单元测试
+│   ├── PropertyTableTests.cs     # PropertyTable：15 个测试
+│   ├── ModsTests.cs              # Mods 二进制格式：5 个测试
+│   └── SettingsTests.cs          # Settings JSON 序列化：4 个测试
+└── SteamEdit.csproj              # 项目文件
 ```
 
 ---
 
-## Tech Stack
+## 技术栈
 
-| Technology | Version |
+| 技术 | 版本 |
 |:---|:---|
 | .NET | 10.0 |
-| Language | C# 13+ |
-| UI Framework | Windows Forms |
-| Target Platform | win-x64 |
-| Publishing | Single-file EXE (self-contained or framework-dependent) |
+| 语言 | C# 13+ |
+| UI 框架 | Windows Forms |
+| 目标平台 | win-x64 |
+| 发布方式 | 单文件 EXE（独立或依赖框架） |
 
 ---
 
-## License & Disclaimer
+## 许可与声明
 
-- Original software copyright belongs to [Tim Green](mailto:tim@tg-software.com)
-- Original download: [https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
-- This project only involves a technical migration (.NET Framework → .NET 10) and UI localization
-- **If there is any infringement, please [submit an Issue](../../issues) to request removal**
+- 原创软件版权归 [Tim Green](mailto:tim@tg-software.com) 所有
+- 原创下载：[https://steamedit.tg-software.com/](https://steamedit.tg-software.com/)
+- 本项目仅涉及技术迁移（.NET Framework → .NET 10）和 UI 本地化
+- **如存在侵权，请 [提交 Issue](../../issues) 申请移除**
