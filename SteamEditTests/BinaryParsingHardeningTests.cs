@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SteamEdit.Data;
+using SteamEdit.Data.Impl;
 
 namespace SteamEditTests;
 
@@ -191,6 +192,35 @@ public class BinaryParsingHardeningTests
 
         Assert.ThrowsException<InvalidDataException>(
             () => PropertyTableIO.ReadPropertyTable_0x07564429(br, stringTable));
+    }
+
+    [TestMethod]
+    public void AppInfo_0x07564429_StringTableSizeExceeds50000_ThrowsInvalidDataException()
+    {
+        string tempFile = Path.GetTempFileName();
+        try
+        {
+            using (var bw = new BinaryWriter(File.Create(tempFile)))
+            {
+                bw.Write(123094057u); // magic for 0x07564429
+                bw.Write(0u);        // unknown value at start
+                // String table position = header(16) + entry data(4) = 20
+                bw.Write((long)20);
+                // Entry data at position 16 (where reader resumes after reading string table)
+                bw.Write(0);         // appId=0 entry terminator (no entries)
+                // String table at position 20
+                bw.Write(50_001u);   // exceeds 50,000 limit
+                // Write 50,001 empty null-terminated strings so ReadZString would succeed
+                for (int i = 0; i < 50_001; i++)
+                    bw.Write((byte)0);
+            }
+
+            Assert.ThrowsException<InvalidDataException>(() =>
+            {
+                AppInfoFactory.Load(tempFile);
+            });
+        }
+        finally { File.Delete(tempFile); }
     }
 
     private class TestAppInfo : IAppInfo

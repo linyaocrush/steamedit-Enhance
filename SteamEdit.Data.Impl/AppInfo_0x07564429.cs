@@ -17,6 +17,9 @@ internal class AppInfo_0x07564429 : AppInfoBase<AppInfoEntry_0x07564429>
 		long position2 = reader.BaseStream.Position;
 		reader.BaseStream.Position = position;
 		uint num = reader.ReadUInt32();
+		if (num > 50_000)
+			throw new InvalidDataException(
+				$"String table size {num} exceeds maximum 50000. File may be corrupted.");
 		string[] array = new string[num];
 		for (uint num2 = 0u; num2 < num; num2++)
 		{
