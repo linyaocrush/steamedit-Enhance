@@ -100,27 +100,27 @@ internal class EditController
 		_snapshotValues.Clear();
 
 		_textGameName.Text = entry.Name;
-		_textGameName.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty("appinfo", "common", "name");
+		_textGameName.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty(AppInfoPaths.Name);
 		_textSortAs.Text = entry.SortAs;
 		_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
-		_textSortAs.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty("appinfo", "common", "sortas");
+		_textSortAs.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty(AppInfoPaths.SortAs);
 		_checkHidden.Checked = entry.IsHidden;
 		_checkCompleted.Checked = entry.IsCompleted;
 
-		string csRaw = entry.GetPropertyValue("none", "appinfo", "common", "controller_support");
+		string csRaw = entry.GetPropertyValue("none", AppInfoPaths.ControllerSupport);
 		int csIdx = Array.IndexOf(ControllerRawValues, csRaw);
 		_listControllerSupport.SelectedIndex = csIdx >= 0 ? csIdx : 0;
 
 		_listEntryType.SelectedItem = entry.Type;
 
-		if (entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport") == int.MaxValue)
+		if (entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport) == int.MaxValue)
 		{
 			_listVR.Enabled = false;
 			_listVR.SelectedItem = null;
 		}
 		else
 		{
-			_listVR.SelectedIndex = entry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport") != int.MaxValue ? 1 : 0;
+			_listVR.SelectedIndex = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport) != int.MaxValue ? 1 : 0;
 		}
 
 		_isSettingUpEntry = false;
@@ -232,10 +232,10 @@ internal class EditController
 			{
 				using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
 				var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
-				originalName = props.GetPropertyValue<string>(null, "appinfo", "common", "name");
+				originalName = props.GetPropertyValue<string>(null, AppInfoPaths.Name);
 			}
 			if (string.IsNullOrWhiteSpace(originalName))
-				originalName = entry.GetPropertyValue<string>(null, "appinfo", "steam_edit", "base_name");
+				originalName = entry.GetPropertyValue<string>(null, AppInfoPaths.BaseName);
 			if (string.IsNullOrWhiteSpace(originalName))
 				originalName = previousName;
 			TranslationGlossary.UpdateEntry(entry.ID, originalName, entry.Name);
@@ -250,20 +250,20 @@ internal class EditController
 	{
 		if (remove)
 		{
-			int val = entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport");
+			int val = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
 			if (val != int.MaxValue)
 			{
-				entry.SetPropertyValue(PropertyType.Int32, val, "appinfo", "steam_edit", "base_openvrsupport");
-				entry.SetPropertyValue(PropertyType.Int32, 0, "appinfo", "common", "openvrsupport");
+				entry.SetPropertyValue(PropertyType.Int32, val, AppInfoPaths.BaseOpenVrSupport);
+				entry.SetPropertyValue(PropertyType.Int32, 0, AppInfoPaths.OpenVrSupport);
 			}
 		}
 		else
 		{
-			int val = entry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
+			int val = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
 			if (val != int.MaxValue)
 			{
-				entry.SetPropertyValue(PropertyType.Int32, val, "appinfo", "common", "openvrsupport");
-				entry.SetPropertyValue(PropertyType.Int32, int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
+				entry.SetPropertyValue(PropertyType.Int32, val, AppInfoPaths.OpenVrSupport);
+				entry.SetPropertyValue(PropertyType.Int32, int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
 			}
 		}
 	}
@@ -288,17 +288,17 @@ internal class EditController
 
 		string key = null;
 		object value = null;
-		if (sender == _textGameName) { key = "name"; value = entry.GetPropertyValue<string>(null, "appinfo", "common", "name"); }
-		else if (sender == _textSortAs) { key = "sortas"; value = entry.GetPropertyValue<string>(null, "appinfo", "common", "sortas"); }
-		else if (sender == _checkHidden) { key = "hidden"; value = entry.GetPropertyValue(0, "appinfo", "steam_edit", "is_hidden"); }
-		else if (sender == _checkCompleted) { key = "completed"; value = entry.GetPropertyValue(0, "appinfo", "steam_edit", "is_completed"); }
-		else if (sender == _listEntryType) { key = "type"; value = entry.GetPropertyValue<string>(null, "appinfo", "common", "type"); }
-		else if (sender == _listControllerSupport) { key = "controller"; value = entry.GetPropertyValue<string>(null, "appinfo", "common", "controller_support"); }
+		if (sender == _textGameName) { key = "name"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.Name); }
+		else if (sender == _textSortAs) { key = "sortas"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.SortAs); }
+		else if (sender == _checkHidden) { key = "hidden"; value = entry.GetPropertyValue(0, AppInfoPaths.IsHidden); }
+		else if (sender == _checkCompleted) { key = "completed"; value = entry.GetPropertyValue(0, AppInfoPaths.IsCompleted); }
+		else if (sender == _listEntryType) { key = "type"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.Type); }
+		else if (sender == _listControllerSupport) { key = "controller"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.ControllerSupport); }
 		else if (sender == _listVR)
 		{
 			key = "vr";
-			value = entry.GetPropertyValue(int.MaxValue, "appinfo", "common", "openvrsupport");
-			_snapshotValues["vr_base"] = entry.GetPropertyValue(int.MaxValue, "appinfo", "steam_edit", "base_openvrsupport");
+			value = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
+			_snapshotValues["vr_base"] = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
 		}
 
 		if (key != null) _snapshotValues[key] = value;
@@ -312,7 +312,7 @@ internal class EditController
 		if (_textGameName.Text != entry.Name)
 		{
 			string prev = entry.Name;
-			_undoManager.Push(entry, new[] { "appinfo", "common", "name" }, PropertyType.String, prev);
+			_undoManager.Push(entry, AppInfoPaths.Name, PropertyType.String, prev);
 			entry.Name = _textGameName.Text;
 			_listManager.InvalidateDisplayName(entry);
 			UpdateGlossaryForEntry(entry, prev);
@@ -337,7 +337,7 @@ internal class EditController
 		if (entry == null) return;
 		if (_textSortAs.Text != entry.SortAs)
 		{
-			_undoManager.Push(entry, new[] { "appinfo", "common", "sortas" }, PropertyType.String, entry.SortAs);
+			_undoManager.Push(entry, AppInfoPaths.SortAs, PropertyType.String, entry.SortAs);
 			entry.SortAs = _textSortAs.Text;
 			_listManager.InvalidateDisplayName(entry);
 			_listManager.RefreshingAfterEdit = true;
@@ -355,7 +355,7 @@ internal class EditController
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		if (_snapshotValues.TryGetValue("hidden", out var prev) && prev is int p)
-			_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_hidden" }, PropertyType.Int32, p);
+			_undoManager.Push(entry, AppInfoPaths.IsHidden, PropertyType.Int32, p);
 		entry.IsHidden = _checkHidden.Checked;
 		_listManager.InvalidateAll();
 	}
@@ -366,7 +366,7 @@ internal class EditController
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		if (_snapshotValues.TryGetValue("completed", out var prev) && prev is int p)
-			_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "is_completed" }, PropertyType.Int32, p);
+			_undoManager.Push(entry, AppInfoPaths.IsCompleted, PropertyType.Int32, p);
 		entry.IsCompleted = _checkCompleted.Checked;
 		_listManager.InvalidateAll();
 	}
@@ -379,8 +379,8 @@ internal class EditController
 		int idx = _listControllerSupport.SelectedIndex;
 		string raw = idx >= 0 && idx < ControllerRawValues.Length ? ControllerRawValues[idx] : "none";
 		if (_snapshotValues.TryGetValue("controller", out var prev) && prev is string p)
-			_undoManager.Push(entry, new[] { "appinfo", "common", "controller_support" }, PropertyType.String, p);
-		entry.SetPropertyValue(PropertyType.String, raw, "appinfo", "common", "controller_support");
+			_undoManager.Push(entry, AppInfoPaths.ControllerSupport, PropertyType.String, p);
+		entry.SetPropertyValue(PropertyType.String, raw, AppInfoPaths.ControllerSupport);
 	}
 
 	private void OnListVR_SelectedIndexChanged(object sender, EventArgs e)
@@ -390,9 +390,9 @@ internal class EditController
 		if (entry == null) return;
 		if (_snapshotValues.TryGetValue("vr", out var prev) && prev is int p)
 		{
-			_undoManager.Push(entry, new[] { "appinfo", "common", "openvrsupport" }, PropertyType.Int32, p);
+			_undoManager.Push(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, p);
 			if (_snapshotValues.TryGetValue("vr_base", out var basePrev) && basePrev is int bp)
-				_undoManager.Push(entry, new[] { "appinfo", "steam_edit", "base_openvrsupport" }, PropertyType.Int32, bp);
+				_undoManager.Push(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, bp);
 		}
 		SetEntryVR(entry, _listVR.SelectedIndex != 0);
 	}
@@ -403,7 +403,7 @@ internal class EditController
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		if (_snapshotValues.TryGetValue("type", out var prev) && prev is string p)
-			_undoManager.Push(entry, new[] { "appinfo", "common", "type" }, PropertyType.String, p);
+			_undoManager.Push(entry, AppInfoPaths.Type, PropertyType.String, p);
 		entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 		_listManager.RefreshGameList();
 	}
@@ -413,7 +413,7 @@ internal class EditController
 		e.Handled = true;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		entry.RevertModifiedProperty("appinfo", "common", "name");
+		entry.RevertModifiedProperty(AppInfoPaths.Name);
 		_listManager.InvalidateDisplayName(entry);
 		_listManager.RefreshingAfterEdit = true;
 		_listManager.RefreshGameList();
@@ -426,7 +426,7 @@ internal class EditController
 		e.Handled = true;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		entry.RevertModifiedProperty("appinfo", "common", "sortas");
+		entry.RevertModifiedProperty(AppInfoPaths.SortAs);
 		_listManager.InvalidateDisplayName(entry);
 		_listManager.RefreshingAfterEdit = true;
 		_listManager.ResortEntry(entry);

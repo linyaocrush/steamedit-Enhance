@@ -13,7 +13,7 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 
 	protected override void HandleNameLocalizedRemoval(PropertyTable common, PropertyTable nameLocalized)
 	{
-		if ((_modifications != null && _modifications.Changes.HasProperty("appinfo", "common", "name")) || Settings.Default.ReplaceLocalizedNames)
+		if ((_modifications != null && _modifications.Changes.HasProperty(AppInfoPaths.Name)) || Settings.Default.ReplaceLocalizedNames)
 		{
 			common.RemoveProperty("name_localized");
 		}
@@ -60,12 +60,12 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 				entry._properties = PropertyTableIO.ReadPropertyTable_0x07564429(subReader, stringTable);
 				entry.RestoreBaseProperties();
 
-				if (!entry._properties.HasProperty("appinfo", "common", "name_localized"))
+				if (!entry._properties.HasProperty(AppInfoPaths.NameLocalized))
 				{
-					PropertyTable nameLocalized = entry._properties.GetPropertyValue<PropertyTable>(null, "appinfo", "steam_edit", "base_name_localized");
+					PropertyTable nameLocalized = entry._properties.GetPropertyValue<PropertyTable>(null, AppInfoPaths.BaseNameLocalized);
 					if (nameLocalized != null)
 					{
-						entry._properties.SetPropertyValue(PropertyType.Table, nameLocalized, "appinfo", "common", "name_localized");
+						entry._properties.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.NameLocalized);
 					}
 				}
 			}

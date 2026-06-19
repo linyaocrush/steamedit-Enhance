@@ -56,24 +56,24 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	public bool IsHidden
 	{
-		get => _properties.GetPropertyValue(0, "appinfo", "steam_edit", "is_hidden") != 0;
+		get => _properties.GetPropertyValue(0, AppInfoPaths.IsHidden) != 0;
 		set
 		{
-			if (value || _properties.HasProperty("appinfo", "steam_edit", "is_hidden"))
+			if (value || _properties.HasProperty(AppInfoPaths.IsHidden))
 			{
-				SetPropertyValue(PropertyType.Int32, value ? 1 : 0, "appinfo", "steam_edit", "is_hidden");
+				SetPropertyValue(PropertyType.Int32, value ? 1 : 0, AppInfoPaths.IsHidden);
 			}
 		}
 	}
 
 	public bool IsCompleted
 	{
-		get => _properties.GetPropertyValue(0, "appinfo", "steam_edit", "is_completed") != 0;
+		get => _properties.GetPropertyValue(0, AppInfoPaths.IsCompleted) != 0;
 		set
 		{
-			if (value || _properties.HasProperty("appinfo", "steam_edit", "is_completed"))
+			if (value || _properties.HasProperty(AppInfoPaths.IsCompleted))
 			{
-				SetPropertyValue(PropertyType.Int32, value ? 1 : 0, "appinfo", "steam_edit", "is_completed");
+				SetPropertyValue(PropertyType.Int32, value ? 1 : 0, AppInfoPaths.IsCompleted);
 			}
 		}
 	}
@@ -84,13 +84,13 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (_cachedName == null)
 			{
-				_cachedName = _properties.GetPropertyValue<string>(null, "appinfo", "common", "name");
+				_cachedName = _properties.GetPropertyValue<string>(null, AppInfoPaths.Name);
 			}
 			return _cachedName;
 		}
 		set
 		{
-			SetPropertyValue(PropertyType.String, value, "appinfo", "common", "name");
+			SetPropertyValue(PropertyType.String, value, AppInfoPaths.Name);
 			ClearCachedProps();
 		}
 	}
@@ -101,7 +101,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (!_cachedHasSortAs.HasValue)
 			{
-				_cachedHasSortAs = _properties.HasProperty("appinfo", "common", "sortas") && _properties.GetPropertyValue(Name, "appinfo", "common", "sortas").Length > 0;
+				_cachedHasSortAs = _properties.HasProperty(AppInfoPaths.SortAs) && _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs).Length > 0;
 			}
 			return _cachedHasSortAs.Value;
 		}
@@ -113,7 +113,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (_cachedSortAs == null)
 			{
-				_cachedSortAs = _properties.GetPropertyValue(Name, "appinfo", "common", "sortas");
+				_cachedSortAs = _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs);
 				if (_cachedSortAs.Length == 0)
 				{
 					_cachedSortAs = Name;
@@ -123,7 +123,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		}
 		set
 		{
-			SetPropertyValue(PropertyType.String, value, "appinfo", "common", "sortas");
+			SetPropertyValue(PropertyType.String, value, AppInfoPaths.SortAs);
 			ClearCachedProps();
 		}
 	}
@@ -132,7 +132,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
-			string propertyValue = _properties.GetPropertyValue("", "appinfo", "config", "installdir");
+			string propertyValue = _properties.GetPropertyValue<string>("", AppInfoPaths.InstallDir);
 			return Path.Combine(SteamData.SteamDir, "steamapps", "common", propertyValue);
 		}
 	}
@@ -141,7 +141,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
-			string propertyValue = _properties.GetPropertyValue<string>(null, "appinfo", "common", "type");
+			string propertyValue = _properties.GetPropertyValue<string>(null, AppInfoPaths.Type);
 			if (propertyValue == null) return AppInfoEntryType.Unknown;
 			return propertyValue.ToLowerInvariant() switch
 			{
@@ -176,7 +176,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			};
 			if (str != null)
 			{
-				SetPropertyValue(PropertyType.String, str, "appinfo", "common", "type");
+				SetPropertyValue(PropertyType.String, str, AppInfoPaths.Type);
 			}
 		}
 	}
@@ -196,7 +196,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	public LaunchTable Launches
 	{
 		get => new LaunchTable(GetLaunchPropertyTable());
-		set => SetPropertyValue(PropertyType.Table, value.PropertyTable, "appinfo", "config", "launch");
+		set => SetPropertyValue(PropertyType.Table, value.PropertyTable, AppInfoPaths.Launch);
 	}
 
 	public event EventHandler Modified;
@@ -293,7 +293,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	private PropertyTable GetLaunchPropertyTable()
 	{
-		PropertyTable propertyTable = _properties.GetPropertyValue<PropertyTable>(null, "appinfo", "config", "launch");
+		PropertyTable propertyTable = _properties.GetPropertyValue<PropertyTable>(null, AppInfoPaths.Launch);
 		return propertyTable ?? new PropertyTable();
 	}
 
@@ -324,15 +324,15 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	protected void RestoreBaseProperties()
 	{
-		string baseName = _properties.GetPropertyValue<string>(null, "appinfo", "steam_edit", "base_name");
+		string baseName = _properties.GetPropertyValue<string>(null, AppInfoPaths.BaseName);
 		if (baseName != null)
 		{
-			_properties.SetPropertyValue(PropertyType.String, baseName, "appinfo", "common", "name");
+			_properties.SetPropertyValue(PropertyType.String, baseName, AppInfoPaths.Name);
 		}
-		string baseType = _properties.GetPropertyValue<string>(null, "appinfo", "steam_edit", "base_type");
+		string baseType = _properties.GetPropertyValue<string>(null, AppInfoPaths.BaseType);
 		if (baseType != null)
 		{
-			_properties.SetPropertyValue(PropertyType.String, baseType, "appinfo", "common", "type");
+			_properties.SetPropertyValue(PropertyType.String, baseType, AppInfoPaths.Type);
 		}
 	}
 
@@ -349,10 +349,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 				PropertyTable nameLocalized = common.GetPropertyValue<PropertyTable>(null, "name_localized");
 				if (nameLocalized != null)
 				{
-					table.SetPropertyValue(PropertyType.Table, nameLocalized, "appinfo", "steam_edit", "base_name_localized");
+					table.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.BaseNameLocalized);
 					HandleNameLocalizedRemoval(common, nameLocalized);
 				}
-				table.SetPropertyValue(PropertyType.String, text, "appinfo", "steam_edit", "base_name");
+				table.SetPropertyValue(PropertyType.String, text, AppInfoPaths.BaseName);
 				if (SteamData.UseCompleted && IsCompleted)
 				{
 					text += SteamData.CompletedSuffix;
@@ -366,7 +366,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			string text2 = common.GetPropertyValue("type", "game");
 			if (text2 != null)
 			{
-				table.SetPropertyValue(PropertyType.String, text2, "appinfo", "steam_edit", "base_type");
+				table.SetPropertyValue(PropertyType.String, text2, AppInfoPaths.BaseType);
 				if (SteamData.UseHidden && IsHidden)
 				{
 					text2 = "hidden_" + text2;

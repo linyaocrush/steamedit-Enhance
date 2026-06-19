@@ -429,7 +429,7 @@ internal class MainWindow : Form
 		foreach (IAppInfoEntry entry in _ctx.Entries)
 		{
 			if (entry.IsModified && entry.Modification?.Changes != null &&
-				entry.Modification.Changes.HasProperty("appinfo", "common", "name"))
+				entry.Modification.Changes.HasProperty(AppInfoPaths.Name))
 				continue;
 			if (string.IsNullOrWhiteSpace(entry.Name)) continue;
 			entriesToTranslate.Add(entry);

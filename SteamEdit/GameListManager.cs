@@ -423,7 +423,7 @@ internal class GameListManager : IDisposable
 	{
 		var sb = new StringBuilder();
 		sb.AppendFormat("{0}: {1}", entry.ID, entry.Name);
-		string oslist = entry.GetPropertyValue<string>(null, "appinfo", "common", "oslist");
+		string oslist = entry.GetPropertyValue<string>(null, AppInfoPaths.OsList);
 		if (oslist != null) sb.AppendFormat(" [{0}]", oslist);
 		return sb.ToString();
 	}

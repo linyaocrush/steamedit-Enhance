@@ -183,7 +183,7 @@ internal static class Program
         try
         {
             var adapters = SteamData.AppInfoData.Entries
-                .Where(e => e.IsModified && e.Modification.Changes.HasProperty("appinfo", "common", "name"))
+                .Where(e => e.IsModified && e.Modification.Changes.HasProperty(AppInfoPaths.Name))
                 .Select(e => new GlossaryAdapter(e))
                 .ToList();
             TranslationGlossary.SyncFromMods(adapters);
@@ -224,7 +224,7 @@ internal static class Program
             if (entry.Modification?.OriginalData == null) return null;
             using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
             var props = SteamEdit.Data.PropertyTableIO.ReadPropertyTable_Mods(reader);
-            return props.GetPropertyValue<string>(null, "appinfo", "common", "name");
+            return props.GetPropertyValue<string>(null, AppInfoPaths.Name);
         }
     }
 
