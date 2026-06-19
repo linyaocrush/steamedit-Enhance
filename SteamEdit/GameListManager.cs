@@ -366,6 +366,25 @@ internal class GameListManager : IDisposable
 
 	public void InvalidateAll() => _appSelection.Invalidate();
 
+	public void NotifyEntryEdited(IAppInfoEntry entry)
+	{
+		InvalidateDisplayName(entry);
+		_refreshingGamesListAfterEdit = true;
+		ResortEntry(entry);
+		_refreshingGamesListAfterEdit = false;
+		InvalidateItem(entry);
+	}
+
+	public void NotifyStatusChanged() => InvalidateAll();
+
+	public void NotifyEntryReverted(IAppInfoEntry entry)
+	{
+		ClearDisplayNameCache();
+		ResortEntry(entry);
+		int idx = _ctx.Entries.IndexOf(entry);
+		if (idx >= 0) SelectIndex(idx);
+	}
+
 	// --- 私有方法 ---
 
 	private void RebuildListBoxItems()
