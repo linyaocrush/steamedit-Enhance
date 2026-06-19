@@ -7,8 +7,6 @@ namespace SteamEdit.Data;
 
 internal class Mods
 {
-	private delegate void ReaderFunction(BinaryReader reader, List<ModifiedEntry> modEntries);
-
 	private const uint CurrentVersion = 6u;
 
 	private readonly IAppInfo _appInfo;
@@ -25,11 +23,10 @@ internal class Mods
 		{
 			using BinaryReader binaryReader = new BinaryReader(File.OpenRead(path));
 			uint version = binaryReader.ReadUInt32();
-			ReaderFunction readerFunction = mods.GetReaderFunction(version);
-			if (readerFunction != null)
+			if (version >= 4u && version <= 6u)
 			{
 				List<ModifiedEntry> list = new List<ModifiedEntry>();
-				readerFunction(binaryReader, list);
+				mods.ReadEntries(binaryReader, list, (int)version);
 				var entryById = new Dictionary<int, IAppInfoEntry>();
 				foreach (var entry in mods._appInfo.Entries) entryById[entry.ID] = entry;
 				foreach (ModifiedEntry modEntry in list)
@@ -40,85 +37,51 @@ internal class Mods
 					}
 				}
 			}
+			else
+			{
+				Log.WriteLine("Mods file has unsupported version {0}", version);
+			}
 		}
 		return mods;
 	}
 
-	private ReaderFunction GetReaderFunction(uint version)
+	private void ReadEntries(BinaryReader reader, List<ModifiedEntry> modEntries, int version)
 	{
-		switch (version)
+		int count = reader.ReadInt32();
+		for (int i = 0; i < count; i++)
 		{
-		case 4u:
-			return ReadModsV4;
-		case 5u:
-			return ReadModsV5;
-		case 6u:
-			return ReadModsV6;
-		default:
-			Log.WriteLine("Mods file has unsupported version {0}", version);
-			return null;
-		}
-	}
+			ModifiedEntry entry = new ModifiedEntry(reader.ReadInt32());
+			entry.Changes = PropertyTableIO.ReadPropertyTable_Mods(reader);
 
-	private void ReadModsV4(BinaryReader reader, List<ModifiedEntry> modEntries)
-	{
-		int num = reader.ReadInt32();
-		for (int i = 0; i < num; i++)
-		{
-			ModifiedEntry modifiedEntry = new ModifiedEntry(reader.ReadInt32());
-			modifiedEntry.Changes = PropertyTableIO.ReadPropertyTable_Mods(reader);
-			modifiedEntry.OriginalDataVersion = 0u;
-			int num2 = reader.ReadInt32();
-			reader.BaseStream.Seek(36L, SeekOrigin.Current);
-			modifiedEntry.OriginalDataChangeNumber = reader.ReadUInt32();
-			reader.BaseStream.Seek(20L, SeekOrigin.Current);
-			modifiedEntry.OriginalData = reader.ReadBytes(num2 - 60);
-			modEntries.Add(modifiedEntry);
-		}
-	}
+			// V4: OriginalDataVersion 不在文件中，硬编码 0
+			entry.OriginalDataVersion = (version >= 5) ? reader.ReadUInt32() : 0u;
 
-	private void ReadModsV5(BinaryReader reader, List<ModifiedEntry> modEntries)
-	{
-		int num = reader.ReadInt32();
-		for (int i = 0; i < num; i++)
-		{
-			ModifiedEntry modifiedEntry = new ModifiedEntry(reader.ReadInt32());
-			modifiedEntry.Changes = PropertyTableIO.ReadPropertyTable_Mods(reader);
-			modifiedEntry.OriginalDataVersion = reader.ReadUInt32();
-			int num2 = reader.ReadInt32();
-			reader.BaseStream.Seek(36L, SeekOrigin.Current);
-			modifiedEntry.OriginalDataChangeNumber = reader.ReadUInt32();
-			reader.BaseStream.Seek(20L, SeekOrigin.Current);
-			modifiedEntry.OriginalData = reader.ReadBytes(num2 - 60);
-			if (modifiedEntry.OriginalDataVersion >= 123094057)
+			if (version <= 5)
 			{
-				modifiedEntry.OriginalData = null;
-				modifiedEntry.OriginalDataVersion = 0u;
-				modifiedEntry.OriginalDataChangeNumber = 0u;
-			}
-			modEntries.Add(modifiedEntry);
-		}
-	}
-
-	private void ReadModsV6(BinaryReader reader, List<ModifiedEntry> modEntries)
-	{
-		int num = reader.ReadInt32();
-		for (int i = 0; i < num; i++)
-		{
-			ModifiedEntry modifiedEntry = new ModifiedEntry(reader.ReadInt32());
-			modifiedEntry.Changes = PropertyTableIO.ReadPropertyTable_Mods(reader);
-			modifiedEntry.OriginalDataVersion = reader.ReadUInt32();
-			modifiedEntry.OriginalDataChangeNumber = reader.ReadUInt32();
-			int num2 = reader.ReadInt32();
-			if (num2 > 0)
-			{
-				modifiedEntry.OriginalData = reader.ReadBytes(num2);
+				// V4/V5: 原始格式，跳过 36+20=60 字节的未知字段
+				int dataSize = reader.ReadInt32();
+				reader.BaseStream.Seek(36L, SeekOrigin.Current);
+				entry.OriginalDataChangeNumber = reader.ReadUInt32();
+				reader.BaseStream.Seek(20L, SeekOrigin.Current);
+				entry.OriginalData = reader.ReadBytes(dataSize - 60);
 			}
 			else
 			{
-				modifiedEntry.OriginalData = null;
+				// V6: 紧凑格式，无跳过
+				entry.OriginalDataChangeNumber = reader.ReadUInt32();
+				int dataSize = reader.ReadInt32();
+				entry.OriginalData = (dataSize > 0) ? reader.ReadBytes(dataSize) : null;
 			}
-			modEntries.Add(modifiedEntry);
+
+			// V5: 0x07564429 格式的 entry 不保存原始数据
+			if (version == 5 && entry.OriginalDataVersion >= 123094057)
+			{
+				entry.OriginalData = null;
+				entry.OriginalDataVersion = 0u;
+				entry.OriginalDataChangeNumber = 0u;
+			}
+
+			modEntries.Add(entry);
 		}
 	}
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SteamEdit.Data;
 
@@ -189,17 +190,36 @@ public class ModsTests
     }
 
     [TestMethod]
-    public void GetReaderFunction_UnsupportedVersion_ReturnsNull()
+    public void Load_UnsupportedVersion_DoesNotLoadEntries()
     {
-        var modsType = typeof(Mods);
-        var constructor = modsType.GetConstructor(
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
-            null, new[] { typeof(IAppInfo) }, null);
-        var mods = constructor.Invoke(new object[] { null });
+        string tempFile = Path.GetTempFileName();
+        try
+        {
+            using (var bw = new BinaryWriter(File.Create(tempFile)))
+            {
+                bw.Write(99u); // unsupported version
+                bw.Write(1);   // 1 entry (should be ignored)
+                bw.Write(12345);
+            }
 
-        var method = modsType.GetMethod("GetReaderFunction",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = method.Invoke(mods, new object[] { 99u });
-        Assert.IsNull(result);
+            var appInfo = new TestAppInfo();
+            var mods = Mods.Load(tempFile, appInfo);
+            Assert.AreEqual(0, appInfo.Entries.Count());
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    private class TestAppInfo : IAppInfo
+    {
+        private readonly List<IAppInfoEntry> _entries = new();
+        public IEnumerable<IAppInfoEntry> Entries => _entries;
+        public event System.EventHandler Modified;
+        public IAppInfoEntry FindEntry(uint AppID) => null;
+        public void Save(string path) { }
+        public void RevertEntry(IAppInfoEntry entry) { }
+        public void RemoveEntry(IAppInfoEntry entry) { }
     }
 }
