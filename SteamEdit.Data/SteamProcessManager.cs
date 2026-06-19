@@ -14,7 +14,7 @@ internal static class SteamProcessManager
         return procs.Length != 0;
     }
 
-    public static void KillSteam()
+    public static void KillSteam(Action<string, Func<bool>> showAndWait)
     {
         Process[] processesByName = Process.GetProcessesByName("steam");
         Log.WriteLine("Steam processes: " + processesByName.Length);
@@ -27,8 +27,7 @@ internal static class SteamProcessManager
             catch (Exception ex) { Log.WriteLine("Failed to kill steam process: {0}", ex.Message); }
             finally { proc.Dispose(); }
         }
-        using (var dlg = new WaitingDialog(SteamEdit.Strings.SteamData_WaitingForClose))
-            dlg.ShowAndWait(() => IsSteamRunning());
+        showAndWait(SteamEdit.Strings.SteamData_WaitingForClose, IsSteamRunning);
     }
 
     public static void EnsureSteamRunning(bool focusIfRunning)

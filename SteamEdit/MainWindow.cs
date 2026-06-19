@@ -472,7 +472,11 @@ internal class MainWindow : LocalizableForm
 	{
 		try
 		{
-			SteamProcessManager.KillSteam();
+			SteamProcessManager.KillSteam((msg, waitWhile) =>
+			{
+				using var dlg = new WaitingDialog(msg);
+				dlg.ShowAndWait(() => waitWhile());
+			});
 			SteamData.Save();
 			SteamData.Apply();
 			SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
