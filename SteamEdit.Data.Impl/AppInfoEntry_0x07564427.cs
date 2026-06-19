@@ -19,6 +19,8 @@ internal class AppInfoEntry_0x07564427 : AppInfoEntryBase
 		try
 		{
 			int count = reader.ReadInt32();
+			if (count < 0)
+				throw new InvalidDataException($"Entry data size {count} is negative.");
 			using (BinaryReader subReader = new BinaryReader(new MemoryStream(reader.ReadBytes(count))))
 			{
 				entry._stuffBeforeHash = subReader.ReadBytes(16);

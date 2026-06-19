@@ -48,6 +48,11 @@ internal class Mods
 	private void ReadEntries(BinaryReader reader, List<ModifiedEntry> modEntries, int version)
 	{
 		int count = reader.ReadInt32();
+		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
+		if (count < 0 || count > 100_000)
+			throw new InvalidDataException($"Mods entry count {count} is out of valid range.");
+		if (count > remaining / 8)
+			throw new InvalidDataException($"Mods entry count {count} exceeds available stream data.");
 		for (int i = 0; i < count; i++)
 		{
 			ModifiedEntry entry = new ModifiedEntry(reader.ReadInt32());
@@ -60,6 +65,9 @@ internal class Mods
 			{
 				// V4/V5: 原始格式，跳过 36+20=60 字节的未知字段
 				int dataSize = reader.ReadInt32();
+				long dataRemaining = reader.BaseStream.Length - reader.BaseStream.Position;
+				if (dataSize < 60 || dataSize > dataRemaining)
+					throw new InvalidDataException($"Mods entry dataSize {dataSize} is out of valid range (remaining={dataRemaining}).");
 				reader.BaseStream.Seek(36L, SeekOrigin.Current);
 				entry.OriginalDataChangeNumber = reader.ReadUInt32();
 				reader.BaseStream.Seek(20L, SeekOrigin.Current);
@@ -70,6 +78,14 @@ internal class Mods
 				// V6: 紧凑格式，无跳过
 				entry.OriginalDataChangeNumber = reader.ReadUInt32();
 				int dataSize = reader.ReadInt32();
+				if (dataSize < 0)
+					throw new InvalidDataException($"Mods entry dataSize {dataSize} is negative.");
+				if (dataSize > 0)
+				{
+					long dataRemaining = reader.BaseStream.Length - reader.BaseStream.Position;
+					if (dataSize > dataRemaining)
+						throw new InvalidDataException($"Mods entry dataSize {dataSize} exceeds available stream data (remaining={dataRemaining}).");
+				}
 				entry.OriginalData = (dataSize > 0) ? reader.ReadBytes(dataSize) : null;
 			}
 

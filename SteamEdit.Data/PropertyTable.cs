@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -263,6 +264,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	private string ToStringInternal(int indent)
 	{
+		if (indent > 32)
+			throw new InvalidDataException($"Property table nesting depth {indent} exceeds maximum 32.");
 		StringBuilder stringBuilder = new StringBuilder();
 		string arg = new string('\t', indent);
 		foreach (Property property in _properties)
