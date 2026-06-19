@@ -104,8 +104,13 @@ internal static class PropertyTableIO
 	private static PropertyTable ReadPropertyTableCore(
 		BinaryReader reader,
 		Func<BinaryReader, string> readName,
-		Func<BinaryReader, string> readWString)
+		Func<BinaryReader, string> readWString,
+		int depth = 0)
 	{
+		const int MaxDepth = 32;
+		if (depth > MaxDepth)
+			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {MaxDepth}. File may be corrupted.");
+
 		PropertyTable propertyTable = new PropertyTable();
 		PropertyType propertyType;
 		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
@@ -113,7 +118,7 @@ internal static class PropertyTableIO
 			string name = readName(reader);
 			propertyTable.AddPropertyValue(value: propertyType switch
 			{
-				PropertyType.Table => ReadPropertyTableCore(reader, readName, readWString),
+				PropertyType.Table => ReadPropertyTableCore(reader, readName, readWString, depth + 1),
 				PropertyType.String => ReadString_0x00000000(reader),
 				PropertyType.WString => readWString(reader),
 				PropertyType.Int32 => reader.ReadInt32(),
@@ -130,8 +135,13 @@ internal static class PropertyTableIO
 		BinaryWriter writer,
 		PropertyTable table,
 		Action<BinaryWriter, string> writeName,
-		Action<BinaryWriter, string> writeWString)
+		Action<BinaryWriter, string> writeWString,
+		int depth = 0)
 	{
+		const int MaxDepth = 32;
+		if (depth > MaxDepth)
+			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {MaxDepth}.");
+
 		foreach (Property property in table.Properties)
 		{
 			writer.Write((byte)property.PropertyType);
@@ -139,7 +149,7 @@ internal static class PropertyTableIO
 			switch (property.PropertyType)
 			{
 			case PropertyType.Table:
-				WritePropertyTableCore(writer, (PropertyTable)property.Value, writeName, writeWString);
+				WritePropertyTableCore(writer, (PropertyTable)property.Value, writeName, writeWString, depth + 1);
 				break;
 			case PropertyType.String:
 				WriteString_0x00000000(writer, (string)property.Value);

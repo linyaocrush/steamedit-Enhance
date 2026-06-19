@@ -223,6 +223,63 @@ public class BinaryParsingHardeningTests
         finally { File.Delete(tempFile); }
     }
 
+    [TestMethod]
+    public void ReadPropertyTableCore_DepthExceeds32_ThrowsInvalidDataException()
+    {
+        // Build binary data with 33 nested Table properties
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            for (int i = 0; i < 33; i++)
+            {
+                bw.Write((byte)PropertyType.Table);
+                PropertyTableIO.WriteZString(bw, $"level{i}");
+            }
+            // 33rd level tries to open another table but should hit depth limit
+            bw.Write((byte)PropertyType.Table);
+            PropertyTableIO.WriteZString(bw, "one_too_many");
+            // End markers for all levels
+            for (int i = 0; i <= 33; i++)
+                bw.Write((byte)8);
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+
+        Assert.ThrowsException<InvalidDataException>(
+            () => PropertyTableIO.ReadPropertyTable_0x00000000(br));
+    }
+
+    [TestMethod]
+    public void ReadPropertyTableCore_DepthExactly32_DoesNotThrow()
+    {
+        // Build binary data with exactly 32 nested Table properties (at the limit)
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            for (int i = 0; i < 32; i++)
+            {
+                bw.Write((byte)PropertyType.Table);
+                PropertyTableIO.WriteZString(bw, $"level{i}");
+            }
+            // Innermost table has a string value
+            bw.Write((byte)PropertyType.String);
+            PropertyTableIO.WriteZString(bw, "leaf");
+            PropertyTableIO.WriteZString(bw, "value");
+            bw.Write((byte)8); // end innermost
+            // End markers for remaining levels
+            for (int i = 0; i < 32; i++)
+                bw.Write((byte)8);
+        }
+
+        ms.Position = 0;
+        using var br = new BinaryReader(ms);
+
+        // Should NOT throw — depth 32 is the max allowed
+        var table = PropertyTableIO.ReadPropertyTable_0x00000000(br);
+        Assert.IsNotNull(table);
+    }
+
     private class TestAppInfo : IAppInfo
     {
         private readonly System.Collections.Generic.List<IAppInfoEntry> _entries = new();
