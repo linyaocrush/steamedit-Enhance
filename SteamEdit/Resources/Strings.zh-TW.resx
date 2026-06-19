@@ -352,6 +352,9 @@
     <value>Ctrl+S      儲存
 Ctrl+Enter  儲存並套用
 Ctrl+Z      復原
+Ctrl+T      翻譯遊戲名稱
+Ctrl+B      批量翻譯
+Ctrl+R      回滾修改
 Ctrl+F      聚焦搜尋框
 Ctrl+C      複製遊戲名稱
 Page Up     上一個遊戲

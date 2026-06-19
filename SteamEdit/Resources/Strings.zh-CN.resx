@@ -352,6 +352,9 @@
     <value>Ctrl+S      保存
 Ctrl+Enter  保存并应用
 Ctrl+Z      撤销
+Ctrl+T      翻译游戏名称
+Ctrl+B      批量翻译
+Ctrl+R      回滚修改
 Ctrl+F      聚焦搜索框
 Ctrl+C      复制游戏名称
 Page Up     上一个游戏

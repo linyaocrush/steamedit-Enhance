@@ -294,6 +294,27 @@ internal class MainWindow : LocalizableForm
 			OnBtnSaveApply_Click(sender, EventArgs.Empty);
 			return;
 		}
+		if (e.Control && e.KeyCode == Keys.T)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			OnBtnTranslate_Click(sender, EventArgs.Empty);
+			return;
+		}
+		if (e.Control && e.KeyCode == Keys.B)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			OnBtnBatchTranslate_Click(sender, EventArgs.Empty);
+			return;
+		}
+		if (e.Control && e.KeyCode == Keys.R)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			OnBtnRevert_Click(sender, EventArgs.Empty);
+			return;
+		}
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
@@ -501,7 +522,7 @@ internal class MainWindow : LocalizableForm
 		dlg.MaximizeBox = false;
 		dlg.MinimizeBox = false;
 		dlg.ShowInTaskbar = false;
-		dlg.ClientSize = new Size(320, 240);
+		dlg.ClientSize = new Size(320, 300);
 		var lbl = new Label();
 		lbl.Dock = DockStyle.Fill;
 		lbl.Font = new Font("Consolas", 9f);

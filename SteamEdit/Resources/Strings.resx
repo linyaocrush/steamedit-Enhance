@@ -352,6 +352,9 @@
     <value>Ctrl+S      Save
 Ctrl+Enter  Save &amp; Apply
 Ctrl+Z      Undo
+Ctrl+T      Translate game name
+Ctrl+B      Batch translate
+Ctrl+R      Revert changes
 Ctrl+F      Focus search box
 Ctrl+C      Copy game name
 Page Up     Previous game
