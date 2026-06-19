@@ -15,6 +15,7 @@ internal static class Log
 		_path = Path.Combine(AppHelper.GetAppDirectory(), "log.txt");
 		_writer = new StreamWriter(_path, append: false) { AutoFlush = true };
 		WriteLines("---", DateTime.Now.ToLongDateString() + " - " + DateTime.Now.ToLongTimeString(), "STARTING UP: " + Environment.CommandLine);
+		AppDomain.CurrentDomain.ProcessExit += (_, _) => Close();
 	}
 
 	public static void WriteLine(string line)
