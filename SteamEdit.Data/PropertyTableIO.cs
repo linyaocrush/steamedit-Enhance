@@ -12,12 +12,15 @@ internal static class PropertyTableIO
 	{
 		byte[] buf = new byte[256];
 		int len = 0;
+		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
 		byte value;
-		while ((value = reader.ReadByte()) != 0)
+		while (len < remaining && (value = reader.ReadByte()) != 0)
 		{
 			if (len == buf.Length) Array.Resize(ref buf, buf.Length * 2);
 			buf[len++] = value;
 		}
+		if (len >= remaining)
+			throw new InvalidDataException("ReadZString: null terminator not found before end of stream");
 		return Encoding.UTF8.GetString(buf, 0, len);
 	}
 
@@ -33,10 +36,16 @@ internal static class PropertyTableIO
 	private static string ReadWideString_0x00000000(BinaryReader reader)
 	{
 		StringBuilder stringBuilder = new StringBuilder();
-		for (char c = (char)reader.ReadUInt16(); c != 0; c = (char)reader.ReadUInt16())
+		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
+		long maxChars = remaining / 2;
+		while (stringBuilder.Length < maxChars)
 		{
+			char c = (char)reader.ReadUInt16();
+			if (c == 0) break;
 			stringBuilder.Append(c);
 		}
+		if (stringBuilder.Length >= maxChars)
+			throw new InvalidDataException("ReadWideString: null terminator not found before end of stream");
 		return stringBuilder.ToString();
 	}
 
