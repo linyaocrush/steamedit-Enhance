@@ -1,6 +1,6 @@
 using System;
 
-namespace SteamEdit.Data;
+namespace Common;
 
 [Flags]
 internal enum AppInfoEntryType
