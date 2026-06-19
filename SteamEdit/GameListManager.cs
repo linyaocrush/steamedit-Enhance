@@ -176,6 +176,7 @@ internal class GameListManager : IDisposable
 		contextMenu.Items.Add(miOpenSteam);
 		contextMenu.Items.Add(miOpenSteamDB);
 		_appSelection.ContextMenuStrip = contextMenu;
+
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 		_sortSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 
