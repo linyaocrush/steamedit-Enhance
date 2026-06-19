@@ -157,13 +157,7 @@ internal class BatchTranslateDialog : Form
         // Update glossary
         try
         {
-            string originalName = previousName;
-            if (entry.Modification?.OriginalData != null)
-            {
-                using var reader = new System.IO.BinaryReader(new System.IO.MemoryStream(entry.Modification.OriginalData));
-                var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
-                originalName = props.GetPropertyValue<string>(null, AppInfoPaths.Name) ?? previousName;
-            }
+            string originalName = entry.Modification?.GetOriginalName() ?? previousName;
             TranslationGlossary.UpdateEntry(entry.ID, originalName, translated);
         }
         catch (Exception ex)

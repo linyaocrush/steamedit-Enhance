@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SteamEdit.Data;
 
 internal class ModifiedEntry
@@ -48,6 +50,14 @@ internal class ModifiedEntry
 	public bool AddChange(PropertyType type, object value, string[] propertyPath)
 	{
 		return Changes.SetPropertyValue(type, value, propertyPath);
+	}
+
+	public string GetOriginalName()
+	{
+		if (OriginalData == null) return null;
+		using var reader = new BinaryReader(new MemoryStream(OriginalData));
+		var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
+		return props.GetPropertyValue<string>(null, AppInfoPaths.Name);
 	}
 
 	public bool ApplyChanges(PropertyTable entryTable)

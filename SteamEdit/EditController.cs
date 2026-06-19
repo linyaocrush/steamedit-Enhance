@@ -227,13 +227,7 @@ internal class EditController
 	{
 		try
 		{
-			string originalName = null;
-			if (entry.Modification?.OriginalData != null)
-			{
-				using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
-				var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
-				originalName = props.GetPropertyValue<string>(null, AppInfoPaths.Name);
-			}
+			string originalName = entry.Modification?.GetOriginalName();
 			if (string.IsNullOrWhiteSpace(originalName))
 				originalName = entry.GetPropertyValue<string>(null, AppInfoPaths.BaseName);
 			if (string.IsNullOrWhiteSpace(originalName))

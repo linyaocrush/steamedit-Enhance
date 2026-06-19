@@ -221,10 +221,7 @@ internal static class Program
 
         private static string GetOriginalName(SteamEdit.Data.IAppInfoEntry entry)
         {
-            if (entry.Modification?.OriginalData == null) return null;
-            using var reader = new BinaryReader(new MemoryStream(entry.Modification.OriginalData));
-            var props = SteamEdit.Data.PropertyTableIO.ReadPropertyTable_Mods(reader);
-            return props.GetPropertyValue<string>(null, AppInfoPaths.Name);
+            return entry.Modification?.GetOriginalName();
         }
     }
 
