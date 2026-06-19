@@ -280,6 +280,47 @@ public class BinaryParsingHardeningTests
         Assert.IsNotNull(table);
     }
 
+    [TestMethod]
+    public void ToStringInternal_DepthExceeds32_ThrowsInvalidDataException()
+    {
+        // Build a PropertyTable with 33 levels of nesting
+        var table = new PropertyTable();
+        var current = table;
+        for (int i = 0; i < 33; i++)
+        {
+            var nested = new PropertyTable();
+            current.AddPropertyValue($"level{i}", PropertyType.Table, nested);
+            current = nested;
+        }
+        current.AddPropertyValue("leaf", PropertyType.String, "value");
+
+        Assert.ThrowsException<InvalidDataException>(() => table.ToString());
+    }
+
+    [TestMethod]
+    public void ApplyChanges_DepthExceeds32_ThrowsInvalidDataException()
+    {
+        // Build changes and entry tables with 33 levels of nesting
+        var changes = new PropertyTable();
+        var entry = new PropertyTable();
+
+        var currentChanges = changes;
+        var currentEntry = entry;
+        for (int i = 0; i < 33; i++)
+        {
+            var nestedChanges = new PropertyTable();
+            var nestedEntry = new PropertyTable();
+            currentChanges.AddPropertyValue($"level{i}", PropertyType.Table, nestedChanges);
+            currentEntry.AddPropertyValue($"level{i}", PropertyType.Table, nestedEntry);
+            currentChanges = nestedChanges;
+            currentEntry = nestedEntry;
+        }
+        currentChanges.AddPropertyValue("leaf", PropertyType.String, "modified");
+
+        var modEntry = new ModifiedEntry(12345) { Changes = changes };
+        Assert.ThrowsException<InvalidDataException>(() => modEntry.ApplyChanges(entry));
+    }
+
     private class TestAppInfo : IAppInfo
     {
         private readonly System.Collections.Generic.List<IAppInfoEntry> _entries = new();

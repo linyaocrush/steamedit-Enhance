@@ -69,8 +69,10 @@ internal class ModifiedEntry
 		return false;
 	}
 
-	private bool ApplyChanges(PropertyTable changesTable, PropertyTable entryTable)
+	private bool ApplyChanges(PropertyTable changesTable, PropertyTable entryTable, int depth = 0)
 	{
+		if (depth > 32)
+			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum 32.");
 		bool result = false;
 		foreach (string propertyName in changesTable.PropertyNames)
 		{
@@ -85,7 +87,7 @@ internal class ModifiedEntry
 					propertyTable = new PropertyTable();
 					entryTable.SetPropertyValue(propertyName, PropertyType.Table, propertyTable);
 				}
-				if (ApplyChanges(changesTable2, propertyTable))
+				if (ApplyChanges(changesTable2, propertyTable, depth + 1))
 				{
 					result = true;
 				}
