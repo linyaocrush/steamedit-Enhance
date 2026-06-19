@@ -519,6 +519,14 @@ Page Down   下一个游戏</value>
     <value>分析中...</value>
   </data>
 
+  <!-- Settings Tab -->
+  <data name="Settings_TabGeneral" xml:space="preserve">
+    <value>常规</value>
+  </data>
+  <data name="Settings_TabAi" xml:space="preserve">
+    <value>AI</value>
+  </data>
+
   <!-- Sort -->
   <data name="Sort_Title" xml:space="preserve">
     <value>排序</value>

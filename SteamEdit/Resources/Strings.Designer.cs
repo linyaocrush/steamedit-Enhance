@@ -222,5 +222,7 @@ namespace SteamEdit {
 
         internal static string Tooltip_BatchReplace => ResourceManager.GetString("Tooltip_BatchReplace", resourceCulture);
         internal static string MainWindow_BatchReplace => ResourceManager.GetString("MainWindow_BatchReplace", resourceCulture);
+        internal static string Settings_TabGeneral => ResourceManager.GetString("Settings_TabGeneral", resourceCulture);
+        internal static string Settings_TabAi => ResourceManager.GetString("Settings_TabAi", resourceCulture);
     }
 }

@@ -519,6 +519,14 @@ Page Down   Next game</value>
     <value>Analyzing...</value>
   </data>
 
+  <!-- Settings Tab -->
+  <data name="Settings_TabGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings_TabAi" xml:space="preserve">
+    <value>AI</value>
+  </data>
+
   <!-- Sort -->
   <data name="Sort_Title" xml:space="preserve">
     <value>Sort</value>
