@@ -43,6 +43,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public bool HasProperty(params string[] PropertyPath)
 	{
+		if (PropertyPath.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
 		foreach (string name in PropertyPath)
 		{
@@ -57,6 +59,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public Property? GetRawProperty(params string[] PropertyPath)
 	{
+		if (PropertyPath.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
 		for (int i = 0; i < PropertyPath.Length - 1; i++)
 		{
@@ -227,6 +231,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public void RemoveProperty(params string[] propertyPath)
 	{
+		if (propertyPath.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Property path depth {propertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		Stack<PropertyTable> stack = new Stack<PropertyTable>();
 		Stack<string> stack2 = new Stack<string>();
 		PropertyTable propertyTable = this;
