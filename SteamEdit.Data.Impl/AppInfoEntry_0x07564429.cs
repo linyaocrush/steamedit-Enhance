@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +20,7 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 		}
 	}
 
-	public static AppInfoEntry_0x07564429 FromReader(BinaryReader reader, IList<string> stringTable)
+	public static AppInfoEntry_0x07564429? FromReader(BinaryReader reader, IList<string> stringTable)
 	{
 		int num = reader.ReadInt32();
 		if (num == 0) return null;
@@ -41,7 +42,7 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 
 				if (!entry._properties.HasProperty(AppInfoPaths.NameLocalized))
 				{
-					PropertyTable nameLocalized = entry._properties.GetPropertyValue<PropertyTable>(null, AppInfoPaths.BaseNameLocalized);
+					PropertyTable? nameLocalized = entry._properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.BaseNameLocalized);
 					if (nameLocalized != null)
 					{
 						entry._properties.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.NameLocalized);

@@ -110,14 +110,15 @@ internal class Mods
 		binaryWriter.Write(modifiedEntries.Count);
 		foreach (IAppInfoEntry item in modifiedEntries)
 		{
-			binaryWriter.Write(item.Modification.ID);
-			PropertyTableIO.WritePropertyTable_Mods(binaryWriter, item.Modification.Changes);
-			binaryWriter.Write(item.Modification.OriginalDataVersion);
-			binaryWriter.Write(item.Modification.OriginalDataChangeNumber);
-			binaryWriter.Write((item.Modification.OriginalData != null) ? item.Modification.OriginalData.Length : 0);
-			if (item.Modification.OriginalData != null)
+			var mod = item.Modification!;
+			binaryWriter.Write(mod.ID);
+			PropertyTableIO.WritePropertyTable_Mods(binaryWriter, mod.Changes);
+			binaryWriter.Write(mod.OriginalDataVersion);
+			binaryWriter.Write(mod.OriginalDataChangeNumber);
+			binaryWriter.Write((mod.OriginalData != null) ? mod.OriginalData.Length : 0);
+			if (mod.OriginalData != null)
 			{
-				binaryWriter.Write(item.Modification.OriginalData);
+				binaryWriter.Write(mod.OriginalData);
 			}
 		}
 		using FileStream destination = File.Open(path, FileMode.Create, FileAccess.Write);

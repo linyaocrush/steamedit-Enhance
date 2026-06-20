@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -10,7 +11,7 @@ internal class AppInfoEntry_0x07564427 : AppInfoEntryBase
 {
 	public override uint AppInfoVersion => 123094055u;
 
-	public static AppInfoEntry_0x07564427 FromReader(BinaryReader reader)
+	public static AppInfoEntry_0x07564427? FromReader(BinaryReader reader)
 	{
 		int num = reader.ReadInt32();
 		if (num == 0) return null;

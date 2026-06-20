@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.IO;
 
@@ -26,7 +27,7 @@ internal class AppInfo_0x07564429 : AppInfoBase<AppInfoEntry_0x07564429>
 			array[num2] = PropertyTableIO.ReadZString(reader);
 		}
 		reader.BaseStream.Position = position2;
-		AppInfoEntry_0x07564429 entry;
+		AppInfoEntry_0x07564429? entry;
 		while ((entry = AppInfoEntry_0x07564429.FromReader(reader, array)) != null)
 		{
 			appInfo._entries.Add(entry);

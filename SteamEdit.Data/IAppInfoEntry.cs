@@ -12,7 +12,7 @@ internal interface IAppInfoEntry
 
 	uint ChangeNumber { get; }
 
-	ModifiedEntry Modification { get; set; }
+	ModifiedEntry? Modification { get; set; }
 
 	bool IsModified { get; }
 
@@ -32,13 +32,13 @@ internal interface IAppInfoEntry
 
 	LaunchTable Launches { get; set; }
 
-	event EventHandler Modified;
+	event EventHandler? Modified;
 
 	byte[] GetOriginalDataCopy();
 
 	T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath);
 
-	void SetPropertyValue(PropertyType Type, object Value, params string[] PropertyPath);
+	void SetPropertyValue(PropertyType Type, object? Value, params string[] PropertyPath);
 
 	void RevertModifiedProperty(params string[] PropertyPath);
 
@@ -46,5 +46,5 @@ internal interface IAppInfoEntry
 
 	PropertyType? GetOriginalPropertyType(params string[] PropertyPath);
 
-	object GetOriginalPropertyValue(params string[] PropertyPath);
+	object? GetOriginalPropertyValue(params string[] PropertyPath);
 }

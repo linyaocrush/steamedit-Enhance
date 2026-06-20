@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using System.Linq;
@@ -12,17 +13,17 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	/// 注入的显示设置，解耦对静态 SteamData 的直接依赖。
 	/// 初始化时由 Program.InitializeSteamData 设置。
 	/// </summary>
-	internal static IEntryDisplaySettings DisplaySettings { get; set; }
+	internal static IEntryDisplaySettings DisplaySettings { get; set; } = null!;
 
-	private string _cachedName;
+	private string? _cachedName;
 	private bool? _cachedHasSortAs;
-	private string _cachedSortAs;
+	private string? _cachedSortAs;
 
-	protected byte[] _stuffBeforeHash;
+	protected byte[] _stuffBeforeHash = null!;
 	protected uint _changeNumber;
-	protected byte[] _originalData;
-	protected PropertyTable _properties;
-	protected ModifiedEntry _modifications;
+	protected byte[] _originalData = null!;
+	protected PropertyTable _properties = null!;
+	protected ModifiedEntry? _modifications;
 
 	public abstract uint AppInfoVersion { get; }
 
@@ -30,12 +31,12 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	public uint ChangeNumber => _changeNumber;
 
-	public ModifiedEntry Modification
+	public ModifiedEntry? Modification
 	{
 		get => _modifications;
 		set
 		{
-			if (value.OriginalData != null)
+			if (value?.OriginalData != null)
 			{
 				uint originalDataChangeNumber = value.OriginalDataChangeNumber;
 				if (originalDataChangeNumber == _changeNumber)
@@ -52,7 +53,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			}
 			ClearCachedProps();
 			_modifications = value;
-			if (_modifications.ApplyChanges(_properties))
+			if (_modifications?.ApplyChanges(_properties) == true)
 			{
 				RaiseModified();
 			}
@@ -91,7 +92,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (_cachedName == null)
 			{
-				_cachedName = _properties.GetPropertyValue<string>(null, AppInfoPaths.Name);
+				_cachedName = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Name);
 			}
 			return _cachedName;
 		}
@@ -149,7 +150,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
-			string propertyValue = _properties.GetPropertyValue<string>(null, AppInfoPaths.Type);
+			string? propertyValue = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Type);
 			if (propertyValue == null) return AppInfoEntryType.Unknown;
 			return propertyValue.ToLowerInvariant() switch
 			{
@@ -168,7 +169,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		}
 		set
 		{
-			string str = value switch
+			string? str = value switch
 			{
 				AppInfoEntryType.Game => "game",
 				AppInfoEntryType.Config => "config",
@@ -195,7 +196,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		return AppInfoEntryType.Unknown;
 	}
 
-	private static string LogAndReturnNull(AppInfoEntryType value)
+	private static string? LogAndReturnNull(AppInfoEntryType value)
 	{
 		Log.WriteLine("Unrecognized entry type: {0}", value);
 		return null;
@@ -207,7 +208,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		set => SetPropertyValue(PropertyType.Table, value.PropertyTable, AppInfoPaths.Launch);
 	}
 
-	public event EventHandler Modified;
+	public event EventHandler? Modified;
 
 	protected void RaiseModified() => this.Modified?.Invoke(this, EventArgs.Empty);
 
@@ -245,8 +246,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		if (_modifications.OriginalData != null)
 		{
 			using BinaryReader reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
-			Property rawProperty = PropertyTableIO.ReadPropertyTable_Mods(reader).GetRawProperty(PropertyPath);
-			_properties.SetRawProperty(rawProperty, PropertyPath);
+			Property? rawProperty = PropertyTableIO.ReadPropertyTable_Mods(reader).GetRawProperty(PropertyPath);
+			_properties.SetRawProperty(rawProperty!, PropertyPath);
 		}
 		if (_modifications.Changes.Count == 0)
 		{
@@ -260,7 +261,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	/// <summary>
 	/// 从原始数据中遍历路径，返回包含目标属性的父表。
 	/// </summary>
-	private PropertyTable TraverseToParent(string[] propertyPath)
+	private PropertyTable? TraverseToParent(string[] propertyPath)
 	{
 		if (_modifications?.OriginalData == null || propertyPath.Length == 0) return null;
 		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
@@ -269,7 +270,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			var prop = table[key];
 			if (prop == null) return null;
-			table = prop.GetValue<PropertyTable>();
+			table = prop.GetValue<PropertyTable>()!;
 			if (table == null) return null;
 		}
 		return table;
@@ -282,7 +283,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		return target?.PropertyType;
 	}
 
-	public object GetOriginalPropertyValue(params string[] PropertyPath)
+	public object? GetOriginalPropertyValue(params string[] PropertyPath)
 	{
 		var table = TraverseToParent(PropertyPath);
 		return table?.GetPropertyAsObject(PropertyPath.Last());
@@ -299,7 +300,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	private PropertyTable GetLaunchPropertyTable()
 	{
-		PropertyTable propertyTable = _properties.GetPropertyValue<PropertyTable>(null, AppInfoPaths.Launch);
+		PropertyTable? propertyTable = _properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.Launch);
 		return propertyTable ?? new PropertyTable();
 	}
 
@@ -330,12 +331,12 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	protected void RestoreBaseProperties()
 	{
-		string baseName = _properties.GetPropertyValue<string>(null, AppInfoPaths.BaseName);
+		string? baseName = _properties.GetPropertyValue<string>(null!, AppInfoPaths.BaseName);
 		if (baseName != null)
 		{
 			_properties.SetPropertyValue(PropertyType.String, baseName, AppInfoPaths.Name);
 		}
-		string baseType = _properties.GetPropertyValue<string>(null, AppInfoPaths.BaseType);
+		string? baseType = _properties.GetPropertyValue<string>(null!, AppInfoPaths.BaseType);
 		if (baseType != null)
 		{
 			_properties.SetPropertyValue(PropertyType.String, baseType, AppInfoPaths.Type);
@@ -346,13 +347,13 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		ClearCachedProps();
 		PropertyTable table = new PropertyTable(_properties);
-		common = table.GetPropertyValue<PropertyTable>(null, "appinfo", "common");
+		common = table.GetPropertyValue<PropertyTable>(null!, "appinfo", "common")!;
 		if (common != null)
 		{
 			string text = Name;
 			if (text != null)
 			{
-				PropertyTable nameLocalized = common.GetPropertyValue<PropertyTable>(null, "name_localized");
+				PropertyTable? nameLocalized = common.GetPropertyValue<PropertyTable>(null!, "name_localized");
 				if (nameLocalized != null)
 				{
 					table.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.BaseNameLocalized);

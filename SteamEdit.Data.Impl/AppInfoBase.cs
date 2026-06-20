@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,16 +10,16 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 {
 	protected uint _unknownValueAtStart;
 	protected List<TEntry> _entries = new List<TEntry>();
-	private List<IAppInfoEntry> _cachedEntries;
-	private Dictionary<uint, IAppInfoEntry> _entryLookup;
+	private List<IAppInfoEntry>? _cachedEntries;
+	private Dictionary<uint, IAppInfoEntry>? _entryLookup;
 
 	protected abstract uint MagicNumber { get; }
 
 	public IEnumerable<IAppInfoEntry> Entries => _cachedEntries ??= _entries.Cast<IAppInfoEntry>().ToList();
 
-	public event EventHandler Modified;
+	public event EventHandler? Modified;
 
-	public IAppInfoEntry FindEntry(uint AppID)
+	public IAppInfoEntry? FindEntry(uint AppID)
 	{
 		if (_entryLookup == null)
 			_entryLookup = _entries.ToDictionary(e => (uint)e.ID, e => (IAppInfoEntry)e);
@@ -55,7 +56,7 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 		}
 	}
 
-	protected void OnEntryModified(object sender, EventArgs e)
+	protected void OnEntryModified(object? sender, EventArgs e)
 	{
 		this.Modified?.Invoke(this, new EventArgs());
 	}
