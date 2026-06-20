@@ -72,8 +72,8 @@ internal class ModifiedEntry
 
 	private bool ApplyChanges(PropertyTable changesTable, PropertyTable entryTable, int depth = 0)
 	{
-		if (depth > 32)
-			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum 32.");
+		if (depth > PropertyTable.MaxNestingDepth)
+			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {PropertyTable.MaxNestingDepth}.");
 		bool result = false;
 		foreach (string propertyName in changesTable.PropertyNames)
 		{

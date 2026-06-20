@@ -108,9 +108,8 @@ internal static class PropertyTableIO
 		Func<BinaryReader, string> readWString,
 		int depth = 0)
 	{
-		const int MaxDepth = 32;
-		if (depth > MaxDepth)
-			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {MaxDepth}. File may be corrupted.");
+		if (depth > PropertyTable.MaxNestingDepth)
+			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {PropertyTable.MaxNestingDepth}. File may be corrupted.");
 
 		PropertyTable propertyTable = new PropertyTable();
 		PropertyType propertyType;
@@ -139,9 +138,8 @@ internal static class PropertyTableIO
 		Action<BinaryWriter, string> writeWString,
 		int depth = 0)
 	{
-		const int MaxDepth = 32;
-		if (depth > MaxDepth)
-			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {MaxDepth}.");
+		if (depth > PropertyTable.MaxNestingDepth)
+			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {PropertyTable.MaxNestingDepth}.");
 
 		foreach (Property property in table.Properties)
 		{
