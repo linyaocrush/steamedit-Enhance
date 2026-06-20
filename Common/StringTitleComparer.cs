@@ -26,6 +26,14 @@ internal class StringTitleComparer : IComparer<string>
 		{
 			s = s.Substring(4).Trim();
 		}
+		else if (s.StartsWith("a ", StringComparison.InvariantCultureIgnoreCase))
+		{
+			s = s.Substring(2).Trim();
+		}
+		else if (s.StartsWith("an ", StringComparison.InvariantCultureIgnoreCase))
+		{
+			s = s.Substring(3).Trim();
+		}
 		return s;
 	}
 }
