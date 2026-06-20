@@ -176,6 +176,7 @@ Rules:
 		string langDisplay = targetLanguage switch
 		{
 			"zh-CN" => "Simplified Chinese",
+			"zh-TW" => "Traditional Chinese",
 			"en" => "English",
 			_ => targetLanguage
 		};
