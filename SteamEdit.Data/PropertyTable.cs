@@ -313,8 +313,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	private string ToStringInternal(int indent)
 	{
-		if (indent > 32)
-			throw new InvalidDataException($"Property table nesting depth {indent} exceeds maximum 32.");
+		if (indent > MaxNestingDepth)
+			throw new InvalidDataException($"Property table nesting depth {indent} exceeds maximum {MaxNestingDepth}.");
 		StringBuilder stringBuilder = new StringBuilder();
 		string arg = new string('\t', indent);
 		foreach (Property property in _properties)
