@@ -12,6 +12,7 @@ namespace Common;
 
 internal class Settings
 {
+	private static readonly PropertyInfo[] _cachedProperties = typeof(Settings).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 	public static readonly Settings Default = new Settings();
 
 	private readonly Dictionary<string, object> _values;
@@ -437,8 +438,7 @@ internal class Settings
 		_suppressDirtyTracking = true;
 
 		// 第一步：应用 [DefaultValue] 默认值
-		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-		foreach (PropertyInfo propertyInfo in properties)
+		foreach (PropertyInfo propertyInfo in _cachedProperties)
 		{
 			DefaultValueAttribute? defaultValueAttribute = Attribute.GetCustomAttribute(propertyInfo, typeof(DefaultValueAttribute)) as DefaultValueAttribute;
 			if (defaultValueAttribute != null)
@@ -453,11 +453,11 @@ internal class Settings
 
 		if (File.Exists(jsonPath))
 		{
-			LoadFromJson(jsonPath, properties);
+			LoadFromJson(jsonPath);
 		}
 		else if (File.Exists(xmlPath))
 		{
-			LoadFromXml(xmlPath, properties);
+			LoadFromXml(xmlPath);
 			// 迁移：直接写出 JSON 并删除旧 XML
 			try
 			{
@@ -475,7 +475,7 @@ internal class Settings
 		_isDirty = false;
 	}
 
-	private void LoadFromJson(string jsonPath, PropertyInfo[] properties)
+	private void LoadFromJson(string jsonPath)
 	{
 		try
 		{
@@ -483,7 +483,7 @@ internal class Settings
 			using var doc = JsonDocument.Parse(json);
 			var root = doc.RootElement;
 
-			foreach (PropertyInfo prop in properties)
+			foreach (PropertyInfo prop in _cachedProperties)
 			{
 				if (!root.TryGetProperty(prop.Name, out JsonElement element))
 					continue;
@@ -541,7 +541,7 @@ internal class Settings
 		return null;
 	}
 
-	private void LoadFromXml(string xmlPath, PropertyInfo[] properties)
+	private void LoadFromXml(string xmlPath)
 	{
 		try
 		{
@@ -553,7 +553,7 @@ internal class Settings
 
 			var readXmlMethod = GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic);
 			if (readXmlMethod == null) return;
-			foreach (PropertyInfo propertyInfo in properties)
+			foreach (PropertyInfo propertyInfo in _cachedProperties)
 			{
 				readXmlMethod.MakeGenericMethod(propertyInfo.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo.Name });
 			}
@@ -569,8 +569,7 @@ internal class Settings
 		string? dir = Path.GetDirectoryName(path);
 		if (dir != null) Directory.CreateDirectory(dir);
 		var dict = new Dictionary<string, string>();
-		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-		foreach (PropertyInfo prop in properties)
+		foreach (PropertyInfo prop in _cachedProperties)
 		{
 			object? value = prop.GetValue(this, null);
 			dict[prop.Name] = value?.ToString() ?? "";
