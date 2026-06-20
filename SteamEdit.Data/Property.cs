@@ -1,23 +1,23 @@
 #nullable enable
 using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace SteamEdit.Data;
 
 internal class Property
 {
-	private static readonly Type?[] _types = new Type?[9]
+	private static readonly FrozenDictionary<PropertyType, Type?> _types = new Dictionary<PropertyType, Type?>
 	{
-		typeof(PropertyTable),
-		typeof(string),
-		typeof(int),
-		typeof(float),
-		null,
-		typeof(string),
-		typeof(Color),
-		typeof(ulong),
-		null
-	};
+		[PropertyType.Table] = typeof(PropertyTable),
+		[PropertyType.String] = typeof(string),
+		[PropertyType.Int32] = typeof(int),
+		[PropertyType.Float] = typeof(float),
+		[PropertyType.WString] = typeof(string),
+		[PropertyType.Color] = typeof(Color),
+		[PropertyType.Uint64] = typeof(ulong),
+	}.ToFrozenDictionary();
 
 	private PropertyType _propType;
 
@@ -41,7 +41,7 @@ internal class Property
 		}
 	}
 
-	public Type? ValueType => _types[(int)_propType];
+	public Type? ValueType => _types.TryGetValue(_propType, out var type) ? type : null;
 
 	internal object? Value
 	{
@@ -102,18 +102,12 @@ internal class Property
 	public bool TryGetValue<T>(out T result)
 	{
 		result = default!;
-		bool result2 = false;
-		int propType = (int)_propType;
-		if (propType >= 0 && propType < _types.Length)
+		if (_types.TryGetValue(_propType, out var type) && type != null && typeof(T).IsAssignableFrom(type))
 		{
-			Type? type = _types[propType];
-			if (type != null && typeof(T).IsAssignableFrom(type))
-			{
-				result = (T)_value!;
-				result2 = true;
-			}
+			result = (T)_value!;
+			return true;
 		}
-		return result2;
+		return false;
 	}
 
 	public Property(string name)
