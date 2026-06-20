@@ -373,11 +373,10 @@ internal class Settings
 	{
 		string? dir = Path.GetDirectoryName(path);
 		if (dir != null) Directory.CreateDirectory(dir);
-		var dict = new Dictionary<string, string>();
+		var dict = new Dictionary<string, object?>();
 		foreach (PropertyInfo prop in _cachedProperties)
 		{
-			object? value = prop.GetValue(this, null);
-			dict[prop.Name] = value?.ToString() ?? "";
+			dict[prop.Name] = prop.GetValue(this, null);
 		}
 		string json = JsonSerializer.Serialize(dict, _jsonOptions);
 		string tempPath = path + ".tmp";
