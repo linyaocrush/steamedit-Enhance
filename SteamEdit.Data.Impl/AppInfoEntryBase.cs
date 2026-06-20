@@ -274,7 +274,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			var prop = table[propertyPath[i]];
 			if (prop == null) return null;
-			table = prop.GetValue<PropertyTable>()!;
+			table = prop.GetValue<PropertyTable>();
 			if (table == null) return null;
 		}
 		return table;

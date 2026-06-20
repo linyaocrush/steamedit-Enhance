@@ -56,7 +56,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		{
 			Property? property = propertyTable[PropertyPath[i]];
 			if (property == null) return null;
-			propertyTable = property.GetValue<PropertyTable>()!;
+			propertyTable = property.GetValue<PropertyTable>();
 			if (propertyTable == null) return null;
 		}
 		return propertyTable[PropertyPath[PropertyPath.Length - 1]];
@@ -131,7 +131,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			Property? property = propertyTable[PropertyPath[i]];
 			if (property != null)
 			{
-				propertyTable = property.GetValue<PropertyTable>()!;
+				propertyTable = property.GetValue<PropertyTable>();
 			}
 			if (property == null || propertyTable == null)
 			{
