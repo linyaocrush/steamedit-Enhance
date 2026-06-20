@@ -26,410 +26,215 @@ internal class Settings
 		Converters = { new JsonStringEnumConverter() }
 	};
 
+	private T Get<T>(string key) => (T)_values[key];
+
+	private void Set<T>(string key, T value)
+	{
+		_values[key] = value!;
+		MarkDirty();
+	}
+
 	[DefaultValue(true)]
 	public bool EnableCompleted
 	{
-		get
-		{
-			return (bool)_values["EnableCompleted"];
-		}
-		set
-		{
-			_values["EnableCompleted"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("EnableCompleted");
+		set => Set("EnableCompleted", value);
 	}
 
 	[DefaultValue(true)]
 	public bool EnableHidden
 	{
-		get
-		{
-			return (bool)_values["EnableHidden"];
-		}
-		set
-		{
-			_values["EnableHidden"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("EnableHidden");
+		set => Set("EnableHidden", value);
 	}
 
 	[DefaultValue(false)]
 	public bool ReplaceLocalizedNames
 	{
-		get
-		{
-			return (bool)_values["ReplaceLocalizedNames"];
-		}
-		set
-		{
-			_values["ReplaceLocalizedNames"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("ReplaceLocalizedNames");
+		set => Set("ReplaceLocalizedNames", value);
 	}
 
 	[DefaultValue("")]
 	public string PassThroughArguments
 	{
-		get
-		{
-			return (string)_values["PassThroughArguments"];
-		}
-		set
-		{
-			_values["PassThroughArguments"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("PassThroughArguments");
+		set => Set("PassThroughArguments", value);
 	}
 
 	[DefaultValue(AppInfoEntryType.Game | AppInfoEntryType.Application | AppInfoEntryType.Video)]
 	public AppInfoEntryType Filters
 	{
-		get
-		{
-			return (AppInfoEntryType)_values["Filters"];
-		}
-		set
-		{
-			_values["Filters"] = value;
-			MarkDirty();
-		}
+		get => Get<AppInfoEntryType>("Filters");
+		set => Set("Filters", value);
 	}
 
 	[DefaultValue(ShowEntriesMode.All)]
 	public ShowEntriesMode FiltersShowEntries
 	{
-		get
-		{
-			return (ShowEntriesMode)_values["FiltersShowEntries"];
-		}
-		set
-		{
-			_values["FiltersShowEntries"] = value;
-			MarkDirty();
-		}
+		get => Get<ShowEntriesMode>("FiltersShowEntries");
+		set => Set("FiltersShowEntries", value);
 	}
 
 	[DefaultValue("")]
 	public string AppInfoPath
 	{
-		get
-		{
-			return (string)_values["AppInfoPath"];
-		}
-		set
-		{
-			_values["AppInfoPath"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AppInfoPath");
+		set => Set("AppInfoPath", value);
 	}
 
 	[DefaultValue("")]
 	public string ModsLocation
 	{
-		get
-		{
-			return (string)_values["ModsLocation"];
-		}
-		set
-		{
-			_values["ModsLocation"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("ModsLocation");
+		set => Set("ModsLocation", value);
 	}
 
 	[DefaultValue("")]
 	public string ShownVersion
 	{
-		get
-		{
-			return (string)_values["ShownVersion"];
-		}
-		set
-		{
-			_values["ShownVersion"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("ShownVersion");
+		set => Set("ShownVersion", value);
 	}
 
 	[DefaultValue(int.MaxValue)]
 	public int WindowLocationX
 	{
-		get
-		{
-			return (int)_values["WindowLocationX"];
-		}
-		set
-		{
-			_values["WindowLocationX"] = value;
-			MarkDirty();
-		}
+		get => Get<int>("WindowLocationX");
+		set => Set("WindowLocationX", value);
 	}
 
 	[DefaultValue(int.MaxValue)]
 	public int WindowLocationY
 	{
-		get
-		{
-			return (int)_values["WindowLocationY"];
-		}
-		set
-		{
-			_values["WindowLocationY"] = value;
-			MarkDirty();
-		}
+		get => Get<int>("WindowLocationY");
+		set => Set("WindowLocationY", value);
 	}
 
 	[DefaultValue(int.MaxValue)]
 	public int WindowSizeX
 	{
-		get
-		{
-			return (int)_values["WindowSizeX"];
-		}
-		set
-		{
-			_values["WindowSizeX"] = value;
-			MarkDirty();
-		}
+		get => Get<int>("WindowSizeX");
+		set => Set("WindowSizeX", value);
 	}
 
 	[DefaultValue(int.MaxValue)]
 	public int WindowSizeY
 	{
-		get
-		{
-			return (int)_values["WindowSizeY"];
-		}
-		set
-		{
-			_values["WindowSizeY"] = value;
-			MarkDirty();
-		}
+		get => Get<int>("WindowSizeY");
+		set => Set("WindowSizeY", value);
 	}
 
 	[DefaultValue(int.MaxValue)]
 	public int MainWindowSplitter
 	{
-		get
-		{
-			return (int)_values["MainWindowSplitter"];
-		}
-		set
-		{
-			_values["MainWindowSplitter"] = value;
-			MarkDirty();
-		}
+		get => Get<int>("MainWindowSplitter");
+		set => Set("MainWindowSplitter", value);
 	}
 
 	[DefaultValue(false)]
 	public bool AutoStart
 	{
-		get
-		{
-			return (bool)_values["AutoStart"];
-		}
-		set
-		{
-			_values["AutoStart"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("AutoStart");
+		set => Set("AutoStart", value);
 	}
 
 	[DefaultValue(false)]
 	public bool AutoStartAutoFix
 	{
-		get
-		{
-			return (bool)_values["AutoStartAutoFix"];
-		}
-		set
-		{
-			_values["AutoStartAutoFix"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("AutoStartAutoFix");
+		set => Set("AutoStartAutoFix", value);
 	}
 
 	[DefaultValue(false)]
 	public bool AutoStartForceStart
 	{
-		get
-		{
-			return (bool)_values["AutoStartForceStart"];
-		}
-		set
-		{
-			_values["AutoStartForceStart"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("AutoStartForceStart");
+		set => Set("AutoStartForceStart", value);
 	}
 
 	[DefaultValue("")]
 	public string Language
 	{
-		get
-		{
-			return (string)_values["Language"];
-		}
-		set
-		{
-			_values["Language"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("Language");
+		set => Set("Language", value);
 	}
 
 	[DefaultValue("")]
 	public string AiApiUrl
 	{
-		get
-		{
-			return (string)_values["AiApiUrl"];
-		}
-		set
-		{
-			_values["AiApiUrl"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiApiUrl");
+		set => Set("AiApiUrl", value);
 	}
 
 	[DefaultValue("")]
 	public string AiApiKey
 	{
-		get
-		{
-			return (string)_values["AiApiKey"];
-		}
-		set
-		{
-			_values["AiApiKey"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiApiKey");
+		set => Set("AiApiKey", value);
 	}
 
 	[DefaultValue("gpt-4o-mini")]
 	public string AiModel
 	{
-		get
-		{
-			return (string)_values["AiModel"];
-		}
-		set
-		{
-			_values["AiModel"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiModel");
+		set => Set("AiModel", value);
 	}
 
 	[DefaultValue("Google")]
 	public string SearchEngine
 	{
-		get
-		{
-			return (string)_values["SearchEngine"];
-		}
-		set
-		{
-			_values["SearchEngine"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("SearchEngine");
+		set => Set("SearchEngine", value);
 	}
 
 	[DefaultValue("zh-CN")]
 	public string AiTargetLanguage
 	{
-		get
-		{
-			return (string)_values["AiTargetLanguage"];
-		}
-		set
-		{
-			_values["AiTargetLanguage"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiTargetLanguage");
+		set => Set("AiTargetLanguage", value);
 	}
 
 	[DefaultValue("")]
 	public string AiCustomSystemPrompt
 	{
-		get
-		{
-			return (string)_values["AiCustomSystemPrompt"];
-		}
-		set
-		{
-			_values["AiCustomSystemPrompt"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiCustomSystemPrompt");
+		set => Set("AiCustomSystemPrompt", value);
 	}
 
 	[DefaultValue("")]
 	public string AiCustomUserMessage
 	{
-		get
-		{
-			return (string)_values["AiCustomUserMessage"];
-		}
-		set
-		{
-			_values["AiCustomUserMessage"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiCustomUserMessage");
+		set => Set("AiCustomUserMessage", value);
 	}
 
 	[DefaultValue("")]
 	public string AiTranslationRules
 	{
-		get
-		{
-			return (string)_values["AiTranslationRules"];
-		}
-		set
-		{
-			_values["AiTranslationRules"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("AiTranslationRules");
+		set => Set("AiTranslationRules", value);
 	}
 
 	[DefaultValue(1)]
 	public int AiBatchTranslateConcurrency
 	{
-		get
-		{
-			return (int)_values["AiBatchTranslateConcurrency"];
-		}
-		set
-		{
-			_values["AiBatchTranslateConcurrency"] = Math.Max(value, 1);
-			MarkDirty();
-		}
+		get => Get<int>("AiBatchTranslateConcurrency");
+		set => Set("AiBatchTranslateConcurrency", Math.Max(value, 1));
 	}
 
 	[DefaultValue("Name")]
 	public string SortField
 	{
-		get
-		{
-			return (string)_values["SortField"];
-		}
-		set
-		{
-			_values["SortField"] = value;
-			MarkDirty();
-		}
+		get => Get<string>("SortField");
+		set => Set("SortField", value);
 	}
 
 	[DefaultValue(false)]
 	public bool SortDescending
 	{
-		get
-		{
-			return (bool)_values["SortDescending"];
-		}
-		set
-		{
-			_values["SortDescending"] = value;
-			MarkDirty();
-		}
+		get => Get<bool>("SortDescending");
+		set => Set("SortDescending", value);
 	}
 
 	private Settings()
