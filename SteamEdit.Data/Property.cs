@@ -85,7 +85,6 @@ internal class Property
 					else
 						throw new FormatException($"Cannot convert \"{text}\" to Uint64 for property \"{Name}\".");
 					break;
-				case (PropertyType)4:
 				case PropertyType.Color:
 					break;
 				}

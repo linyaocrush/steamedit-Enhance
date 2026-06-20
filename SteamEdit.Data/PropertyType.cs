@@ -8,6 +8,7 @@ internal enum PropertyType
 	String = 1,
 	Int32 = 2,
 	Float = 3,
+	// Value 4 is unused in Steam's VDF format
 	WString = 5,
 	Color = 6,
 	Uint64 = 7,
