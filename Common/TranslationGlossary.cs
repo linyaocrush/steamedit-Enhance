@@ -29,15 +29,23 @@ internal class GlossaryData
 
 internal static class TranslationGlossary
 {
-	private static GlossaryData _data = null!;
+	private static GlossaryData _data = new();
 	private static Dictionary<string, string> _originalToTranslated = new(StringComparer.OrdinalIgnoreCase);
 	private static string? _filePath;
+	private static bool _initialized;
 	private static readonly object _lock = new();
 
 	public static void Initialize(string dataDirectory)
 	{
 		_filePath = Path.Combine(dataDirectory, "glossary.json");
 		Load();
+		_initialized = true;
+	}
+
+	private static void ThrowIfNotInitialized()
+	{
+		if (!_initialized)
+			throw new InvalidOperationException("TranslationGlossary.Initialize() must be called before using this class.");
 	}
 
 	public static void Load()
@@ -79,6 +87,7 @@ internal static class TranslationGlossary
 
 	public static void SyncFromMods(IEnumerable<IAppInfoEntryAdapter> entries)
 	{
+		ThrowIfNotInitialized();
 		lock (_lock)
 		{
 			bool changed = false;
@@ -111,6 +120,7 @@ internal static class TranslationGlossary
 
 	public static void UpdateEntry(int appId, string originalName, string translatedName)
 	{
+		ThrowIfNotInitialized();
 		if (string.IsNullOrWhiteSpace(originalName) || string.IsNullOrWhiteSpace(translatedName))
 			return;
 		if (originalName == translatedName) return;
@@ -131,6 +141,7 @@ internal static class TranslationGlossary
 
 	public static string? ToPromptString(int maxEntries = 100)
 	{
+		ThrowIfNotInitialized();
 		lock (_lock)
 		{
 			if (_data.Entries.Count == 0) return null;
@@ -148,6 +159,7 @@ internal static class TranslationGlossary
 
 	public static string? FindTranslatedByOriginalName(string originalName)
 	{
+		ThrowIfNotInitialized();
 		if (string.IsNullOrWhiteSpace(originalName)) return null;
 		lock (_lock)
 		{
