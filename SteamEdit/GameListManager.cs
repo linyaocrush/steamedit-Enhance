@@ -13,6 +13,8 @@ namespace SteamEdit;
 
 internal class GameListManager : IDisposable
 {
+	private const int IconSpacing = 6;
+
 	private readonly GameDataContext _ctx;
 	private readonly IAppInfoDataStore _dataStore;
 	private readonly ListBox _appSelection;
@@ -488,7 +490,7 @@ internal class GameListManager : IDisposable
 		Color foreColor = _appSelection.ForeColor;
 		Font font = _defaultAppSelectionFont;
 		Rectangle bounds = e.Bounds;
-		int iconSize = e.Bounds.Height - 6;
+		int iconSize = e.Bounds.Height - IconSpacing;
 
 		if ((_currentFilters & (_currentFilters - 1)) != 0)
 		{
@@ -499,19 +501,19 @@ internal class GameListManager : IDisposable
 		int totalWidth = bounds.Width;
 		if (entry.IsModified)
 		{
-			e.Graphics.DrawImage(Resources.icon_modified, bounds.X + totalWidth - (iconSize + 6), e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.Width = totalWidth - (iconSize + 6);
+			e.Graphics.DrawImage(Resources.icon_modified, bounds.X + totalWidth - (iconSize + IconSpacing), e.Bounds.Y + 3, iconSize, iconSize);
+			bounds.Width = totalWidth - (iconSize + IconSpacing);
 			font = _boldAppSelectionFont;
 		}
 		if (entry.IsCompleted)
 		{
-			e.Graphics.DrawImage(Resources.icon_completed, bounds.X + totalWidth - (iconSize + 6) * 2, e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.Width = totalWidth - (iconSize + 6) * 2;
+			e.Graphics.DrawImage(Resources.icon_completed, bounds.X + totalWidth - (iconSize + IconSpacing) * 2, e.Bounds.Y + 3, iconSize, iconSize);
+			bounds.Width = totalWidth - (iconSize + IconSpacing) * 2;
 		}
 		if (entry.IsHidden)
 		{
-			e.Graphics.DrawImage(Resources.icon_hidden, bounds.X + totalWidth - (iconSize + 6) * 3, e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.Width = totalWidth - (iconSize + 6) * 3;
+			e.Graphics.DrawImage(Resources.icon_hidden, bounds.X + totalWidth - (iconSize + IconSpacing) * 3, e.Bounds.Y + 3, iconSize, iconSize);
+			bounds.Width = totalWidth - (iconSize + IconSpacing) * 3;
 			foreColor = Color.FromArgb(255 - (255 - foreColor.R) / 2, 255 - (255 - foreColor.G) / 2, 255 - (255 - foreColor.B) / 2);
 			font = _hiddenAppSelectionFont;
 		}
