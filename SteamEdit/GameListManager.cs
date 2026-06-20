@@ -15,6 +15,7 @@ namespace SteamEdit;
 internal class GameListManager : IDisposable
 {
 	private readonly GameDataContext _ctx;
+	private readonly IAppInfoDataStore _dataStore;
 	private readonly ListBox _appSelection;
 	private readonly ContextMenuStrip _filterSelectorMenu;
 	private readonly ContextMenuStrip _sortSelectorMenu;
@@ -45,6 +46,7 @@ internal class GameListManager : IDisposable
 
 	public GameListManager(
 		GameDataContext ctx,
+		IAppInfoDataStore dataStore,
 		ListBox appSelection,
 		ContextMenuStrip filterSelectorMenu,
 		ContextMenuStrip sortSelectorMenu,
@@ -54,6 +56,7 @@ internal class GameListManager : IDisposable
 		ToolStripStatusLabel lblModifiedCount)
 	{
 		_ctx = ctx;
+		_dataStore = dataStore;
 		_appSelection = appSelection;
 		_filterSelectorMenu = filterSelectorMenu;
 		_sortSelectorMenu = sortSelectorMenu;
@@ -181,7 +184,7 @@ internal class GameListManager : IDisposable
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 		_sortSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 
-		SteamData.AppInfoData.Modified += OnEntryModified;
+		_dataStore.AppInfo.Modified += OnEntryModified;
 
 		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)
 		{
@@ -229,7 +232,7 @@ internal class GameListManager : IDisposable
 
 		int totalCount = 0;
 		_ctx.BaseEntries = new List<IAppInfoEntry>();
-		foreach (var ent in SteamData.AppInfoData.Entries)
+		foreach (var ent in _dataStore.AppInfo.Entries)
 		{
 			if (ent.Name == null) continue;
 			totalCount++;
@@ -324,7 +327,7 @@ internal class GameListManager : IDisposable
 	public void UpdateStatusBar()
 	{
 		_lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _ctx.Entries?.Count ?? 0, _ctx.TotalEntryCount);
-		int modifiedCount = SteamData.AppInfoData?.Entries.Count(e => e.IsModified) ?? 0;
+		int modifiedCount = _dataStore.AppInfo?.Entries.Count(e => e.IsModified) ?? 0;
 		_lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, modifiedCount);
 	}
 
@@ -626,6 +629,6 @@ internal class GameListManager : IDisposable
 		_boldAppSelectionFont?.Dispose();
 		_hiddenAppSelectionFont?.Dispose();
 		_bgLogoAttributes?.Dispose();
-		SteamData.AppInfoData.Modified -= OnEntryModified;
+		_dataStore.AppInfo.Modified -= OnEntryModified;
 	}
 }

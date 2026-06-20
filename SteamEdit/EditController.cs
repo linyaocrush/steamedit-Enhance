@@ -15,6 +15,7 @@ internal class EditController
 	private static readonly string[] ControllerRawValues = { "none", "partial", "full" };
 
 	private readonly GameDataContext _ctx;
+	private readonly IAppInfoDataStore _dataStore;
 	private readonly GameListManager _listManager;
 
 	private readonly ClearableTextBox _textGameName;
@@ -33,6 +34,7 @@ internal class EditController
 
 	public EditController(
 		GameDataContext ctx,
+		IAppInfoDataStore dataStore,
 		GameListManager listManager,
 		ClearableTextBox textGameName,
 		ClearableTextBox textSortAs,
@@ -43,6 +45,7 @@ internal class EditController
 		ComboBox listEntryType)
 	{
 		_ctx = ctx;
+		_dataStore = dataStore;
 		_listManager = listManager;
 		_textGameName = textGameName;
 		_textSortAs = textSortAs;
@@ -164,7 +167,7 @@ internal class EditController
 		if (entry == null) return;
 		try
 		{
-			SteamData.AppInfoData.RevertEntry(entry);
+			_dataStore.AppInfo.RevertEntry(entry);
 			_listManager.NotifyEntryReverted(entry);
 			LoadEntry(entry);
 		}
@@ -172,7 +175,7 @@ internal class EditController
 		{
 			if (MessageBox.Show(null, string.Format(Strings.Msg_FailedRevert, entry.ToString()), Strings.Msg_FailedRevertTitle, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
 			{
-				SteamData.AppInfoData.RemoveEntry(entry);
+				_dataStore.AppInfo.RemoveEntry(entry);
 				_listManager.RefreshGameList();
 			}
 		}

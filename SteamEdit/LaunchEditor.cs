@@ -74,7 +74,7 @@ internal class LaunchEditor : LocalizableForm
 
 	private void uiItem_OnCopyLaunchInfo(object sender, CopyLaunchInfoArgs e)
 	{
-		using SelectAppLaunch selectAppLaunch = new SelectAppLaunch();
+		using SelectAppLaunch selectAppLaunch = new SelectAppLaunch(SteamData.DataStore);
 		if (selectAppLaunch.ShowDialog(this) == DialogResult.OK)
 		{
 			LaunchItem launchInfo = selectAppLaunch.LaunchInfo;

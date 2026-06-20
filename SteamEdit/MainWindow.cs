@@ -77,7 +77,7 @@ internal class MainWindow : LocalizableForm
 
 		// 创建游戏列表管理器
 		_listManager = new GameListManager(
-			_ctx, appSelection, filterSelectorMenu, sortSelectorMenu,
+			_ctx, SteamData.DataStore, appSelection, filterSelectorMenu, sortSelectorMenu,
 			toolTips, appFilterText, lblNumAppsShown, lblModifiedCount);
 
 		// 填充 EntryType 下拉框（依赖 _listManager 的 filterImages）
@@ -125,7 +125,7 @@ internal class MainWindow : LocalizableForm
 
 		// 创建编辑控制器
 		_editController = new EditController(
-			_ctx, _listManager, textGameName, textSortAs,
+			_ctx, SteamData.DataStore, _listManager, textGameName, textSortAs,
 			checkHidden, checkCompleted, listControllerSupport,
 			listVR, listEntryType);
 		// 订阅 SteamData 事件

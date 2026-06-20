@@ -98,12 +98,19 @@ internal static class SteamData
 
 	public static IEntryDisplaySettings DisplaySettings { get; } = new DisplaySettingsImpl();
 
+	public static IAppInfoDataStore DataStore { get; } = new DataStoreImpl();
+
 	private sealed class DisplaySettingsImpl : IEntryDisplaySettings
 	{
 		public string SteamDir => SteamData.SteamDir;
 		public bool UseCompleted => SteamData.UseCompleted;
 		public string CompletedSuffix => SteamData.CompletedSuffix;
 		public bool UseHidden => SteamData.UseHidden;
+	}
+
+	private sealed class DataStoreImpl : IAppInfoDataStore
+	{
+		public IAppInfo AppInfo => SteamData.AppInfoData;
 	}
 
 	public static void Initialize(ref SteamDataInitProps props)

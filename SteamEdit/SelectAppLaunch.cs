@@ -25,10 +25,10 @@ internal class SelectAppLaunch : LocalizableForm
 
 	public LaunchItem LaunchInfo { get; private set; }
 
-	public SelectAppLaunch()
+	public SelectAppLaunch(IAppInfoDataStore dataStore)
 	{
 		InitializeComponent();
-		List<IAppInfoEntry> list = new List<IAppInfoEntry>(SteamData.AppInfoData.Entries.Where((IAppInfoEntry ent) => ent.Type == AppInfoEntryType.Game));
+		List<IAppInfoEntry> list = new List<IAppInfoEntry>(dataStore.AppInfo.Entries.Where((IAppInfoEntry ent) => ent.Type == AppInfoEntryType.Game));
 		list.Sort((IAppInfoEntry a, IAppInfoEntry b) => StringTitleComparer.CompareStrings(a.ToString(), b.ToString()));
 		appSelection.BeginUpdate();
 		appSelection.Items.Clear();
