@@ -13,10 +13,23 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	private Dictionary<string, Property> _propertyMap = new Dictionary<string, Property>(StringComparer.Ordinal);
 	private int _hashCode;
 	private bool _hashCodeDirty = true;
+	private string[]? _propertyNamesCache;
 
 	public int Count => _properties.Count;
 
-	public IEnumerable<string> PropertyNames => _properties.Select((Property prop) => prop.Name);
+	public IEnumerable<string> PropertyNames
+	{
+		get
+		{
+			if (_propertyNamesCache == null)
+			{
+				_propertyNamesCache = new string[_properties.Count];
+				for (int i = 0; i < _properties.Count; i++)
+					_propertyNamesCache[i] = _properties[i].Name;
+			}
+			return _propertyNamesCache;
+		}
+	}
 
 	internal IEnumerable<Property> Properties => _properties;
 
@@ -39,14 +52,14 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public Property? GetRawProperty(params string[] PropertyPath)
 	{
 		PropertyTable propertyTable = this;
-		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
+		for (int i = 0; i < PropertyPath.Length - 1; i++)
 		{
-			Property? property = propertyTable[item];
+			Property? property = propertyTable[PropertyPath[i]];
 			if (property == null) return null;
 			propertyTable = property.GetValue<PropertyTable>()!;
 			if (propertyTable == null) return null;
 		}
-		return propertyTable[PropertyPath.Last()];
+		return propertyTable[PropertyPath[PropertyPath.Length - 1]];
 	}
 
 	public void SetRawProperty(Property prop, params string[] PropertyPath)
@@ -57,8 +70,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			return;
 		}
 		PropertyTable propertyTable = this;
-		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
+		for (int i = 0; i < PropertyPath.Length - 1; i++)
 		{
+			string item = PropertyPath[i];
 			if (propertyTable.HasProperty(item))
 			{
 				propertyTable = propertyTable.GetPropertyValue<PropertyTable>(item);
@@ -74,7 +88,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 				return;
 			}
 		}
-		propertyTable.SetPropertyValue(PropertyPath.Last(), prop.PropertyType, prop.Value);
+		propertyTable.SetPropertyValue(PropertyPath[PropertyPath.Length - 1], prop.PropertyType, prop.Value);
 	}
 
 	public T GetPropertyValue<T>(string name, T defValue = default!)
@@ -112,9 +126,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
 	{
 		PropertyTable propertyTable = this;
-		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
+		for (int i = 0; i < PropertyPath.Length - 1; i++)
 		{
-			Property? property = propertyTable[item];
+			Property? property = propertyTable[PropertyPath[i]];
 			if (property != null)
 			{
 				propertyTable = property.GetValue<PropertyTable>()!;
@@ -124,7 +138,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 				return DefaultValue;
 			}
 		}
-		return propertyTable.GetPropertyValue(PropertyPath.Last(), DefaultValue);
+		return propertyTable.GetPropertyValue(PropertyPath[PropertyPath.Length - 1], DefaultValue);
 	}
 
 	public PropertyType GetPropertyType(string name)
@@ -144,6 +158,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		_properties.Add(item);
 		_propertyMap[name] = item;
 		_hashCodeDirty = true;
+		_propertyNamesCache = null;
 	}
 
 	public bool SetPropertyValue(string name, PropertyType type, object? value)
@@ -154,6 +169,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			property = new Property(name);
 			_properties.Add(property);
 			_propertyMap[name] = property;
+			_propertyNamesCache = null;
 		}
 		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
@@ -165,8 +181,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public bool SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
 		PropertyTable propertyTable = this;
-		foreach (string item in propertyPath.Take(propertyPath.Length - 1))
+		for (int i = 0; i < propertyPath.Length - 1; i++)
 		{
+			string item = propertyPath[i];
 			if (propertyTable.HasProperty(item))
 			{
 				propertyTable = propertyTable.GetPropertyValue<PropertyTable>(item);
@@ -182,7 +199,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 				return false;
 			}
 		}
-		return propertyTable.SetPropertyValue(propertyPath.Last(), type, value);
+		return propertyTable.SetPropertyValue(propertyPath[propertyPath.Length - 1], type, value);
 	}
 
 	public void RemoveProperty(string name)
@@ -192,6 +209,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			_properties.Remove(prop);
 			_propertyMap.Remove(name);
 			_hashCodeDirty = true;
+			_propertyNamesCache = null;
 		}
 	}
 
@@ -200,8 +218,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		Stack<PropertyTable> stack = new Stack<PropertyTable>();
 		Stack<string> stack2 = new Stack<string>();
 		PropertyTable propertyTable = this;
-		foreach (string item in propertyPath.Take(propertyPath.Length - 1))
+		for (int i = 0; i < propertyPath.Length - 1; i++)
 		{
+			string item = propertyPath[i];
 			stack.Push(propertyTable);
 			stack2.Push(item);
 			if (propertyTable.HasProperty(item))
@@ -215,7 +234,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			}
 			return;
 		}
-		propertyTable.RemoveProperty(propertyPath.Last());
+		propertyTable.RemoveProperty(propertyPath[propertyPath.Length - 1]);
 		if (propertyTable.Count == 0)
 		{
 			while (stack.Count > 0)
@@ -232,6 +251,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		_properties.Clear();
 		_propertyMap.Clear();
 		_hashCodeDirty = true;
+		_propertyNamesCache = null;
 	}
 
 	public PropertyTable()

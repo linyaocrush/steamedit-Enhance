@@ -37,6 +37,8 @@ internal class GameListManager : IDisposable
 	private readonly StringBuilder _appSearchTerm = new();
 	private int _appSelectionLastHoverI = -1;
 	private bool _refreshingGamesListAfterEdit;
+	private int _modifiedCount;
+	private bool _modifiedCountDirty = true;
 
 	public event EventHandler<IAppInfoEntry> SelectedEntryChanged;
 	public event EventHandler ContextMenuCopyName;
@@ -231,16 +233,19 @@ internal class GameListManager : IDisposable
 		ClearDisplayNameCache();
 
 		int totalCount = 0;
+		_modifiedCount = 0;
 		_ctx.BaseEntries = new List<IAppInfoEntry>();
 		foreach (var ent in _dataStore.AppInfo.Entries)
 		{
 			if (ent.Name == null) continue;
 			totalCount++;
+			if (ent.IsModified) _modifiedCount++;
 			if ((ent.Type & _currentFilters) == 0) continue;
 			if (showMode == ShowEntriesMode.OnlyModified && !ent.IsModified) continue;
 			if (showMode == ShowEntriesMode.OnlyUnmodified && ent.IsModified) continue;
 			_ctx.BaseEntries.Add(ent);
 		}
+		_modifiedCountDirty = false;
 		_ctx.TotalEntryCount = totalCount;
 		_ctx.CurrentSearchTerm = "";
 		ApplyIncrementalSearch();
@@ -327,8 +332,17 @@ internal class GameListManager : IDisposable
 	public void UpdateStatusBar()
 	{
 		_lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _ctx.Entries?.Count ?? 0, _ctx.TotalEntryCount);
-		int modifiedCount = _dataStore.AppInfo?.Entries.Count(e => e.IsModified) ?? 0;
-		_lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, modifiedCount);
+		if (_modifiedCountDirty)
+		{
+			_modifiedCount = 0;
+			if (_dataStore.AppInfo != null)
+			{
+				foreach (var e in _dataStore.AppInfo.Entries)
+					if (e.IsModified) _modifiedCount++;
+			}
+			_modifiedCountDirty = false;
+		}
+		_lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, _modifiedCount);
 	}
 
 	public void ApplyLanguageToFilters()
@@ -617,6 +631,7 @@ internal class GameListManager : IDisposable
 
 	private void OnEntryModified(object sender, EventArgs e)
 	{
+		_modifiedCountDirty = true;
 		_statusBarDebounceTimer.Stop();
 		_statusBarDebounceTimer.Start();
 	}

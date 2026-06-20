@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.IO;
-using System.Linq;
 using Common;
 using SteamEdit.Data;
 
@@ -266,9 +265,9 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		if (_modifications?.OriginalData == null || propertyPath.Length == 0) return null;
 		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
 		var table = PropertyTableIO.ReadPropertyTable_Mods(reader);
-		foreach (var key in propertyPath.Take(propertyPath.Length - 1))
+		for (int i = 0; i < propertyPath.Length - 1; i++)
 		{
-			var prop = table[key];
+			var prop = table[propertyPath[i]];
 			if (prop == null) return null;
 			table = prop.GetValue<PropertyTable>()!;
 			if (table == null) return null;
@@ -279,14 +278,14 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	public PropertyType? GetOriginalPropertyType(params string[] PropertyPath)
 	{
 		var table = TraverseToParent(PropertyPath);
-		var target = table?[PropertyPath.Last()];
+		var target = table?[PropertyPath[PropertyPath.Length - 1]];
 		return target?.PropertyType;
 	}
 
 	public object? GetOriginalPropertyValue(params string[] PropertyPath)
 	{
 		var table = TraverseToParent(PropertyPath);
-		return table?.GetPropertyAsObject(PropertyPath.Last());
+		return table?.GetPropertyAsObject(PropertyPath[PropertyPath.Length - 1]);
 	}
 
 	protected ModifiedEntry ModificationsCreate()
