@@ -17,6 +17,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	private string? _cachedName;
 	private bool? _cachedHasSortAs;
 	private string? _cachedSortAs;
+	private AppInfoEntryType? _cachedType;
 
 	protected byte[] _stuffBeforeHash = null!;
 	protected uint _changeNumber;
@@ -149,9 +150,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
+			if (_cachedType.HasValue) return _cachedType.Value;
 			string? propertyValue = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Type);
 			if (propertyValue == null) return AppInfoEntryType.Unknown;
-			return propertyValue.ToLowerInvariant() switch
+			AppInfoEntryType result = propertyValue.ToLowerInvariant() switch
 			{
 				"game" => AppInfoEntryType.Game,
 				"config" => AppInfoEntryType.Config,
@@ -165,6 +167,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 				"beta" => AppInfoEntryType.Beta,
 				_ => LogAndReturnUnknown(propertyValue),
 			};
+			_cachedType = result;
+			return result;
 		}
 		set
 		{
@@ -216,6 +220,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		_cachedName = null;
 		_cachedSortAs = null;
 		_cachedHasSortAs = null;
+		_cachedType = null;
 	}
 
 	public byte[] GetOriginalDataCopy() => (byte[])_originalData.Clone();

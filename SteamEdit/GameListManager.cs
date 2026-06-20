@@ -426,7 +426,7 @@ internal class GameListManager : IDisposable
 			return;
 		}
 
-		string[] patternParts = trimmed.ToLower().Split(' ', '\t', '　');
+		string[] patternParts = trimmed.Split(' ', '\t', '　');
 		List<IAppInfoEntry> source;
 		if (!string.IsNullOrEmpty(_ctx.CurrentSearchTerm) && trimmed.StartsWith(_ctx.CurrentSearchTerm, StringComparison.OrdinalIgnoreCase))
 			source = _ctx.Entries;
@@ -454,10 +454,9 @@ internal class GameListManager : IDisposable
 
 	private static bool IsFuzzyMatch(string testString, string[] patternParts)
 	{
-		string lower = testString.ToLower();
 		foreach (string patt in patternParts)
 		{
-			if (!lower.Contains(patt)) return false;
+			if (!testString.Contains(patt, StringComparison.OrdinalIgnoreCase)) return false;
 		}
 		return true;
 	}
