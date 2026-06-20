@@ -316,7 +316,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (_modifications.OriginalData == null)
 			{
-				throw new NotImplementedException();
+				return false;
 			}
 			using (BinaryReader reader = new BinaryReader(new MemoryStream(_modifications.OriginalData)))
 			{

@@ -37,12 +37,13 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 		binaryWriter.BaseStream.CopyTo(destination);
 	}
 
-	public void RevertEntry(IAppInfoEntry entry)
+	public bool RevertEntry(IAppInfoEntry entry)
 	{
 		if (entry != null)
 		{
-			((TEntry)entry).Revert();
+			return ((TEntry)entry).Revert();
 		}
+		return false;
 	}
 
 	public void RemoveEntry(IAppInfoEntry entry)

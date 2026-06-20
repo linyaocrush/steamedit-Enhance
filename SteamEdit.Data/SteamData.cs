@@ -150,6 +150,10 @@ internal static class SteamData
 
 	public static void Shutdown()
 	{
+		if (AppInfoData != null)
+		{
+			AppInfoData.Modified -= OnEntryModified;
+		}
 	}
 
 	public static void Save()

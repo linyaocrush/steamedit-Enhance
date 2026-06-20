@@ -14,7 +14,7 @@ internal interface IAppInfo
 
 	void Save(string path);
 
-	void RevertEntry(IAppInfoEntry entry);
+	bool RevertEntry(IAppInfoEntry entry);
 
 	void RemoveEntry(IAppInfoEntry entry);
 }

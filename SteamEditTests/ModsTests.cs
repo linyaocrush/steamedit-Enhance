@@ -220,7 +220,7 @@ public class ModsTests
         public event System.EventHandler Modified;
         public IAppInfoEntry FindEntry(uint AppID) => null;
         public void Save(string path) { }
-        public void RevertEntry(IAppInfoEntry entry) { }
+        public bool RevertEntry(IAppInfoEntry entry) => false;
         public void RemoveEntry(IAppInfoEntry entry) { }
     }
 }

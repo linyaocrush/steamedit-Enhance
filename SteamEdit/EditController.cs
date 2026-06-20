@@ -165,13 +165,12 @@ internal class EditController
 	public void RevertEntry(IAppInfoEntry entry)
 	{
 		if (entry == null) return;
-		try
+		if (_dataStore.AppInfo.RevertEntry(entry))
 		{
-			_dataStore.AppInfo.RevertEntry(entry);
 			_listManager.NotifyEntryReverted(entry);
 			LoadEntry(entry);
 		}
-		catch (NotImplementedException)
+		else
 		{
 			if (MessageBox.Show(null, string.Format(Strings.Msg_FailedRevert, entry.ToString()), Strings.Msg_FailedRevertTitle, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
 			{
