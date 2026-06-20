@@ -159,6 +159,7 @@ Rules:
 		catch (Exception ex)
 		{
 			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
+			throw new Exception($"Failed to parse AI response: {ex.Message}", ex);
 		}
 
 		return result?.Trim() ?? "";
