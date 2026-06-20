@@ -395,6 +395,9 @@ Page Down   Next game</value>
   <data name="Msg_CriticalError" xml:space="preserve">
     <value>SteamEdit: Critical Error</value>
   </data>
+  <data name="Msg_SettingsSaveFailed" xml:space="preserve">
+    <value>Failed to save settings: {0}</value>
+  </data>
   <data name="Msg_LoadFailed" xml:space="preserve">
     <value>Failed to load appinfo.vdf. Possibly corrupted. Please locate your appinfo.vdf file.</value>
   </data>

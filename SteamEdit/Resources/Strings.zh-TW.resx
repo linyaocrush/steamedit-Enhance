@@ -377,6 +377,9 @@ Page Down   下一個遊戲</value>
   <data name="Msg_CriticalError" xml:space="preserve">
     <value>錯誤</value>
   </data>
+  <data name="Msg_SettingsSaveFailed" xml:space="preserve">
+    <value>設定儲存失敗：{0}</value>
+  </data>
   <data name="Msg_SaveFailed" xml:space="preserve">
     <value>儲存時發生錯誤：{0}</value>
   </data>

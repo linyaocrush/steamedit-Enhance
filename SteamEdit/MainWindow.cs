@@ -239,7 +239,7 @@ internal class MainWindow : LocalizableForm
 	{
 		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
 		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
-		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); }
+		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); MessageBox.Show(this, string.Format(Strings.Msg_SettingsSaveFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		if (SteamData.NeedsSave)
 		{
 			switch (MessageBox.Show(Strings.Msg_UnsavedChanges, Strings.Msg_SaveFirst, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))

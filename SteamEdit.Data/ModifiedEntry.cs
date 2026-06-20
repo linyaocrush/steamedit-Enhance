@@ -81,7 +81,7 @@ internal class ModifiedEntry
 			PropertyType propertyType = changesTable.GetPropertyType(propertyName);
 			if (propertyType == PropertyType.Table)
 			{
-				PropertyTable changesTable2 = (PropertyTable)propertyAsObject!;
+				if (propertyAsObject is not PropertyTable changesTable2) continue;
 				PropertyTable? propertyTable = entryTable.GetPropertyValue<PropertyTable>(propertyName);
 				if (propertyTable == null)
 				{
