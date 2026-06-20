@@ -38,7 +38,9 @@ internal static class Log
 			{
 				_writer.WriteLine(line);
 			}
+#if DEBUG
 			Console.WriteLine(string.Join(Environment.NewLine, lines));
+#endif
 		}
 	}
 
