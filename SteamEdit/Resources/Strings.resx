@@ -502,6 +502,9 @@ Page Down   Next game</value>
   <data name="Settings_TranslationRules" xml:space="preserve">
     <value>Translation Rules (AI Summary)</value>
   </data>
+  <data name="Settings_BatchConcurrency" xml:space="preserve">
+    <value>Batch Concurrency</value>
+  </data>
   <data name="Tooltip_TranslationRules" xml:space="preserve">
     <value>AI-analyzed translation rules from your glossary. Appended to system prompt during translation.</value>
   </data>

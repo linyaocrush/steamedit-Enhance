@@ -389,6 +389,20 @@ internal class Settings
 		}
 	}
 
+	[DefaultValue(1)]
+	public int AiBatchTranslateConcurrency
+	{
+		get
+		{
+			return (int)_values["AiBatchTranslateConcurrency"];
+		}
+		set
+		{
+			_values["AiBatchTranslateConcurrency"] = Math.Clamp(value, 1, 10);
+			MarkDirty();
+		}
+	}
+
 	[DefaultValue("Name")]
 	public string SortField
 	{

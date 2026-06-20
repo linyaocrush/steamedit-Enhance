@@ -69,67 +69,51 @@ internal class BatchTranslateDialog : LocalizableForm
         _cts = new CancellationTokenSource();
         string customSystemPrompt = Settings.Default.AiCustomSystemPrompt;
         string customUserMessage = Settings.Default.AiCustomUserMessage;
+        int concurrency = Math.Clamp(Settings.Default.AiBatchTranslateConcurrency, 1, 10);
 
-        for (_currentIndex = 0; _currentIndex < _entries.Count; _currentIndex++)
+        if (concurrency <= 1)
         {
-            if (_cts.Token.IsCancellationRequested) break;
-
-            _pauseEvent.Wait(_cts.Token);
-            if (_cts.Token.IsCancellationRequested) break;
-
-            IAppInfoEntry entry = _entries[_currentIndex];
-            string currentName = entry.Name;
-
-            if (InvokeRequired)
-                BeginInvoke(() => lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName));
-            else
-                lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName);
-
-            // Check glossary fast path
-            string existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(currentName);
-            if (!string.IsNullOrWhiteSpace(existingTranslation))
+            // 串行模式
+            for (_currentIndex = 0; _currentIndex < _entries.Count; _currentIndex++)
             {
-                ApplyTranslation(entry, currentName, existingTranslation);
-                _successCount++;
-                if (InvokeRequired) BeginInvoke(UpdateStatsDisplay);
-                else UpdateStatsDisplay();
-                continue;
+                if (_cts.Token.IsCancellationRequested) break;
+                _pauseEvent.Wait(_cts.Token);
+                if (_cts.Token.IsCancellationRequested) break;
+
+                await TranslateOneAsync(_entries[_currentIndex], customSystemPrompt, customUserMessage, _cts.Token);
             }
+        }
+        else
+        {
+            // 并行模式
+            var semaphore = new SemaphoreSlim(concurrency);
+            var tasks = new List<Task>();
+            int index = 0;
 
-            // Build context from VDF metadata
-            string context = AiTranslator.BuildContext(
-                entry.GetPropertyValue<string>(null, AppInfoPaths.Developers),
-                entry.GetPropertyValue<string>(null, AppInfoPaths.Publishers),
-                entry.GetPropertyValue<string>(null, AppInfoPaths.Type));
-
-            try
+            foreach (var entry in _entries)
             {
-                string translated = await AiTranslator.TranslateWithContextAsync(
-                    currentName, _targetLanguage, context,
-                    customSystemPrompt, customUserMessage, _cts.Token);
+                if (_cts.Token.IsCancellationRequested) break;
 
-                if (!string.IsNullOrWhiteSpace(translated))
+                _pauseEvent.Wait(_cts.Token);
+                if (_cts.Token.IsCancellationRequested) break;
+
+                await semaphore.WaitAsync(_cts.Token);
+                _currentIndex = Interlocked.Increment(ref index);
+
+                tasks.Add(Task.Run(async () =>
                 {
-                    ApplyTranslation(entry, currentName, translated);
-                    _successCount++;
-                }
-                else
-                {
-                    _skipCount++;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                Log.WriteLine("Batch translate failed for \"{0}\": {1}", currentName, ex.Message);
-                _failCount++;
+                    try
+                    {
+                        await TranslateOneAsync(entry, customSystemPrompt, customUserMessage, _cts.Token);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }, _cts.Token));
             }
 
-            if (InvokeRequired) BeginInvoke(UpdateStatsDisplay);
-            else UpdateStatsDisplay();
+            await Task.WhenAll(tasks);
         }
 
         if (InvokeRequired)
@@ -140,6 +124,62 @@ internal class BatchTranslateDialog : LocalizableForm
             btnPause.Enabled = false;
             btnCancel.Text = Strings.BatchTranslate_Close;
         }
+    }
+
+    private async Task TranslateOneAsync(IAppInfoEntry entry, string customSystemPrompt, string customUserMessage, CancellationToken ct)
+    {
+        string currentName = entry.Name;
+
+        if (InvokeRequired)
+            BeginInvoke(() => lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName));
+        else
+            lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName);
+
+        // Check glossary fast path
+        string? existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(currentName);
+        if (!string.IsNullOrWhiteSpace(existingTranslation))
+        {
+            ApplyTranslation(entry, currentName, existingTranslation);
+            Interlocked.Increment(ref _successCount);
+            if (InvokeRequired) BeginInvoke(UpdateStatsDisplay);
+            else UpdateStatsDisplay();
+            return;
+        }
+
+        // Build context from VDF metadata
+        string? context = AiTranslator.BuildContext(
+            entry.GetPropertyValue<string>(null!, AppInfoPaths.Developers),
+            entry.GetPropertyValue<string>(null!, AppInfoPaths.Publishers),
+            entry.GetPropertyValue<string>(null!, AppInfoPaths.Type));
+
+        try
+        {
+            string translated = await AiTranslator.TranslateWithContextAsync(
+                currentName, _targetLanguage, context,
+                customSystemPrompt, customUserMessage, ct);
+
+            if (!string.IsNullOrWhiteSpace(translated))
+            {
+                ApplyTranslation(entry, currentName, translated);
+                Interlocked.Increment(ref _successCount);
+            }
+            else
+            {
+                Interlocked.Increment(ref _skipCount);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.WriteLine("Batch translate failed for \"{0}\": {1}", currentName, ex.Message);
+            Interlocked.Increment(ref _failCount);
+        }
+
+        if (InvokeRequired) BeginInvoke(UpdateStatsDisplay);
+        else UpdateStatsDisplay();
     }
 
     private void ApplyTranslation(IAppInfoEntry entry, string previousName, string translated)

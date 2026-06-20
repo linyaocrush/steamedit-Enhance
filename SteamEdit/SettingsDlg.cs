@@ -85,6 +85,8 @@ internal class SettingsDlg : LocalizableForm
     private TextBox textTranslationRules;
     private Button btnAnalyzeRules;
     private Button btnClearRules;
+    private Label lblBatchConcurrency;
+    private NumericUpDown numBatchConcurrency;
 
     private TabControl tabSettings;
     private TabPage tabGeneral;
@@ -121,6 +123,7 @@ internal class SettingsDlg : LocalizableForm
         textCustomUserMessage.Text = string.IsNullOrWhiteSpace(Settings.Default.AiCustomUserMessage)
             ? AiTranslator.DefaultUserMessage : Settings.Default.AiCustomUserMessage;
         textTranslationRules.Text = Settings.Default.AiTranslationRules;
+        numBatchConcurrency.Value = Settings.Default.AiBatchTranslateConcurrency;
         _loading = false;
         UpdateAutoStartSubEnabled();
 
@@ -175,6 +178,7 @@ internal class SettingsDlg : LocalizableForm
             Settings.Default.AiCustomSystemPrompt = textCustomSystemPrompt.Text == AiTranslator.DefaultSystemPrompt ? "" : textCustomSystemPrompt.Text;
             Settings.Default.AiCustomUserMessage = textCustomUserMessage.Text == AiTranslator.DefaultUserMessage ? "" : textCustomUserMessage.Text;
             Settings.Default.AiTranslationRules = textTranslationRules.Text;
+            Settings.Default.AiBatchTranslateConcurrency = (int)numBatchConcurrency.Value;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
             ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
             Settings.Default.Save();
@@ -405,6 +409,7 @@ internal class SettingsDlg : LocalizableForm
         lblCustomSystemPrompt.Text = Strings.Settings_CustomSystemPrompt;
         lblCustomUserMessage.Text = Strings.Settings_CustomUserMessage;
         lblTranslationRules.Text = Strings.Settings_TranslationRules;
+        lblBatchConcurrency.Text = Strings.Settings_BatchConcurrency;
         btnResetPrompt.Text = Strings.Settings_ResetPrompt;
         btnResetUserMessage.Text = Strings.Settings_ResetPrompt;
         btnAnalyzeRules.Text = Strings.Settings_AnalyzeRules;
@@ -819,6 +824,21 @@ internal class SettingsDlg : LocalizableForm
         this.btnAnalyzeRules.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
         this.btnClearRules.Location = new System.Drawing.Point(83, 63);
         this.btnClearRules.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
+        // lblBatchConcurrency
+        this.lblBatchConcurrency = new System.Windows.Forms.Label();
+        this.lblBatchConcurrency.AutoSize = true;
+        this.lblBatchConcurrency.Margin = new System.Windows.Forms.Padding(6);
+        this.lblBatchConcurrency.Name = "lblBatchConcurrency";
+        this.lblBatchConcurrency.TabIndex = 43;
+        this.lblBatchConcurrency.Text = "Batch Concurrency";
+        // numBatchConcurrency
+        this.numBatchConcurrency = new System.Windows.Forms.NumericUpDown();
+        this.numBatchConcurrency.Minimum = 1;
+        this.numBatchConcurrency.Maximum = 10;
+        this.numBatchConcurrency.Name = "numBatchConcurrency";
+        this.numBatchConcurrency.Size = new System.Drawing.Size(60, 20);
+        this.numBatchConcurrency.TabIndex = 44;
+        this.toolTip.SetToolTip(this.numBatchConcurrency, "Number of parallel translation requests (1 = serial)");
         // lblSearchEngine
         this.lblSearchEngine.AutoSize = true;
         this.lblSearchEngine.Margin = new System.Windows.Forms.Padding(6);
@@ -884,11 +904,13 @@ internal class SettingsDlg : LocalizableForm
         tableAi.Controls.Add(panelUserMsg, 1, 6);
         tableAi.Controls.Add(this.lblTranslationRules, 0, 7);
         tableAi.Controls.Add(panelRules, 1, 7);
+        tableAi.Controls.Add(this.lblBatchConcurrency, 0, 8);
+        tableAi.Controls.Add(this.numBatchConcurrency, 1, 8);
         tableAi.Dock = System.Windows.Forms.DockStyle.Fill;
         tableAi.Location = new System.Drawing.Point(0, 0);
         tableAi.Margin = new System.Windows.Forms.Padding(0);
         tableAi.Name = "tableAi";
-        tableAi.RowCount = 8;
+        tableAi.RowCount = 9;
         tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -897,7 +919,8 @@ internal class SettingsDlg : LocalizableForm
         tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110f));
         tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80f));
         tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 90f));
-        tableAi.Size = new System.Drawing.Size(389, 430);
+        tableAi.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableAi.Size = new System.Drawing.Size(389, 457);
         tableAi.TabIndex = 0;
         // tabGeneral
         this.tabGeneral.Controls.Add(tableGeneral);

@@ -448,6 +448,9 @@ Page Down   下一個遊戲</value>
   <data name="Settings_TranslationRules" xml:space="preserve">
     <value>翻譯規則</value>
   </data>
+  <data name="Settings_BatchConcurrency" xml:space="preserve">
+    <value>批次翻譯並行數</value>
+  </data>
   <data name="Settings_ResetPrompt" xml:space="preserve">
     <value>重設</value>
   </data>

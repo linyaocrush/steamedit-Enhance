@@ -186,6 +186,7 @@ namespace SteamEdit {
         internal static string Msg_AiNotConfigured => ResourceManager.GetString("Msg_AiNotConfigured", resourceCulture);
         internal static string Msg_NoTranslatableGames => ResourceManager.GetString("Msg_NoTranslatableGames", resourceCulture);
         internal static string Settings_TranslationRules => ResourceManager.GetString("Settings_TranslationRules", resourceCulture);
+        internal static string Settings_BatchConcurrency => ResourceManager.GetString("Settings_BatchConcurrency", resourceCulture);
         internal static string Tooltip_TranslationRules => ResourceManager.GetString("Tooltip_TranslationRules", resourceCulture);
         internal static string Settings_AnalyzeRules => ResourceManager.GetString("Settings_AnalyzeRules", resourceCulture);
         internal static string Settings_ClearRules => ResourceManager.GetString("Settings_ClearRules", resourceCulture);

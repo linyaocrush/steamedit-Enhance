@@ -502,6 +502,9 @@ Page Down   下一个游戏</value>
   <data name="Settings_TranslationRules" xml:space="preserve">
     <value>翻译规则（AI 总结）</value>
   </data>
+  <data name="Settings_BatchConcurrency" xml:space="preserve">
+    <value>批量翻译并发数</value>
+  </data>
   <data name="Tooltip_TranslationRules" xml:space="preserve">
     <value>AI 从你的术语表中分析出的翻译规则，翻译时自动附加到系统提示词后</value>
   </data>
