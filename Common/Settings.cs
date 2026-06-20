@@ -398,7 +398,7 @@ internal class Settings
 		}
 		set
 		{
-			_values["AiBatchTranslateConcurrency"] = Math.Clamp(value, 1, 10);
+			_values["AiBatchTranslateConcurrency"] = Math.Max(value, 1);
 			MarkDirty();
 		}
 	}

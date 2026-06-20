@@ -834,7 +834,7 @@ internal class SettingsDlg : LocalizableForm
         // numBatchConcurrency
         this.numBatchConcurrency = new System.Windows.Forms.NumericUpDown();
         this.numBatchConcurrency.Minimum = 1;
-        this.numBatchConcurrency.Maximum = 10;
+        this.numBatchConcurrency.Maximum = 9999;
         this.numBatchConcurrency.Name = "numBatchConcurrency";
         this.numBatchConcurrency.Size = new System.Drawing.Size(60, 20);
         this.numBatchConcurrency.TabIndex = 44;

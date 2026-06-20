@@ -69,7 +69,7 @@ internal class BatchTranslateDialog : LocalizableForm
         _cts = new CancellationTokenSource();
         string customSystemPrompt = Settings.Default.AiCustomSystemPrompt;
         string customUserMessage = Settings.Default.AiCustomUserMessage;
-        int concurrency = Math.Clamp(Settings.Default.AiBatchTranslateConcurrency, 1, 10);
+        int concurrency = Math.Max(Settings.Default.AiBatchTranslateConcurrency, 1);
 
         if (concurrency <= 1)
         {
