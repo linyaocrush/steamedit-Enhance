@@ -703,19 +703,19 @@ internal class SettingsDlg : LocalizableForm
         // comboAiModel
         this.comboAiModel.FormattingEnabled = true;
         this.comboAiModel.Name = "comboAiModel";
-        this.comboAiModel.Size = new System.Drawing.Size(160, 21);
+        this.comboAiModel.Size = new System.Drawing.Size(120, 21);
         this.comboAiModel.TabIndex = 25;
         this.comboAiModel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         // btnFetchModels
         this.btnFetchModels.Name = "btnFetchModels";
-        this.btnFetchModels.Size = new System.Drawing.Size(60, 23);
+        this.btnFetchModels.Size = new System.Drawing.Size(80, 23);
         this.btnFetchModels.TabIndex = 26;
         this.btnFetchModels.Text = "Fetch";
         this.btnFetchModels.UseVisualStyleBackColor = true;
         this.btnFetchModels.Click += new System.EventHandler(btnFetchModels_Click);
         this.comboAiModel.Location = new System.Drawing.Point(0, 3);
         this.comboAiModel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-        this.btnFetchModels.Location = new System.Drawing.Point(163, 2);
+        this.btnFetchModels.Location = new System.Drawing.Point(123, 2);
         this.btnFetchModels.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
         // panelModel (ComboBox + Button)
         panelModel.Controls.Add(this.comboAiModel);
