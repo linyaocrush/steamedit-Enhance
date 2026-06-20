@@ -292,17 +292,20 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public override int GetHashCode()
 	{
-		if (_hashCodeDirty)
+		lock (_cacheLock)
 		{
-			int num = GetType().GetHashCode();
-			foreach (Property property in _properties)
+			if (_hashCodeDirty)
 			{
-				num ^= property.GetHashCode();
+				int num = GetType().GetHashCode();
+				foreach (Property property in _properties)
+				{
+					num ^= property.GetHashCode();
+				}
+				_hashCode = num;
+				_hashCodeDirty = false;
 			}
-			_hashCode = num;
-			_hashCodeDirty = false;
+			return _hashCode;
 		}
-		return _hashCode;
 	}
 
 	private string ToStringInternal(int indent)
