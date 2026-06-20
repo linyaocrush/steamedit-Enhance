@@ -3,11 +3,11 @@ namespace SteamEdit.Data;
 
 internal class LaunchItem
 {
-	public string Label = "";
+	public string Label { get; set; } = "";
 
-	public string Executable = "";
+	public string Executable { get; set; } = "";
 
-	public string Arguments = "";
+	public string Arguments { get; set; } = "";
 
-	public string WorkingDir = "";
+	public string WorkingDir { get; set; } = "";
 }
