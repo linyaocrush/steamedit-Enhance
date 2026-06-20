@@ -70,6 +70,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public void SetRawProperty(Property prop, params string[] PropertyPath)
 	{
+		if (PropertyPath.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		if (prop == null)
 		{
 			RemoveProperty(PropertyPath);
@@ -131,6 +133,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
 	{
+		if (PropertyPath.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
 		for (int i = 0; i < PropertyPath.Length - 1; i++)
 		{
@@ -186,6 +190,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public bool SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
+		if (propertyPath.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Property path depth {propertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
 		for (int i = 0; i < propertyPath.Length - 1; i++)
 		{
