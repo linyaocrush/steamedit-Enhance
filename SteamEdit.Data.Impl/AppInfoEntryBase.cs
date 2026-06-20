@@ -1,6 +1,8 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Common;
 using SteamEdit.Data;
 
@@ -146,6 +148,23 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		}
 	}
 
+	private static readonly Dictionary<string, AppInfoEntryType> StringToType = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["game"] = AppInfoEntryType.Game,
+		["config"] = AppInfoEntryType.Config,
+		["tool"] = AppInfoEntryType.Tool,
+		["demo"] = AppInfoEntryType.Demo,
+		["dlc"] = AppInfoEntryType.DLC,
+		["application"] = AppInfoEntryType.Application,
+		["video"] = AppInfoEntryType.Video,
+		["guide"] = AppInfoEntryType.Guide,
+		["music"] = AppInfoEntryType.Music,
+		["beta"] = AppInfoEntryType.Beta,
+	};
+
+	private static readonly Dictionary<AppInfoEntryType, string> TypeToString = StringToType
+		.ToDictionary(kv => kv.Value, kv => kv.Key);
+
 	public AppInfoEntryType Type
 	{
 		get
@@ -153,56 +172,23 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			if (_cachedType.HasValue) return _cachedType.Value;
 			string? propertyValue = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Type);
 			if (propertyValue == null) return AppInfoEntryType.Unknown;
-			AppInfoEntryType result = propertyValue.ToLowerInvariant() switch
+			if (!StringToType.TryGetValue(propertyValue, out var result))
 			{
-				"game" => AppInfoEntryType.Game,
-				"config" => AppInfoEntryType.Config,
-				"tool" => AppInfoEntryType.Tool,
-				"demo" => AppInfoEntryType.Demo,
-				"dlc" => AppInfoEntryType.DLC,
-				"application" => AppInfoEntryType.Application,
-				"video" => AppInfoEntryType.Video,
-				"guide" => AppInfoEntryType.Guide,
-				"music" => AppInfoEntryType.Music,
-				"beta" => AppInfoEntryType.Beta,
-				_ => LogAndReturnUnknown(propertyValue),
-			};
+				Log.WriteLine("Unrecognized entry type: {0}", propertyValue);
+				result = AppInfoEntryType.Unknown;
+			}
 			_cachedType = result;
 			return result;
 		}
 		set
 		{
-			string? str = value switch
+			if (!TypeToString.TryGetValue(value, out var str))
 			{
-				AppInfoEntryType.Game => "game",
-				AppInfoEntryType.Config => "config",
-				AppInfoEntryType.Tool => "tool",
-				AppInfoEntryType.Demo => "demo",
-				AppInfoEntryType.DLC => "dlc",
-				AppInfoEntryType.Application => "application",
-				AppInfoEntryType.Video => "video",
-				AppInfoEntryType.Guide => "guide",
-				AppInfoEntryType.Music => "music",
-				AppInfoEntryType.Beta => "beta",
-				_ => LogAndReturnNull(value),
-			};
-			if (str != null)
-			{
-				SetPropertyValue(PropertyType.String, str, AppInfoPaths.Type);
+				Log.WriteLine("Unrecognized entry type: {0}", value);
+				return;
 			}
+			SetPropertyValue(PropertyType.String, str, AppInfoPaths.Type);
 		}
-	}
-
-	private static AppInfoEntryType LogAndReturnUnknown(string text)
-	{
-		Log.WriteLine("Unrecognized entry type: {0}", text);
-		return AppInfoEntryType.Unknown;
-	}
-
-	private static string? LogAndReturnNull(AppInfoEntryType value)
-	{
-		Log.WriteLine("Unrecognized entry type: {0}", value);
-		return null;
 	}
 
 	public LaunchTable Launches
