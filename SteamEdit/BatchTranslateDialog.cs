@@ -116,6 +116,8 @@ internal class BatchTranslateDialog : LocalizableForm
             await Task.WhenAll(tasks);
         }
 
+        TranslationGlossary.Flush();
+
         if (InvokeRequired)
             BeginInvoke(() => { UpdateStatsDisplay(); btnPause.Enabled = false; btnCancel.Text = Strings.BatchTranslate_Close; });
         else

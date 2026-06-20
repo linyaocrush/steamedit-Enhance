@@ -229,6 +229,7 @@ internal class EditController
 			if (string.IsNullOrWhiteSpace(originalName))
 				originalName = previousName;
 			TranslationGlossary.UpdateEntry(entry.ID, originalName, entry.Name);
+			TranslationGlossary.Flush();
 		}
 		catch (Exception ex)
 		{

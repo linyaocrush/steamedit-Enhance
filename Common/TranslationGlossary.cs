@@ -33,6 +33,7 @@ internal static class TranslationGlossary
 	private static Dictionary<string, string> _originalToTranslated = new(StringComparer.OrdinalIgnoreCase);
 	private static string? _filePath;
 	private static bool _initialized;
+	private static bool _dirty;
 	private static readonly object _lock = new();
 
 	public static void Initialize(string dataDirectory)
@@ -134,9 +135,25 @@ internal static class TranslationGlossary
 				Translated = translatedName
 			};
 			_originalToTranslated[originalName] = translatedName;
-			Save();
+			_dirty = true;
 		}
 		Log.WriteLine("Glossary: Updated {0} -> \"{1}\"", key, translatedName);
+	}
+
+	/// <summary>
+	/// 将待保存的更改写入磁盘。批量操作结束后调用。
+	/// </summary>
+	public static void Flush()
+	{
+		ThrowIfNotInitialized();
+		lock (_lock)
+		{
+			if (_dirty)
+			{
+				Save();
+				_dirty = false;
+			}
+		}
 	}
 
 	public static string? ToPromptString(int maxEntries = 100)
