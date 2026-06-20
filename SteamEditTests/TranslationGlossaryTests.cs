@@ -1,3 +1,4 @@
+#nullable enable
 using System.IO;
 using Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -1,3 +1,4 @@
+#nullable enable
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SteamEdit.Data;
