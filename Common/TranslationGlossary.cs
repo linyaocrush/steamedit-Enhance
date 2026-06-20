@@ -178,7 +178,9 @@ internal static class TranslationGlossary
 			};
 			string json = JsonSerializer.Serialize(_data, options);
 			if (_filePath == null) return;
-			File.WriteAllText(_filePath, json, Encoding.UTF8);
+			string tempPath = _filePath + ".tmp";
+			File.WriteAllText(tempPath, json, Encoding.UTF8);
+			File.Move(tempPath, _filePath, overwrite: true);
 			Log.WriteLine("Glossary: Saved {0} entries", _data.Entries.Count);
 		}
 		catch (Exception ex)
