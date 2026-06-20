@@ -356,17 +356,43 @@ internal class Settings
 			XmlElement? documentElement = xmlDocument.DocumentElement;
 			if (documentElement == null) return;
 
-			var readXmlMethod = GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic);
-			if (readXmlMethod == null) return;
 			foreach (PropertyInfo propertyInfo in _cachedProperties)
 			{
-				readXmlMethod.MakeGenericMethod(propertyInfo.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo.Name });
+				XmlElement? element = documentElement[propertyInfo.Name];
+				if (element == null) continue;
+
+				string text = element.InnerText;
+				object? currentValue = propertyInfo.GetValue(this, null);
+				object? parsed = ParseXmlValue(text, propertyInfo.PropertyType, currentValue);
+				if (parsed != null)
+				{
+					propertyInfo.SetValue(this, parsed, null);
+				}
 			}
 		}
 		catch (Exception ex)
 		{
 			Log.WriteLine("Settings: XML parse error, using defaults: {0}", ex.Message);
 		}
+	}
+
+	private static object? ParseXmlValue(string text, Type targetType, object? defaultValue)
+	{
+		if (targetType == typeof(string))
+			return text;
+
+		if (targetType == typeof(bool) && bool.TryParse(text, out var b))
+			return b;
+		if (targetType == typeof(int) && int.TryParse(text, out var i))
+			return i;
+
+		if (targetType.IsEnum)
+		{
+			try { return Enum.Parse(targetType, text); }
+			catch (Exception ex) when (ex is ArgumentException or OverflowException) { }
+		}
+
+		return defaultValue;
 	}
 
 	private void SaveJson(string path)
@@ -396,56 +422,6 @@ internal class Settings
 		{
 			Log.WriteLine("Settings: Save failed: {0}", ex.Message);
 		}
-	}
-
-	private void ReadXml<T>(XmlElement root, string name)
-	{
-		PropertyInfo? property = GetType().GetProperty(name);
-		if (property != null)
-		{
-			property.SetValue(this, ParseXml(root, name, (T)property.GetValue(this, null)!), null);
-		}
-	}
-
-	private static T ParseXml<T>(XmlElement root, string name, T defaultValue)
-	{
-		T result = defaultValue;
-		if (root[name] != null)
-		{
-			Type[] types = new Type[2]
-			{
-				typeof(string),
-				typeof(T).MakeByRefType()
-			};
-			MethodInfo? method = typeof(T).GetMethod("TryParse", types);
-			if (method != null)
-			{
-				object?[] array = new object?[2]
-				{
-					root[name]!.InnerText,
-					null
-				};
-				if (method.Invoke(null, array) is true)
-				{
-					result = (T)array[1]!;
-				}
-			}
-			else if (typeof(T).IsEnum)
-			{
-				try
-				{
-					result = (T)Enum.Parse(typeof(T), root[name]!.InnerText);
-				}
-				catch (Exception ex) when (ex is ArgumentException or OverflowException)
-				{
-				}
-			}
-			else if (typeof(T).IsAssignableFrom(typeof(string)))
-			{
-				result = (T)(object)root[name]!.InnerText;
-			}
-		}
-		return result;
 	}
 
 	private string GetJsonFilePath()
