@@ -95,6 +95,16 @@ internal static class SteamData
 
 	public static event EventHandler OnNeedsApply;
 
+	public static IEntryDisplaySettings DisplaySettings { get; } = new DisplaySettingsImpl();
+
+	private sealed class DisplaySettingsImpl : IEntryDisplaySettings
+	{
+		public string SteamDir => SteamData.SteamDir;
+		public bool UseCompleted => SteamData.UseCompleted;
+		public string CompletedSuffix => SteamData.CompletedSuffix;
+		public bool UseHidden => SteamData.UseHidden;
+	}
+
 	public static void Initialize(ref SteamDataInitProps props)
 	{
 		_initProps = props;

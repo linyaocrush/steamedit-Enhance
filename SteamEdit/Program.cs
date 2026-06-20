@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using Common;
 using Microsoft.Win32;
 using SteamEdit.Data;
+using SteamEdit.Data.Impl;
 
 namespace SteamEdit;
 
@@ -76,7 +77,7 @@ internal static class Program
         {
             var task = Task.Run(() =>
             {
-                try { SteamData.Initialize(ref initCopy); }
+                try { SteamData.Initialize(ref initCopy); AppInfoEntryBase.DisplaySettings = SteamData.DisplaySettings; }
                 catch (Exception ex) { loadError = ex; }
             });
             if (!loading.ShowAndWait(() => !task.IsCompleted))

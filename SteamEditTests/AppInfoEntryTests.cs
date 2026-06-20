@@ -8,6 +8,20 @@ namespace SteamEditTests;
 [TestClass]
 public class AppInfoEntryTests
 {
+    [AssemblyInitialize]
+    public static void InitDisplaySettings(TestContext _)
+    {
+        AppInfoEntryBase.DisplaySettings = new TestDisplaySettings();
+    }
+
+    private class TestDisplaySettings : IEntryDisplaySettings
+    {
+        public string SteamDir => @"C:\Program Files (x86)\Steam";
+        public bool UseCompleted => false;
+        public string CompletedSuffix => " ✓";
+        public bool UseHidden => false;
+    }
+
     private class TestEntry : AppInfoEntryBase
     {
         public override uint AppInfoVersion => 0x07564428u;
