@@ -121,8 +121,12 @@ internal class Mods
 				binaryWriter.Write(mod.OriginalData);
 			}
 		}
-		using FileStream destination = File.Open(path, FileMode.Create, FileAccess.Write);
-		binaryWriter.BaseStream.Position = 0L;
-		binaryWriter.BaseStream.CopyTo(destination);
+		string tempPath = path + ".tmp";
+		using (FileStream destination = File.Open(tempPath, FileMode.Create, FileAccess.Write))
+		{
+			binaryWriter.BaseStream.Position = 0L;
+			binaryWriter.BaseStream.CopyTo(destination);
+		}
+		File.Move(tempPath, path, overwrite: true);
 	}
 }
