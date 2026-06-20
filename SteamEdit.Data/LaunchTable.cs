@@ -11,8 +11,6 @@ internal class LaunchTable
 
 	public PropertyTable PropertyTable => new PropertyTable(_propertyTable);
 
-	public PropertyTable PropertyTableRef => _propertyTable;
-
 	public int Count => _propertyTable.Count;
 
 	public IEnumerable<LaunchItem> Items => from prop in _propertyTable.Properties.Where((Property prop) => prop.PropertyType == PropertyType.Table).OrderBy((Property prop) => prop.Name, StringComparer.OrdinalIgnoreCase)
