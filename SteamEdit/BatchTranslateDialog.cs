@@ -52,10 +52,16 @@ internal class BatchTranslateDialog : LocalizableForm
 
     private void UpdateStatsDisplay()
     {
-        lblProgress.Text = string.Format(Strings.BatchTranslate_Progress, _currentIndex, _entries.Count);
-        progressBar.Maximum = _entries.Count;
-        progressBar.Value = Math.Min(_currentIndex, _entries.Count);
-        lblStats.Text = string.Format(Strings.BatchTranslate_Stats, _successCount, _skipCount, _failCount);
+        // 快照计数器，避免并行模式下读取不一致
+        int current = Volatile.Read(ref _currentIndex);
+        int success = Volatile.Read(ref _successCount);
+        int skip = Volatile.Read(ref _skipCount);
+        int fail = Volatile.Read(ref _failCount);
+        int total = _entries.Count;
+        lblProgress.Text = string.Format(Strings.BatchTranslate_Progress, current, total);
+        progressBar.Maximum = total;
+        progressBar.Value = Math.Min(current, total);
+        lblStats.Text = string.Format(Strings.BatchTranslate_Stats, success, skip, fail);
     }
 
     protected override async void OnLoad(EventArgs e)
