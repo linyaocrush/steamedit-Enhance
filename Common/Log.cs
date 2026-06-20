@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 
@@ -7,7 +8,7 @@ internal static class Log
 {
 	private static readonly object _syncObj;
 	private static readonly string _path;
-	private static StreamWriter _writer;
+	private static StreamWriter? _writer;
 
 	static Log()
 	{

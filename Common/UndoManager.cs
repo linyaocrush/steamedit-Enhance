@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using SteamEdit.Data;
 
@@ -8,9 +9,9 @@ internal class UndoRecord
     public IAppInfoEntry Entry { get; }
     public string[] PropertyPath { get; }
     public PropertyType Type { get; }
-    public object PreviousValue { get; }
+    public object? PreviousValue { get; }
 
-    public UndoRecord(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object previousValue)
+    public UndoRecord(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object? previousValue)
     {
         Entry = entry;
         PropertyPath = propertyPath;

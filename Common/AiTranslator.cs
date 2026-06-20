@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -53,7 +54,7 @@ internal static class AiTranslator
 			{
 				if (item.TryGetProperty("id", out var idProp))
 				{
-					string id = idProp.GetString();
+					string? id = idProp.GetString();
 					if (!string.IsNullOrEmpty(id))
 						models.Add(id);
 				}
@@ -87,7 +88,7 @@ Rules:
 		float temperature = 0.1f,
 		CancellationToken cancellationToken = default)
 	{
-		string apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
+		string? apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
 		string apiKey = Settings.Default.AiApiKey;
 
 		if (string.IsNullOrWhiteSpace(apiUrl))
@@ -137,7 +138,7 @@ Rules:
 		}
 
 		using var doc = JsonDocument.Parse(responseBody);
-		string result = null;
+		string? result = null;
 
 		try
 		{
@@ -166,9 +167,9 @@ Rules:
 	public static async Task<string> TranslateWithContextAsync(
 		string gameName,
 		string targetLanguage,
-		string context = null,
-		string customSystemPrompt = null,
-		string customUserMessage = null,
+		string? context = null,
+		string? customSystemPrompt = null,
+		string? customUserMessage = null,
 		CancellationToken cancellationToken = default)
 	{
 		string langDisplay = targetLanguage switch
@@ -221,7 +222,7 @@ Rules:
 		return result;
 	}
 
-	public static string BuildContext(string developer, string publisher, string type)
+	public static string? BuildContext(string developer, string publisher, string type)
 	{
 		var parts = new List<string>();
 		if (!string.IsNullOrWhiteSpace(developer)) parts.Add("Developer: " + developer);
@@ -232,7 +233,7 @@ Rules:
 	}
 
 	public static async Task<string> AnalyzeTranslationRulesAsync(
-		string glossaryJsonContent, string customSystemPrompt = null, CancellationToken cancellationToken = default)
+		string glossaryJsonContent, string? customSystemPrompt = null, CancellationToken cancellationToken = default)
 	{
 		string systemPromptSection = "";
 		if (!string.IsNullOrWhiteSpace(customSystemPrompt))

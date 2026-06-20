@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,10 +12,10 @@ namespace Common;
 internal class GlossaryEntry
 {
 	[JsonPropertyName("original")]
-	public string Original { get; set; }
+	public string Original { get; set; } = "";
 
 	[JsonPropertyName("translated")]
-	public string Translated { get; set; }
+	public string Translated { get; set; } = "";
 }
 
 internal class GlossaryData
@@ -28,9 +29,9 @@ internal class GlossaryData
 
 internal static class TranslationGlossary
 {
-	private static GlossaryData _data;
+	private static GlossaryData _data = null!;
 	private static Dictionary<string, string> _originalToTranslated = new(StringComparer.OrdinalIgnoreCase);
-	private static string _filePath;
+	private static string? _filePath;
 	private static readonly object _lock = new();
 
 	public static void Initialize(string dataDirectory)
@@ -128,7 +129,7 @@ internal static class TranslationGlossary
 		Log.WriteLine("Glossary: Updated {0} -> \"{1}\"", key, translatedName);
 	}
 
-	public static string ToPromptString(int maxEntries = 100)
+	public static string? ToPromptString(int maxEntries = 100)
 	{
 		lock (_lock)
 		{
@@ -145,7 +146,7 @@ internal static class TranslationGlossary
 		}
 	}
 
-	public static string FindTranslatedByOriginalName(string originalName)
+	public static string? FindTranslatedByOriginalName(string originalName)
 	{
 		if (string.IsNullOrWhiteSpace(originalName)) return null;
 		lock (_lock)
@@ -164,6 +165,7 @@ internal static class TranslationGlossary
 				Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 			};
 			string json = JsonSerializer.Serialize(_data, options);
+			if (_filePath == null) return;
 			File.WriteAllText(_filePath, json, Encoding.UTF8);
 			Log.WriteLine("Glossary: Saved {0} entries", _data.Entries.Count);
 		}

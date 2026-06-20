@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -425,7 +426,7 @@ internal class Settings
 		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
 		foreach (PropertyInfo propertyInfo in properties)
 		{
-			DefaultValueAttribute defaultValueAttribute = (DefaultValueAttribute)Attribute.GetCustomAttribute(propertyInfo, typeof(DefaultValueAttribute));
+			DefaultValueAttribute? defaultValueAttribute = Attribute.GetCustomAttribute(propertyInfo, typeof(DefaultValueAttribute)) as DefaultValueAttribute;
 			if (defaultValueAttribute != null)
 			{
 				propertyInfo.SetValue(this, defaultValueAttribute.Value, null);
@@ -475,7 +476,7 @@ internal class Settings
 
 				try
 				{
-					object value = DeserializeJsonElement(element, prop.PropertyType);
+					object? value = DeserializeJsonElement(element, prop.PropertyType);
 					if (value != null)
 					{
 						prop.SetValue(this, value, null);
@@ -493,7 +494,7 @@ internal class Settings
 		}
 	}
 
-	private static object DeserializeJsonElement(JsonElement element, Type targetType)
+	private static object? DeserializeJsonElement(JsonElement element, Type targetType)
 	{
 		if (element.ValueKind == JsonValueKind.Null || element.ValueKind == JsonValueKind.Undefined)
 			return null;
@@ -501,7 +502,7 @@ internal class Settings
 		// SaveJson 将所有值存为字符串，所以需要先尝试字符串解析
 		if (element.ValueKind == JsonValueKind.String)
 		{
-			string str = element.GetString();
+			string? str = element.GetString();
 			if (targetType == typeof(bool))
 				return bool.TryParse(str, out var b) ? b : null;
 			if (targetType == typeof(int))
@@ -510,7 +511,7 @@ internal class Settings
 				return str ?? "";
 			if (targetType.IsEnum)
 			{
-				try { return Enum.Parse(targetType, str); }
+				try { return Enum.Parse(targetType, str!); }
 				catch (ArgumentException) { return null; }
 			}
 			return null;
@@ -533,9 +534,11 @@ internal class Settings
 			using XmlReader reader = XmlReader.Create(xmlPath);
 			XmlDocument xmlDocument = new XmlDocument();
 			xmlDocument.Load(reader);
-			XmlElement documentElement = xmlDocument.DocumentElement;
+			XmlElement? documentElement = xmlDocument.DocumentElement;
+			if (documentElement == null) return;
 
 			var readXmlMethod = GetType().GetMethod("ReadXml", BindingFlags.Instance | BindingFlags.NonPublic);
+			if (readXmlMethod == null) return;
 			foreach (PropertyInfo propertyInfo in properties)
 			{
 				readXmlMethod.MakeGenericMethod(propertyInfo.PropertyType).Invoke(this, new object[2] { documentElement, propertyInfo.Name });
@@ -549,13 +552,13 @@ internal class Settings
 
 	private void SaveJson(string path)
 	{
-		string dir = Path.GetDirectoryName(path);
+		string? dir = Path.GetDirectoryName(path);
 		if (dir != null) Directory.CreateDirectory(dir);
 		var dict = new Dictionary<string, string>();
 		PropertyInfo[] properties = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
 		foreach (PropertyInfo prop in properties)
 		{
-			object value = prop.GetValue(this, null);
+			object? value = prop.GetValue(this, null);
 			dict[prop.Name] = value?.ToString() ?? "";
 		}
 		string json = JsonSerializer.Serialize(dict, _jsonOptions);
@@ -580,10 +583,10 @@ internal class Settings
 
 	private void ReadXml<T>(XmlElement root, string name)
 	{
-		PropertyInfo property = GetType().GetProperty(name);
+		PropertyInfo? property = GetType().GetProperty(name);
 		if (property != null)
 		{
-			property.SetValue(this, ParseXml(root, name, (T)property.GetValue(this, null)), null);
+			property.SetValue(this, ParseXml(root, name, (T)property.GetValue(this, null)!), null);
 		}
 	}
 
@@ -597,24 +600,24 @@ internal class Settings
 				typeof(string),
 				typeof(T).MakeByRefType()
 			};
-			MethodInfo method = typeof(T).GetMethod("TryParse", types);
+			MethodInfo? method = typeof(T).GetMethod("TryParse", types);
 			if (method != null)
 			{
-				object[] array = new object[2]
+				object?[] array = new object?[2]
 				{
-					root[name].InnerText,
+					root[name]!.InnerText,
 					null
 				};
-				if ((bool)method.Invoke(null, array))
+				if (method.Invoke(null, array) is true)
 				{
-					result = (T)array[1];
+					result = (T)array[1]!;
 				}
 			}
 			else if (typeof(T).IsEnum)
 			{
 				try
 				{
-					result = (T)Enum.Parse(typeof(T), root[name].InnerText);
+					result = (T)Enum.Parse(typeof(T), root[name]!.InnerText);
 				}
 				catch (Exception ex) when (ex is ArgumentException or OverflowException)
 				{
@@ -622,7 +625,7 @@ internal class Settings
 			}
 			else if (typeof(T).IsAssignableFrom(typeof(string)))
 			{
-				result = (T)(object)root[name].InnerText;
+				result = (T)(object)root[name]!.InnerText;
 			}
 		}
 		return result;
