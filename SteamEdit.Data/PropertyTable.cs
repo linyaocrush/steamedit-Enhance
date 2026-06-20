@@ -14,6 +14,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	private int _hashCode;
 	private bool _hashCodeDirty = true;
 	private string[]? _propertyNamesCache;
+	private readonly object _cacheLock = new();
 
 	public int Count => _properties.Count;
 
@@ -21,13 +22,16 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	{
 		get
 		{
-			if (_propertyNamesCache == null)
+			lock (_cacheLock)
 			{
-				_propertyNamesCache = new string[_properties.Count];
-				for (int i = 0; i < _properties.Count; i++)
-					_propertyNamesCache[i] = _properties[i].Name;
+				if (_propertyNamesCache == null)
+				{
+					_propertyNamesCache = new string[_properties.Count];
+					for (int i = 0; i < _properties.Count; i++)
+						_propertyNamesCache[i] = _properties[i].Name;
+				}
+				return _propertyNamesCache;
 			}
-			return _propertyNamesCache;
 		}
 	}
 
@@ -158,7 +162,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		_properties.Add(item);
 		_propertyMap[name] = item;
 		_hashCodeDirty = true;
-		_propertyNamesCache = null;
+		lock (_cacheLock) { _propertyNamesCache = null; }
 	}
 
 	public bool SetPropertyValue(string name, PropertyType type, object? value)
@@ -169,7 +173,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			property = new Property(name);
 			_properties.Add(property);
 			_propertyMap[name] = property;
-			_propertyNamesCache = null;
+			lock (_cacheLock) { _propertyNamesCache = null; }
 		}
 		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
@@ -209,7 +213,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			_properties.Remove(prop);
 			_propertyMap.Remove(name);
 			_hashCodeDirty = true;
-			_propertyNamesCache = null;
+			lock (_cacheLock) { _propertyNamesCache = null; }
 		}
 	}
 
@@ -251,7 +255,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		_properties.Clear();
 		_propertyMap.Clear();
 		_hashCodeDirty = true;
-		_propertyNamesCache = null;
+		lock (_cacheLock) { _propertyNamesCache = null; }
 	}
 
 	public PropertyTable()
