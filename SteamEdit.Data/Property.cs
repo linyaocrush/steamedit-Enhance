@@ -53,7 +53,8 @@ internal class Property
 		{
 			_value = null;
 			if (value == null) return;
-			if (ValueType!.IsAssignableFrom(value.GetType()))
+			if (ValueType == null) return;
+			if (ValueType.IsAssignableFrom(value.GetType()))
 			{
 				_value = value;
 			}
