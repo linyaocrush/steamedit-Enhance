@@ -65,16 +65,25 @@ internal class Property
 					_value = text;
 					break;
 				case PropertyType.Int32:
-					_value = int.Parse(text);
+					if (int.TryParse(text, out int intVal))
+						_value = intVal;
+					else
+						throw new FormatException($"Cannot convert \"{text}\" to Int32 for property \"{Name}\".");
 					break;
 				case PropertyType.Float:
-					_value = float.Parse(text);
+					if (float.TryParse(text, out float floatVal))
+						_value = floatVal;
+					else
+						throw new FormatException($"Cannot convert \"{text}\" to Float for property \"{Name}\".");
 					break;
 				case PropertyType.WString:
 					_value = text;
 					break;
 				case PropertyType.Uint64:
-					_value = ulong.Parse(text);
+					if (ulong.TryParse(text, out ulong ulongVal))
+						_value = ulongVal;
+					else
+						throw new FormatException($"Cannot convert \"{text}\" to Uint64 for property \"{Name}\".");
 					break;
 				case (PropertyType)4:
 				case PropertyType.Color:
