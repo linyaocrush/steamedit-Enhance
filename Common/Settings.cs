@@ -318,7 +318,7 @@ internal class Settings
 		if (element.ValueKind == JsonValueKind.Null || element.ValueKind == JsonValueKind.Undefined)
 			return null;
 
-		// SaveJson 将所有值存为字符串，所以需要先尝试字符串解析
+		// 兼容旧版 JSON（值存为字符串）和新版（原生类型）
 		if (element.ValueKind == JsonValueKind.String)
 		{
 			string? str = element.GetString();
