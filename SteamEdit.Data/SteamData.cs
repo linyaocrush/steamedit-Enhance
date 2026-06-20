@@ -126,11 +126,7 @@ internal static class SteamData
 		{
 			AppInfoData = AppInfoFactory.Load(AppInfoPath);
 		}
-		catch (UnknownAppInfoVersionException)
-		{
-			throw;
-		}
-		catch (Exception e)
+		catch (Exception e) when (e is not UnknownAppInfoVersionException)
 		{
 			throw new AppInfoLoadException($"Exception caught while loading appinfo.vdf from '{AppInfoPath}'", e);
 		}
