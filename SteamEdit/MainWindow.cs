@@ -112,14 +112,14 @@ internal class MainWindow : LocalizableForm
 		{
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null)
-				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"steam://nav/games/details/{entry.ID}", UseShellExecute = true }); }
+				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"steam://nav/games/details/{entry.ID}", UseShellExecute = true })?.Dispose(); }
 				catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 		_listManager.ContextMenuOpenInSteamDB += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null)
-				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"https://steamdb.info/app/{entry.ID}/", UseShellExecute = true }); }
+				try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = $"https://steamdb.info/app/{entry.ID}/", UseShellExecute = true })?.Dispose(); }
 				catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 

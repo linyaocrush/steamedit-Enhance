@@ -642,6 +642,8 @@ internal class GameListManager : IDisposable
 		_boldAppSelectionFont?.Dispose();
 		_hiddenAppSelectionFont?.Dispose();
 		_bgLogoAttributes?.Dispose();
+		foreach (var img in _filterImages.Values)
+			img.Dispose();
 		_dataStore.AppInfo.Modified -= OnEntryModified;
 	}
 }
