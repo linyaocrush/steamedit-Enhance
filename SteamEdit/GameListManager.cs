@@ -40,6 +40,8 @@ internal class GameListManager : IDisposable
 	private bool _refreshingGamesListAfterEdit;
 	private int _modifiedCount;
 	private bool _modifiedCountDirty = true;
+	private int _tooltipCachedId = -1;
+	private string _tooltipCachedText = "";
 
 	public event EventHandler<IAppInfoEntry> SelectedEntryChanged;
 	public event EventHandler ContextMenuCopyName;
@@ -465,11 +467,14 @@ internal class GameListManager : IDisposable
 
 	private string GetEntryToolTip(IAppInfoEntry entry)
 	{
+		if (entry.ID == _tooltipCachedId) return _tooltipCachedText;
 		var sb = new StringBuilder();
 		sb.AppendFormat("{0}: {1}", entry.ID, entry.Name);
 		string oslist = entry.GetPropertyValue<string>(null, AppInfoPaths.OsList);
 		if (oslist != null) sb.AppendFormat(" [{0}]", oslist);
-		return sb.ToString();
+		_tooltipCachedId = entry.ID;
+		_tooltipCachedText = sb.ToString();
+		return _tooltipCachedText;
 	}
 
 	// --- 事件处理 ---
