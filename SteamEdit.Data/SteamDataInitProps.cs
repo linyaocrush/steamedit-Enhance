@@ -1,3 +1,4 @@
+#nullable enable
 namespace SteamEdit.Data;
 
 internal struct SteamDataInitProps

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using Common;
@@ -10,7 +11,7 @@ internal static class SteamData
 
 	private static SteamDataInitProps _initProps;
 
-	private static Mods _modData;
+	private static Mods _modData = null!;
 
 	private static bool _needsSave;
 
@@ -18,11 +19,11 @@ internal static class SteamData
 
 	public static string CompletedSuffix => " ✓";
 
-	public static string SteamDir { get; private set; }
+	public static string SteamDir { get; private set; } = "";
 
-	public static string AppInfoPath { get; private set; }
+	public static string AppInfoPath { get; private set; } = "";
 
-	public static string ModInfoPath { get; private set; }
+	public static string ModInfoPath { get; private set; } = "";
 
 	public static bool UseCompleted
 	{
@@ -56,7 +57,7 @@ internal static class SteamData
 		}
 	}
 
-	public static IAppInfo AppInfoData { get; private set; }
+	public static IAppInfo AppInfoData { get; private set; } = null!;
 
 	public static bool NeedsSave
 	{
@@ -69,7 +70,7 @@ internal static class SteamData
 			if (_needsSave != value)
 			{
 				_needsSave = value;
-				SteamData.OnNeedsSave?.Invoke(null, null);
+				SteamData.OnNeedsSave?.Invoke(null, EventArgs.Empty);
 				NeedsApply = true;
 			}
 		}
@@ -86,14 +87,14 @@ internal static class SteamData
 			if (_needsApply != value)
 			{
 				_needsApply = value;
-				SteamData.OnNeedsApply?.Invoke(null, null);
+				SteamData.OnNeedsApply?.Invoke(null, EventArgs.Empty);
 			}
 		}
 	}
 
-	public static event EventHandler OnNeedsSave;
+	public static event EventHandler? OnNeedsSave;
 
-	public static event EventHandler OnNeedsApply;
+	public static event EventHandler? OnNeedsApply;
 
 	public static IEntryDisplaySettings DisplaySettings { get; } = new DisplaySettingsImpl();
 
@@ -109,7 +110,7 @@ internal static class SteamData
 	{
 		_initProps = props;
 		AppInfoPath = _initProps.AppInfoPath;
-		SteamDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(AppInfoPath), "..\\"));
+		SteamDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(AppInfoPath) ?? "", "..\\"));
 		Log.WriteLine("Initializing SteamData:");
 		Log.WriteLine("  AppInfoPath: {0}", _initProps.AppInfoPath);
 		Log.WriteLine("  DataDirectory: {0}", _initProps.DataDirectory);
@@ -135,7 +136,7 @@ internal static class SteamData
 		NeedsSave = false;
 	}
 
-	private static void OnEntryModified(object sender, EventArgs e)
+	private static void OnEntryModified(object? sender, EventArgs e)
 	{
 		NeedsSave = true;
 	}

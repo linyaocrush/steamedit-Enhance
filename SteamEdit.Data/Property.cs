@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Drawing;
 
@@ -5,7 +6,7 @@ namespace SteamEdit.Data;
 
 internal class Property
 {
-	private static readonly Type[] _types = new Type[9]
+	private static readonly Type?[] _types = new Type?[9]
 	{
 		typeof(PropertyTable),
 		typeof(string),
@@ -20,7 +21,7 @@ internal class Property
 
 	private PropertyType _propType;
 
-	private object _value;
+	private object? _value;
 
 	public string Name { get; private set; }
 
@@ -40,9 +41,9 @@ internal class Property
 		}
 	}
 
-	public Type ValueType => _types[(int)_propType];
+	public Type? ValueType => _types[(int)_propType];
 
-	internal object Value
+	internal object? Value
 	{
 		get
 		{
@@ -52,7 +53,7 @@ internal class Property
 		{
 			_value = null;
 			if (value == null) return;
-			if (ValueType.IsAssignableFrom(value.GetType()))
+			if (ValueType!.IsAssignableFrom(value.GetType()))
 			{
 				_value = value;
 			}
@@ -91,15 +92,15 @@ internal class Property
 
 	public bool TryGetValue<T>(out T result)
 	{
-		result = default(T);
+		result = default!;
 		bool result2 = false;
 		int propType = (int)_propType;
 		if (propType >= 0 && propType < _types.Length)
 		{
-			Type type = _types[propType];
+			Type? type = _types[propType];
 			if (type != null && typeof(T).IsAssignableFrom(type))
 			{
-				result = (T)_value;
+				result = (T)_value!;
 				result2 = true;
 			}
 		}
@@ -113,7 +114,7 @@ internal class Property
 		_value = null;
 	}
 
-	public Property(string name, PropertyType type, object value)
+	public Property(string name, PropertyType type, object? value)
 	{
 		Name = name;
 		_propType = type;
@@ -126,7 +127,7 @@ internal class Property
 		_propType = other._propType;
 		if (_propType == PropertyType.Table)
 		{
-			_value = new PropertyTable((PropertyTable)other._value);
+			_value = new PropertyTable((PropertyTable)other._value!);
 		}
 		else
 		{
@@ -134,7 +135,7 @@ internal class Property
 		}
 	}
 
-	public override bool Equals(object obj)
+	public override bool Equals(object? obj)
 	{
 		bool result = false;
 		if (obj is Property property)

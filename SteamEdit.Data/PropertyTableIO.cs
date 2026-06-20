@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -149,25 +150,25 @@ internal static class PropertyTableIO
 			switch (property.PropertyType)
 			{
 			case PropertyType.Table:
-				WritePropertyTableCore(writer, (PropertyTable)property.Value, writeName, writeWString, depth + 1);
+				WritePropertyTableCore(writer, (PropertyTable)property.Value!, writeName, writeWString, depth + 1);
 				break;
 			case PropertyType.String:
-				WriteString_0x00000000(writer, (string)property.Value);
+				WriteString_0x00000000(writer, (string)property.Value!);
 				break;
 			case PropertyType.WString:
-				writeWString(writer, (string)property.Value);
+				writeWString(writer, (string)property.Value!);
 				break;
 			case PropertyType.Int32:
-				writer.Write((int)property.Value);
+				writer.Write((int)property.Value!);
 				break;
 			case PropertyType.Uint64:
-				writer.Write((ulong)property.Value);
+				writer.Write((ulong)property.Value!);
 				break;
 			case PropertyType.Float:
-				writer.Write((float)property.Value);
+				writer.Write((float)property.Value!);
 				break;
 			case PropertyType.Color:
-				WriteColor_0x00000000(writer, (Color)property.Value);
+				WriteColor_0x00000000(writer, (Color)property.Value!);
 				break;
 			default:
 				throw new NotImplementedException("The value type " + property.PropertyType.ToString() + " has not been implemented.");

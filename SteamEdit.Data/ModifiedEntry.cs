@@ -1,3 +1,4 @@
+#nullable enable
 using System.IO;
 
 namespace SteamEdit.Data;
@@ -6,9 +7,9 @@ internal class ModifiedEntry
 {
 	public readonly int ID;
 
-	private byte[] _originalData;
+	private byte[]? _originalData;
 
-	public byte[] OriginalData
+	public byte[]? OriginalData
 	{
 		get
 		{
@@ -31,7 +32,7 @@ internal class ModifiedEntry
 
 	public uint OriginalDataChangeNumber { get; set; }
 
-	public PropertyTable Changes { get; set; }
+	public PropertyTable Changes { get; set; } = null!;
 
 	public ModifiedEntry(IAppInfoEntry entry)
 	{
@@ -47,17 +48,17 @@ internal class ModifiedEntry
 		ID = id;
 	}
 
-	public bool AddChange(PropertyType type, object value, string[] propertyPath)
+	public bool AddChange(PropertyType type, object? value, string[] propertyPath)
 	{
 		return Changes.SetPropertyValue(type, value, propertyPath);
 	}
 
-	public string GetOriginalName()
+	public string? GetOriginalName()
 	{
 		if (OriginalData == null) return null;
 		using var reader = new BinaryReader(new MemoryStream(OriginalData));
 		var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
-		return props.GetPropertyValue<string>(null, AppInfoPaths.Name);
+		return props.GetPropertyValue<string>(null!, AppInfoPaths.Name);
 	}
 
 	public bool ApplyChanges(PropertyTable entryTable)
@@ -76,12 +77,12 @@ internal class ModifiedEntry
 		bool result = false;
 		foreach (string propertyName in changesTable.PropertyNames)
 		{
-			object propertyAsObject = changesTable.GetPropertyAsObject(propertyName);
+			object? propertyAsObject = changesTable.GetPropertyAsObject(propertyName);
 			PropertyType propertyType = changesTable.GetPropertyType(propertyName);
 			if (propertyType == PropertyType.Table)
 			{
-				PropertyTable changesTable2 = (PropertyTable)propertyAsObject;
-				PropertyTable propertyTable = entryTable.GetPropertyValue<PropertyTable>(propertyName);
+				PropertyTable changesTable2 = (PropertyTable)propertyAsObject!;
+				PropertyTable? propertyTable = entryTable.GetPropertyValue<PropertyTable>(propertyName);
 				if (propertyTable == null)
 				{
 					propertyTable = new PropertyTable();

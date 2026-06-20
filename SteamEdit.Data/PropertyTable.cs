@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +20,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	internal IEnumerable<Property> Properties => _properties;
 
-	internal Property this[string name] => _propertyMap.TryGetValue(name, out var prop) ? prop : null;
+	internal Property? this[string name] => _propertyMap.TryGetValue(name, out var prop) ? prop : null;
 
 	public bool HasProperty(params string[] PropertyPath)
 	{
@@ -35,14 +36,14 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return true;
 	}
 
-	public Property GetRawProperty(params string[] PropertyPath)
+	public Property? GetRawProperty(params string[] PropertyPath)
 	{
 		PropertyTable propertyTable = this;
 		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
 		{
-			Property property = propertyTable[item];
+			Property? property = propertyTable[item];
 			if (property == null) return null;
-			propertyTable = property.GetValue<PropertyTable>();
+			propertyTable = property.GetValue<PropertyTable>()!;
 			if (propertyTable == null) return null;
 		}
 		return propertyTable[PropertyPath.Last()];
@@ -76,7 +77,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		propertyTable.SetPropertyValue(PropertyPath.Last(), prop.PropertyType, prop.Value);
 	}
 
-	public T GetPropertyValue<T>(string name, T defValue = default(T))
+	public T GetPropertyValue<T>(string name, T defValue = default!)
 	{
 		if (!TryGetPropertyValue<T>(name, out var result))
 		{
@@ -88,8 +89,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public bool TryGetPropertyValue<T>(string name, out T result)
 	{
 		bool result2 = false;
-		result = default(T);
-		Property property = this[name];
+		result = default!;
+		Property? property = this[name];
 		if (property != null)
 		{
 			result2 = property.TryGetValue<T>(out result);
@@ -97,10 +98,10 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return result2;
 	}
 
-	public object GetPropertyAsObject(string name)
+	public object? GetPropertyAsObject(string name)
 	{
-		object result = null;
-		Property property = this[name];
+		object? result = null;
+		Property? property = this[name];
 		if (property != null && property.Value != null)
 		{
 			result = property.Value;
@@ -113,10 +114,10 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		PropertyTable propertyTable = this;
 		foreach (string item in PropertyPath.Take(PropertyPath.Length - 1))
 		{
-			Property property = propertyTable[item];
+			Property? property = propertyTable[item];
 			if (property != null)
 			{
-				propertyTable = property.GetValue<PropertyTable>();
+				propertyTable = property.GetValue<PropertyTable>()!;
 			}
 			if (property == null || propertyTable == null)
 			{
@@ -129,7 +130,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public PropertyType GetPropertyType(string name)
 	{
 		PropertyType result = PropertyType._Invalid_;
-		Property property = this[name];
+		Property? property = this[name];
 		if (property != null)
 		{
 			result = property.PropertyType;
@@ -137,7 +138,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return result;
 	}
 
-	public void AddPropertyValue(string name, PropertyType type, object value)
+	public void AddPropertyValue(string name, PropertyType type, object? value)
 	{
 		Property item = new Property(name, type, value);
 		_properties.Add(item);
@@ -145,9 +146,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		_hashCodeDirty = true;
 	}
 
-	public bool SetPropertyValue(string name, PropertyType type, object value)
+	public bool SetPropertyValue(string name, PropertyType type, object? value)
 	{
-		Property property = this[name];
+		Property? property = this[name];
 		if (property == null)
 		{
 			property = new Property(name);
@@ -161,7 +162,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return result;
 	}
 
-	public bool SetPropertyValue(PropertyType type, object value, params string[] propertyPath)
+	public bool SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
 		PropertyTable propertyTable = this;
 		foreach (string item in propertyPath.Take(propertyPath.Length - 1))
@@ -246,13 +247,13 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		}
 	}
 
-	public bool Equals(PropertyTable other)
+	public bool Equals(PropertyTable? other)
 	{
 		if (other == null || Count != other.Count) return false;
 		return _properties.All(prop => other._propertyMap.TryGetValue(prop.Name, out var otherProp) && prop.Equals(otherProp));
 	}
 
-	public override bool Equals(object obj)
+	public override bool Equals(object? obj)
 	{
 		return Equals(obj as PropertyTable);
 	}

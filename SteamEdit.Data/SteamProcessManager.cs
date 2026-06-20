@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +12,7 @@ internal static class SteamProcessManager
     /// 获取已验证的 Steam 可执行文件路径。
     /// 验证文件存在且 CompanyName 为 "Valve Corporation"。
     /// </summary>
-    public static string GetSteamExePath()
+    public static string? GetSteamExePath()
     {
         string steamDir = SteamData.SteamDir;
         if (string.IsNullOrEmpty(steamDir)) return null;
@@ -28,7 +29,7 @@ internal static class SteamProcessManager
             var versionInfo = FileVersionInfo.GetVersionInfo(exePath);
             if (!string.Equals(versionInfo.CompanyName, "Valve Corporation", StringComparison.OrdinalIgnoreCase))
             {
-                Log.WriteLine("Steam exe company mismatch: {0} (expected Valve Corporation)", versionInfo.CompanyName);
+                Log.WriteLine("Steam exe company mismatch: {0} (expected Valve Corporation)", versionInfo.CompanyName ?? "(null)");
                 return null;
             }
         }
@@ -43,7 +44,7 @@ internal static class SteamProcessManager
 
     public static bool IsSteamRunning()
     {
-        string expectedPath = GetSteamExePath();
+        string? expectedPath = GetSteamExePath();
         if (expectedPath == null)
         {
             // 无法验证路径时回退到进程名匹配
@@ -57,7 +58,8 @@ internal static class SteamProcessManager
         {
             try
             {
-                if (string.Equals(Path.GetFullPath(proc.MainModule.FileName), normalizedExpected, StringComparison.OrdinalIgnoreCase))
+                string? fileName = proc.MainModule?.FileName;
+                if (fileName != null && string.Equals(Path.GetFullPath(fileName), normalizedExpected, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -70,8 +72,8 @@ internal static class SteamProcessManager
 
     public static void KillSteam(string waitingMessage, Action<string, Func<bool>> showAndWait)
     {
-        string expectedPath = GetSteamExePath();
-        string normalizedExpected = expectedPath != null ? Path.GetFullPath(expectedPath) : null;
+        string? expectedPath = GetSteamExePath();
+        string? normalizedExpected = expectedPath != null ? Path.GetFullPath(expectedPath) : null;
         if (normalizedExpected == null)
             Log.WriteLine("WARNING: Steam exe validation failed, falling back to name-only process matching");
 
@@ -88,7 +90,7 @@ internal static class SteamProcessManager
                 if (normalizedExpected != null)
                 {
                     string procPath;
-                    try { procPath = Path.GetFullPath(proc.MainModule.FileName); }
+                    try { procPath = Path.GetFullPath(proc.MainModule?.FileName ?? ""); }
                     catch (System.ComponentModel.Win32Exception) { continue; } // 无权限，非目标进程
 
                     if (!string.Equals(procPath, normalizedExpected, StringComparison.OrdinalIgnoreCase))
@@ -114,7 +116,7 @@ internal static class SteamProcessManager
     {
         if (focusIfRunning || !IsSteamRunning())
         {
-            string exePath = GetSteamExePath();
+            string? exePath = GetSteamExePath();
             if (exePath == null)
             {
                 Log.WriteLine("Cannot start Steam: exe path validation failed");
