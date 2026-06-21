@@ -9,13 +9,11 @@ internal static class SteamData
 {
 	public const string CompletedChar = "✓";
 
+	private static readonly object _lock = new();
 	private static SteamDataInitProps _initProps;
-
 	private static Mods _modData = null!;
-
-	private static bool _needsSave;
-
-	private static bool _needsApply;
+	private static volatile bool _needsSave;
+	private static volatile bool _needsApply;
 
 	public static string CompletedSuffix => " ✓";
 
@@ -29,14 +27,17 @@ internal static class SteamData
 	{
 		get
 		{
-			return _initProps.EnableCompleted;
+			lock (_lock) return _initProps.EnableCompleted;
 		}
 		set
 		{
-			if (_initProps.EnableCompleted != value)
+			lock (_lock)
 			{
-				_initProps.EnableCompleted = value;
-				NeedsSave = true;
+				if (_initProps.EnableCompleted != value)
+				{
+					_initProps.EnableCompleted = value;
+					NeedsSave = true;
+				}
 			}
 		}
 	}
@@ -45,14 +46,17 @@ internal static class SteamData
 	{
 		get
 		{
-			return _initProps.EnableHidden;
+			lock (_lock) return _initProps.EnableHidden;
 		}
 		set
 		{
-			if (_initProps.EnableHidden != value)
+			lock (_lock)
 			{
-				_initProps.EnableHidden = value;
-				NeedsSave = true;
+				if (_initProps.EnableHidden != value)
+				{
+					_initProps.EnableHidden = value;
+					NeedsSave = true;
+				}
 			}
 		}
 	}
@@ -61,16 +65,27 @@ internal static class SteamData
 
 	public static bool NeedsSave
 	{
-		get
-		{
-			return _needsSave;
-		}
+		get => _needsSave;
 		private set
 		{
-			if (_needsSave != value)
+			EventHandler? handler;
+			bool changed;
+			lock (_lock)
 			{
-				_needsSave = value;
-				SteamData.OnNeedsSave?.Invoke(null, EventArgs.Empty);
+				changed = _needsSave != value;
+				if (changed)
+				{
+					_needsSave = value;
+					handler = OnNeedsSave;
+				}
+				else
+				{
+					handler = null;
+				}
+			}
+			if (changed)
+			{
+				handler?.Invoke(null, EventArgs.Empty);
 				NeedsApply = true;
 			}
 		}
@@ -78,16 +93,27 @@ internal static class SteamData
 
 	public static bool NeedsApply
 	{
-		get
-		{
-			return _needsApply;
-		}
+		get => _needsApply;
 		private set
 		{
-			if (_needsApply != value)
+			EventHandler? handler;
+			bool changed;
+			lock (_lock)
 			{
-				_needsApply = value;
-				SteamData.OnNeedsApply?.Invoke(null, EventArgs.Empty);
+				changed = _needsApply != value;
+				if (changed)
+				{
+					_needsApply = value;
+					handler = OnNeedsApply;
+				}
+				else
+				{
+					handler = null;
+				}
+			}
+			if (changed)
+			{
+				handler?.Invoke(null, EventArgs.Empty);
 			}
 		}
 	}

@@ -74,4 +74,26 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 	}
 
 	protected abstract void SaveEntries(BinaryWriter writer);
+
+	/// <summary>
+	/// 通用的条目加载辅助。读取 unknownValueAtStart 后，循环调用 readEntry 直到返回 null。
+	/// </summary>
+	protected void LoadEntriesCore(BinaryReader reader, Func<BinaryReader, TEntry?> readEntry)
+	{
+		_unknownValueAtStart = reader.ReadUInt32();
+		ReadEntriesLoop(reader, readEntry);
+	}
+
+	/// <summary>
+	/// 条目循环读取。当 unknownValueAtStart 已在外部读取时使用此方法。
+	/// </summary>
+	protected void ReadEntriesLoop(BinaryReader reader, Func<BinaryReader, TEntry?> readEntry)
+	{
+		TEntry? entry;
+		while ((entry = readEntry(reader)) != null)
+		{
+			_entries.Add(entry);
+			entry.Modified += OnEntryModified;
+		}
+	}
 }
