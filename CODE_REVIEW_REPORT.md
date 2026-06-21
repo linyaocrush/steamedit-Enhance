@@ -90,27 +90,7 @@ public static void Apply()
 
 ---
 
-### 6. `BatchTranslateDialog.OnLoad` — `async void` 未捕获异常
-
-**文件:** `SteamEdit/BatchTranslateDialog.cs:67-71`
-
-```csharp
-protected override async void OnLoad(EventArgs e)
-{
-    base.OnLoad(e);
-    await RunBatchAsync();
-}
-```
-
-`OnLoad` 是 `async void`，如果 `RunBatchAsync` 中抛出异常（网络错误、API 异常、`TranslationGlossary.Flush()` 失败），异常不会被捕获，会通过 `TaskScheduler.UnobservedTaskException` 传播，可能导致进程崩溃或静默失败。
-
-**影响:** 批量翻译中任何未预期的异常都会导致对话框静默关闭或应用崩溃。
-
-**修复建议:** 在 `OnLoad` 中用 try-catch 包裹 `RunBatchAsync()`，异常时显示错误信息。
-
----
-
-### 7. `AppInfoPaths` — 可变静态数组
+### 6. `AppInfoPaths` — 可变静态数组
 
 **文件:** `SteamEdit.Data/AppInfoPaths.cs:7-27`
 
@@ -126,7 +106,7 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 8. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
+### 7. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
 
 **文件:** `Common/Settings.cs:29`
 
