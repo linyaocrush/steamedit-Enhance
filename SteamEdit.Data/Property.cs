@@ -121,7 +121,7 @@ internal class Property
 	{
 		Name = name;
 		_propType = type;
-		_value = value;
+		Value = value;
 	}
 
 	public Property(Property other)
