@@ -36,22 +36,6 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 3. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
-
-**文件:** `Common/Settings.cs:29`
-
-```csharp
-private T Get<T>(string key) => (T)_values[key];
-```
-
-每个属性 getter 直接从 `_values` 字典取值。如果未来新增属性但忘记添加 `[DefaultValue]`，反序列化时不会填充该键，首次访问将抛出 `KeyNotFoundException`。
-
-**影响:** 当前所有属性都有默认值，暂时安全。但扩展性差。
-
-**修复建议:** 改为 `_values.TryGetValue(key, out var val) ? (T)val : default!` 或添加防御性检查。
-
----
-
 ## 🟡 改进建议
 
 ### 1. `SteamData` — 全静态可变状态，无线程同步
