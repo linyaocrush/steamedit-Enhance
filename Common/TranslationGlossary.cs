@@ -35,6 +35,11 @@ internal static class TranslationGlossary
 	private static bool _initialized;
 	private static bool _dirty;
 	private static readonly object _lock = new();
+	private static readonly JsonSerializerOptions _jsonOptions = new()
+	{
+		WriteIndented = true,
+		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+	};
 
 	public static void Initialize(string dataDirectory)
 	{
@@ -188,12 +193,7 @@ internal static class TranslationGlossary
 	{
 		try
 		{
-			var options = new JsonSerializerOptions
-			{
-				WriteIndented = true,
-				Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-			};
-			string json = JsonSerializer.Serialize(_data, options);
+			string json = JsonSerializer.Serialize(_data, _jsonOptions);
 			if (_filePath == null) return;
 			string tempPath = _filePath + ".tmp";
 			File.WriteAllText(tempPath, json, Encoding.UTF8);

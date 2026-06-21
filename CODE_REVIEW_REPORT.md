@@ -8,31 +8,15 @@
 
 ## 🔴 严重问题（需优先处理）
 
-### 1. `SHA1` 哈希写入但从未校验
+### ~~1. `SHA1` 哈希写入但从未校验~~ ✅ 已降级为建议
 
-**文件:** `AppInfoEntry_0x07564427.cs:28-29`、`AppInfoEntry_0x07564428.cs:29-30`、`AppInfoEntry_0x07564429.cs:38-39`
-
-所有版本的 `FromReader` 方法读取 20 字节哈希后直接丢弃，`Write` 方法重新计算并写入新哈希。读取时从不校验存储的哈希与重新计算的哈希是否一致。
-
-**影响:** 损坏的条目会被静默加载并写入不同数据，校验形同虚设。
-
-**修复建议:** 在 `FromReader` 中添加可选的校验逻辑（至少在 Debug 模式下验证）。
+> 已移至 🟡 改进建议 #26。哈希覆盖的数据格式（字符串表示 vs 二进制数据）在读取时无法直接重算，且 Steam 自身会验证哈希。添加读取时校验的实现复杂度高，收益有限。
 
 ---
 
-### 2. `AppInfoPaths` — 可变静态数组
+### ~~2. `AppInfoPaths` — 可变静态数组~~ ✅ 已降级为建议
 
-**文件:** `SteamEdit.Data/AppInfoPaths.cs:7-27`
-
-```csharp
-public static readonly string[] Name = { "appinfo", "common", "name" };
-```
-
-`static readonly` 仅保证引用不可变，数组内容可被任意修改。任何代码都可以执行 `AppInfoPaths.Name[0] = "hacked"` 而不产生编译错误。
-
-**影响:** 恶意或意外修改会导致全局属性路径失效，且极难调试。
-
-**修复建议:** 改为 `IReadOnlyList<string>` 或使用 `FrozenSet` / 不可变集合。
+> 已移至 🟡 改进建议 #25。由于 `params string[]` 签名约束，修改涉及 30+ 调用点，风险收益比不高。
 
 ---
 
@@ -84,19 +68,8 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 5. `TranslationGlossary.Save()` — 每次分配 `JsonSerializerOptions`
 
-**文件:** `Common/TranslationGlossary.cs:191-195`
-
-每次调用 `Save()` 都创建新的 `JsonSerializerOptions`，触发反射和缓存初始化。
-
-**收益:** 减少 GC 压力和启动延迟。
-
-**实现路径:** 提取为 `private static readonly JsonSerializerOptions` 字段。
-
----
-
-### 6. `AiTranslator` — 无重试/退避机制
+### 5. `AiTranslator` — 无重试/退避机制
 
 **文件:** `Common/AiTranslator.cs:116-125`
 
@@ -108,7 +81,7 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 7. `AiTranslator` — API 密钥明文存储
+### 6. `AiTranslator` — API 密钥明文存储
 
 **文件:** `Common/Settings.cs` 中 `AiApiKey` 属性
 
@@ -120,7 +93,7 @@ API 密钥以明文存储在 `Settings.json` 中。任何能读取该文件的�
 
 ---
 
-### 8. `AppInfoEntryBase.RevertModifiedProperty` — 每次反序列化整个原始数据
+### 7. `AppInfoEntryBase.RevertModifiedProperty` — 每次反序列化整个原始数据
 
 **文件:** `SteamEdit.Data.Impl/AppInfoEntryBase.cs:229-249`
 
@@ -132,19 +105,8 @@ API 密钥以明文存储在 `Settings.json` 中。任何能读取该文件的�
 
 ---
 
-### 9. `AppInfoEntryBase.Name`/`SortAs` — null 缓存失效
 
-**文件:** `SteamEdit.Data.Impl/AppInfoEntryBase.cs:94-99,121-133`
-
-当属性不存在时，`GetPropertyValue` 返回 null，`_cachedName` 被设为 null。下次访问时再次进入 `if (_cachedName == null)` 分支，重新读取属性表。
-
-**收益:** 避免不必要的重复属性查找。
-
-**实现路径:** 使用哨兵值（如 `bool _nameCached`）区分"未缓存"和"缓存为 null"。
-
----
-
-### 10. `AppInfoEntryBase.Launches` — 每次访问创建新对象
+### 8. `AppInfoEntryBase.Launches` — 每次访问创建新对象
 
 **文件:** `SteamEdit.Data.Impl/AppInfoEntryBase.cs:194-195`
 
@@ -160,7 +122,7 @@ get => new LaunchTable(GetLaunchPropertyTable());
 
 ---
 
-### 11. `WaitingDialog.ShowAndWait` — `Application.DoEvents` 重入风险
+### 9. `WaitingDialog.ShowAndWait` — `Application.DoEvents` 重入风险
 
 **文件:** `SteamEdit/WaitingDialog.cs:65-82`
 
@@ -172,7 +134,7 @@ get => new LaunchTable(GetLaunchPropertyTable());
 
 ---
 
-### 12. `Program.cs` — 任务取消后竞态条件
+### 10. `Program.cs` — 任务取消后竞态条件
 
 **文件:** `SteamEdit/Program.cs:86-88`
 
@@ -189,35 +151,8 @@ return false;
 
 ---
 
-### 13. `MainWindow` — 错误消息暴露完整堆栈跟踪
 
-**文件:** `SteamEdit/MainWindow.cs:486,487,494,510`
-
-所有保存/应用错误处理使用 `ex.ToString()`，向用户显示完整堆栈跟踪。
-
-**收益:** 改善用户体验，避免泄露内部实现细节。
-
-**实现路径:** 对话框显示 `ex.Message`，堆栈跟踪写入日志。
-
----
-
-### 14. `GameListManager.OnAppSelection_DrawItem` — 潜在 `KeyNotFoundException`
-
-**文件:** `SteamEdit/GameListManager.cs:500`
-
-```csharp
-e.Graphics.DrawImage(_filterImages[entry.Type], ...);
-```
-
-如果 `entry.Type` 的值不在 `_filterImages` 字典中（如未来新增枚举值），将抛出异常。
-
-**收益:** 防止渲染崩溃。
-
-**实现路径:** 使用 `TryGetValue` 并提供默认图标。
-
----
-
-### 15. `UndoManager` — 无撤销栈深度限制
+### 11. `UndoManager` — 无撤销栈深度限制
 
 **文件:** `Common/UndoManager.cs`
 
@@ -229,7 +164,7 @@ e.Graphics.DrawImage(_filterImages[entry.Type], ...);
 
 ---
 
-### 16. `BatchReplaceDialog` — 批量替换无撤销支持
+### 12. `BatchReplaceDialog` — 批量替换无撤销支持
 
 **文件:** `SteamEdit/BatchReplaceDialog.cs:390-428`
 
@@ -241,7 +176,7 @@ e.Graphics.DrawImage(_filterImages[entry.Type], ...);
 
 ---
 
-### 17. `Settings.SaveJson` — 临时文件替换在 Windows 上非原子
+### 13. `Settings.SaveJson` — 临时文件替换在 Windows 上非原子
 
 **文件:** `Common/Settings.cs:408-410`
 
@@ -258,7 +193,7 @@ Windows 上 `File.Move(overwrite: true)` 非原子。进程崩溃可能导致设
 
 ---
 
-### 18. `SteamData.Save` — 备份恢复本身可能失败
+### 14. `SteamData.Save` — 备份恢复本身可能失败
 
 **文件:** `SteamEdit.Data/SteamData.cs:167-172`
 
@@ -278,7 +213,7 @@ catch (Exception ex)
 
 ---
 
-### 19. `SettingsDlg.ApplyAutoStartRegistry` — Checkbox 变更立即写入注册表
+### 15. `SettingsDlg.ApplyAutoStartRegistry` — Checkbox 变更立即写入注册表
 
 **文件:** `SteamEdit/SettingsDlg.cs:323,333,344`
 
@@ -290,7 +225,7 @@ catch (Exception ex)
 
 ---
 
-### 20. `EditController._listEntryType.SelectedItem` — 未检查 null
+### 16. `EditController._listEntryType.SelectedItem` — 未检查 null
 
 **文件:** `SteamEdit/EditController.cs:391`
 
@@ -306,7 +241,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 21. `GameListManager.SortEntries` — 每次排序分配新 Dictionary
+### 17. `GameListManager.SortEntries` — 每次排序分配新 Dictionary
 
 **文件:** `SteamEdit/GameListManager.cs:315-316`
 
@@ -318,7 +253,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 22. `MainWindow` — 静态事件导致内存泄漏风险
+### 18. `MainWindow` — 静态事件导致内存泄漏风险
 
 **文件:** `SteamEdit/MainWindow.cs:132-133`
 
@@ -330,7 +265,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 23. `Settings._values` — 无线程安全
+### 19. `Settings._values` — 无线程安全
 
 **文件:** `Common/Settings.cs`
 
@@ -342,7 +277,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 24. `LaunchTable.Items` — 每次枚举重新执行 LINQ 查询
+### 20. `LaunchTable.Items` — 每次枚举重新执行 LINQ 查询
 
 **文件:** `SteamEdit.Data/LaunchTable.cs:16`
 
