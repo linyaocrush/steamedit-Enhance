@@ -28,8 +28,8 @@ internal class AppInfo_0x07564429 : AppInfoBase<AppInfoEntry_0x07564429>
 			stringTable[i] = PropertyTableIO.ReadZString(reader);
 		reader.BaseStream.Position = entriesStart;
 
-		// 加载条目（使用字符串表上下文）
-		appInfo.LoadEntriesCore(reader, br => AppInfoEntry_0x07564429.FromReader(br, stringTable));
+		// 加载条目（使用字符串表上下文，_unknownValueAtStart 已在上方读取）
+		appInfo.ReadEntriesLoop(reader, br => AppInfoEntry_0x07564429.FromReader(br, stringTable));
 		return appInfo;
 	}
 

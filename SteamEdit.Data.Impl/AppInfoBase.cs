@@ -81,6 +81,14 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 	protected void LoadEntriesCore(BinaryReader reader, Func<BinaryReader, TEntry?> readEntry)
 	{
 		_unknownValueAtStart = reader.ReadUInt32();
+		ReadEntriesLoop(reader, readEntry);
+	}
+
+	/// <summary>
+	/// 条目循环读取。当 unknownValueAtStart 已在外部读取时使用此方法。
+	/// </summary>
+	protected void ReadEntriesLoop(BinaryReader reader, Func<BinaryReader, TEntry?> readEntry)
+	{
 		TEntry? entry;
 		while ((entry = readEntry(reader)) != null)
 		{
