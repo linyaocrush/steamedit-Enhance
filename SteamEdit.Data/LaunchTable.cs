@@ -55,6 +55,7 @@ internal class LaunchTable
 	public void Clear()
 	{
 		_propertyTable.Clear();
+		_nextIndex = 0;
 	}
 
 	public void Add(LaunchItem item)

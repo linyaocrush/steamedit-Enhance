@@ -19,20 +19,21 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 
 	public static AppInfoEntry_0x07564429? FromReader(BinaryReader reader, IList<string> stringTable)
 	{
-		var entry = ReadEntryCore(reader,
+		return ReadEntryCore(reader,
 			() => new AppInfoEntry_0x07564429(),
 			subReader => PropertyTableIO.ReadPropertyTable_0x07564429(subReader, stringTable),
-			hashBlockCount: 2);
-
-		if (entry != null && !entry._properties.HasProperty(AppInfoPaths.NameLocalized))
-		{
-			PropertyTable? nameLocalized = entry._properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.BaseNameLocalized);
-			if (nameLocalized != null)
+			hashBlockCount: 2,
+			postProcess: entry =>
 			{
-				entry._properties.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.NameLocalized);
-			}
-		}
-		return entry;
+				if (!entry._properties.HasProperty(AppInfoPaths.NameLocalized))
+				{
+					PropertyTable? nameLocalized = entry._properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.BaseNameLocalized);
+					if (nameLocalized != null)
+					{
+						entry._properties.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.NameLocalized);
+					}
+				}
+			});
 	}
 
 	public void Write(BinaryWriter writer, List<string> stringTable, Dictionary<string, uint> stringLookup)

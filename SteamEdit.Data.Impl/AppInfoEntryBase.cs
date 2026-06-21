@@ -398,7 +398,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		BinaryReader reader,
 		Func<TEntry> createEntry,
 		Func<BinaryReader, PropertyTable> readPropertyTable,
-		int hashBlockCount) where TEntry : AppInfoEntryBase
+		int hashBlockCount,
+		Action<TEntry>? postProcess = null) where TEntry : AppInfoEntryBase
 	{
 		int num = reader.ReadInt32();
 		if (num == 0) return null;
@@ -420,6 +421,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 				entry._properties = readPropertyTable(subReader);
 				entry.RestoreBaseProperties();
 			}
+			postProcess?.Invoke(entry);
 			entry._originalData = PropertyTableIO.WritePropertyTable_Mods(entry._properties);
 			entry.ClearCachedProps();
 			return entry;
