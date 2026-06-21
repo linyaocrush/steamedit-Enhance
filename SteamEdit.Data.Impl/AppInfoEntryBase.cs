@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Common;
 using SteamEdit.Data;
 
@@ -387,5 +389,82 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected virtual void HandleNameLocalizedRemoval(PropertyTable common, PropertyTable nameLocalized)
 	{
 		common.RemoveProperty("name_localized");
+	}
+
+	/// <summary>
+	/// 通用的条目读取模板。各版本子类传入工厂方法、属性表读取委托和哈希块数量。
+	/// </summary>
+	protected static TEntry? ReadEntryCore<TEntry>(
+		BinaryReader reader,
+		Func<TEntry> createEntry,
+		Func<BinaryReader, PropertyTable> readPropertyTable,
+		int hashBlockCount) where TEntry : AppInfoEntryBase
+	{
+		int num = reader.ReadInt32();
+		if (num == 0) return null;
+
+		var entry = createEntry();
+		entry.ID = num;
+		try
+		{
+			int count = reader.ReadInt32();
+			if (count < 0)
+				throw new InvalidDataException($"Entry data size {count} is negative.");
+			using (BinaryReader subReader = new BinaryReader(new MemoryStream(reader.ReadBytes(count))))
+			{
+				entry._stuffBeforeHash = subReader.ReadBytes(16);
+				subReader.ReadBytes(20); // hash 1
+				entry._changeNumber = subReader.ReadUInt32();
+				for (int i = 1; i < hashBlockCount; i++)
+					subReader.ReadBytes(20); // additional hash blocks
+				entry._properties = readPropertyTable(subReader);
+				entry.RestoreBaseProperties();
+			}
+			entry._originalData = PropertyTableIO.WritePropertyTable_Mods(entry._properties);
+			entry.ClearCachedProps();
+			return entry;
+		}
+		catch (Exception e)
+		{
+			throw new AppInfoLoadException($"Failed to load entry with appId {entry.ID:X8}", e);
+		}
+	}
+
+	/// <summary>
+	/// 通用的条目写入模板。各版本子类传入属性表写入委托和哈希块数量。
+	/// </summary>
+	protected void WriteEntryCore(BinaryWriter writer, int hashBlockCount, Action<BinaryWriter, PropertyTable> writePropertyTable)
+	{
+		PropertyTable table = PrepareWriteTable(out _);
+		string s = table.ToString();
+		byte[] bytes = Encoding.UTF8.GetBytes(s);
+		using var sha = SHA1.Create();
+		byte[] hash = sha.ComputeHash(bytes);
+		writer.Write(ID);
+		using BinaryWriter subWriter = new BinaryWriter(new MemoryStream());
+		subWriter.Write(_stuffBeforeHash);
+		subWriter.Write(hash);
+		subWriter.Write(_changeNumber);
+		writePropertyTable(subWriter, table);
+		if (hashBlockCount > 1)
+		{
+			// 回填 tableHash：需要先写入 tableData，计算哈希，再回填
+			MemoryStream subMs = (MemoryStream)subWriter.BaseStream;
+			long afterChangeNumber = 16 + 20 + 4; // stuffBeforeHash + hash + changeNumber
+			subMs.Position = afterChangeNumber;
+			byte[] tableData = new byte[subMs.Length - afterChangeNumber];
+			subMs.Read(tableData, 0, tableData.Length);
+			byte[] tableHash = sha.ComputeHash(tableData);
+			// 重写：stuffBeforeHash + hash + changeNumber + tableHash + tableData
+			subMs.SetLength(0);
+			subWriter.Write(_stuffBeforeHash);
+			subWriter.Write(hash);
+			subWriter.Write(_changeNumber);
+			subWriter.Write(tableHash);
+			subWriter.Write(tableData);
+		}
+		MemoryStream outMs = (MemoryStream)subWriter.BaseStream;
+		writer.Write((int)outMs.Length);
+		writer.Write(outMs.GetBuffer(), 0, (int)outMs.Length);
 	}
 }

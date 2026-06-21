@@ -331,17 +331,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ## 🔵 简化建议
 
-### 1. `AppInfoEntry_0x07564427/28/29` — 版本实现代码重复率 ~90%
-
-**简化点:** 三个版本的 `FromReader`/`Write` 方法结构几乎完全相同，仅属性表读取委托和哈希块数量不同。
-
-**收益:** 消除约 200 行重复代码，新增版本只需配置差异参数。
-
-**实现概要:** 在 `AppInfoEntryBase` 中实现通用的 `FromReader(reader, readPropertyTable, hashBlockCount)` 模板方法，各版本子类仅提供委托和参数。
-
----
-
-### 2. `AppInfo_0x07564427/28/29` — 容器类同样重复
+### 1. `AppInfo_0x07564427/28/29` — 容器类同样重复
 
 **简化点:** 三个 `AppInfo_0x...` 的 `Load` 方法结构完全相同，仅 magic number 和 entry 类型不同。
 
@@ -361,7 +351,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 4. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
+### 3. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
 
 **简化点:** 在代码中手动构建整个对话框（518-544 行），使用硬编码尺寸。
 

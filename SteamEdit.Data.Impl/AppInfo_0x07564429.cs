@@ -44,7 +44,7 @@ internal class AppInfo_0x07564429 : AppInfoBase<AppInfoEntry_0x07564429>
 		{
 			foreach (AppInfoEntry_0x07564429 entry in Entries)
 			{
-				entry.Write(binaryWriter2, ref stringTable, ref stringLookup);
+				entry.Write(binaryWriter2, stringTable, stringLookup);
 			}
 			binaryWriter2.Write(0);
 			long value = writer.BaseStream.Position + 8 + binaryWriter2.BaseStream.Length;
