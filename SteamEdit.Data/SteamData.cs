@@ -177,8 +177,33 @@ internal static class SteamData
 	public static void Apply()
 	{
 		Log.WriteLine("Saving SteamData:");
-		AppInfoData.Save(AppInfoPath);
-		Log.WriteLine("  AppInfo saved");
-		NeedsApply = false;
+		string backupPath = AppInfoPath + ".bak";
+		try
+		{
+			if (File.Exists(AppInfoPath))
+			{
+				File.Copy(AppInfoPath, backupPath, overwrite: true);
+			}
+			AppInfoData.Save(AppInfoPath);
+			Log.WriteLine("  AppInfo saved");
+			NeedsApply = false;
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("Apply failed: {0}", ex.ToString());
+			try
+			{
+				if (File.Exists(backupPath))
+				{
+					File.Copy(backupPath, AppInfoPath, overwrite: true);
+					Log.WriteLine("  AppInfo restored from backup");
+				}
+			}
+			catch (Exception restoreEx)
+			{
+				Log.WriteLine("  AppInfo backup restore also failed: {0}", restoreEx.ToString());
+			}
+			throw;
+		}
 	}
 }

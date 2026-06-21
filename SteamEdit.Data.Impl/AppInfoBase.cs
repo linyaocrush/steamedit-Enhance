@@ -28,13 +28,24 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 
 	public void Save(string path)
 	{
-		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
-		binaryWriter.Write(MagicNumber);
-		binaryWriter.Write(_unknownValueAtStart);
-		SaveEntries(binaryWriter);
-		using FileStream destination = File.Open(path, FileMode.Create, FileAccess.Write);
-		binaryWriter.BaseStream.Position = 0L;
-		binaryWriter.BaseStream.CopyTo(destination);
+		string tempPath = path + ".tmp";
+		try
+		{
+			using (FileStream tempStream = File.Create(tempPath))
+			using (BinaryWriter binaryWriter = new BinaryWriter(tempStream))
+			{
+				binaryWriter.Write(MagicNumber);
+				binaryWriter.Write(_unknownValueAtStart);
+				SaveEntries(binaryWriter);
+			}
+			File.Replace(tempPath, path, null);
+		}
+		catch
+		{
+			try { if (File.Exists(tempPath)) File.Delete(tempPath); }
+			catch { /* 最佳努力清理 */ }
+			throw;
+		}
 	}
 
 	public bool RevertEntry(IAppInfoEntry entry)

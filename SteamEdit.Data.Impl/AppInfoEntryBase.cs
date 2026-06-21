@@ -17,8 +17,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	internal static IEntryDisplaySettings DisplaySettings { get; set; } = null!;
 
 	private string? _cachedName;
+	private bool _nameCached;
 	private bool? _cachedHasSortAs;
 	private string? _cachedSortAs;
+	private bool _sortAsCached;
 	private AppInfoEntryType? _cachedType;
 
 	protected byte[] _stuffBeforeHash = null!;
@@ -92,9 +94,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
-			if (_cachedName == null)
+			if (!_nameCached)
 			{
 				_cachedName = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Name);
+				_nameCached = true;
 			}
 			return _cachedName;
 		}
@@ -122,13 +125,14 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
-			if (_cachedSortAs == null)
+			if (!_sortAsCached)
 			{
 				_cachedSortAs = _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs);
 				if (_cachedSortAs == null || _cachedSortAs.Length == 0)
 				{
 					_cachedSortAs = Name;
 				}
+				_sortAsCached = true;
 			}
 			return _cachedSortAs;
 		}
@@ -204,7 +208,9 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected void ClearCachedProps()
 	{
 		_cachedName = null;
+		_nameCached = false;
 		_cachedSortAs = null;
+		_sortAsCached = false;
 		_cachedHasSortAs = null;
 		_cachedType = null;
 	}

@@ -26,7 +26,7 @@ internal class Settings
 		Converters = { new JsonStringEnumConverter() }
 	};
 
-	private T Get<T>(string key) => (T)_values[key];
+	private T Get<T>(string key) => _values.TryGetValue(key, out var val) ? (T)val : default!;
 
 	private void Set<T>(string key, T value)
 	{

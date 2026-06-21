@@ -499,7 +499,8 @@ internal class GameListManager : IDisposable
 
 		if ((_currentFilters & (_currentFilters - 1)) != 0)
 		{
-			e.Graphics.DrawImage(_filterImages[entry.Type], e.Bounds.X + 3, e.Bounds.Y + 3, iconSize, iconSize);
+			if (_filterImages.TryGetValue(entry.Type, out var icon))
+				e.Graphics.DrawImage(icon, e.Bounds.X + 3, e.Bounds.Y + 3, iconSize, iconSize);
 			bounds.X += e.Bounds.Height;
 			bounds.Width -= e.Bounds.Height;
 		}

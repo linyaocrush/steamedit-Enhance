@@ -483,15 +483,15 @@ internal class MainWindow : LocalizableForm
 	private void OnBtnSave_Click(object sender, EventArgs e)
 	{
 		try { SteamData.Save(); }
-		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
+		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
 	}
 
 	private void OnBtnSaveApply_Click(object sender, EventArgs e)
 	{
 		try { SteamData.Save(); }
-		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); return; }
+		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
 		try { SteamData.Apply(); }
-		catch (Exception ex2) { MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.ToString())); }
+		catch (Exception ex2) { Log.WriteLine("Apply failed: {0}", ex2); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.Message)); }
 	}
 
 	private void OnBtnSaveApplyRestart_Click(object sender, EventArgs e)
@@ -507,7 +507,7 @@ internal class MainWindow : LocalizableForm
 			SteamData.Apply();
 			SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
 		}
-		catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
+		catch (Exception ex) { Log.WriteLine("SaveApplyRestart failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
 	}
 
 	private void OnHelp_Click(object sender, EventArgs e)

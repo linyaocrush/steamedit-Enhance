@@ -67,7 +67,22 @@ internal class BatchTranslateDialog : LocalizableForm
     protected override async void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        await RunBatchAsync();
+        try
+        {
+            await RunBatchAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // 用户取消，正常退出
+        }
+        catch (Exception ex)
+        {
+            Log.WriteLine("BatchTranslate error: {0}", ex);
+            if (InvokeRequired)
+                BeginInvoke(() => MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error));
+            else
+                MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private async Task RunBatchAsync()

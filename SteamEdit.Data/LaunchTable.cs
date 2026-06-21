@@ -8,6 +8,7 @@ namespace SteamEdit.Data;
 internal class LaunchTable
 {
 	private PropertyTable _propertyTable;
+	private int _nextIndex;
 
 	public PropertyTable PropertyTable => new PropertyTable(_propertyTable);
 
@@ -27,16 +28,19 @@ internal class LaunchTable
 	public LaunchTable()
 	{
 		_propertyTable = new PropertyTable();
+		_nextIndex = 0;
 	}
 
 	public LaunchTable(LaunchTable other)
 	{
 		_propertyTable = new PropertyTable(other.PropertyTable);
+		_nextIndex = other._nextIndex;
 	}
 
 	public LaunchTable(PropertyTable table)
 	{
 		_propertyTable = new PropertyTable(table);
+		_nextIndex = table.Count;
 	}
 
 	public LaunchTable(IEnumerable<LaunchItem> items)
@@ -69,6 +73,7 @@ internal class LaunchTable
 		{
 			propertyTable.SetPropertyValue("workingdir", PropertyType.String, item.WorkingDir);
 		}
-		_propertyTable.SetPropertyValue(_propertyTable.Count.ToString(), PropertyType.Table, propertyTable);
+		_propertyTable.SetPropertyValue(_nextIndex.ToString(), PropertyType.Table, propertyTable);
+		_nextIndex++;
 	}
 }
