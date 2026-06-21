@@ -216,7 +216,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		return _properties.GetPropertyValue(DefaultValue, PropertyPath);
 	}
 
-	public void SetPropertyValue(PropertyType Type, object Value, params string[] PropertyPath)
+	public void SetPropertyValue(PropertyType Type, object? Value, params string[] PropertyPath)
 	{
 		_properties.SetPropertyValue(Type, Value, PropertyPath);
 		if (ModificationsCreate().AddChange(Type, Value, PropertyPath))

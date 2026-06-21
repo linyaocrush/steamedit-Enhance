@@ -143,7 +143,8 @@ internal class LaunchEditorItem : LocalizableUserControl
 
 	private void panel1_Paint(object sender, PaintEventArgs e)
 	{
-		e.Graphics.DrawRectangle(new Pen(SystemColors.ControlLight), e.ClipRectangle.Left, e.ClipRectangle.Top, e.ClipRectangle.Width - 1, e.ClipRectangle.Height - 1);
+		using var pen = new Pen(SystemColors.ControlLight);
+		e.Graphics.DrawRectangle(pen, e.ClipRectangle.Left, e.ClipRectangle.Top, e.ClipRectangle.Width - 1, e.ClipRectangle.Height - 1);
 	}
 
 	private void btnSelectExec_Click(object sender, EventArgs e)

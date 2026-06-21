@@ -182,10 +182,16 @@ internal static class Program
             {
                 TranslationGlossary.Initialize(dataInit.DataDirectory);
                 Task.Run(() => SyncGlossaryFromEntries());
-                MainWindow_ = new MainWindow();
-                Application.Run(MainWindow_);
-                SteamData.Shutdown();
-                Log.Close();
+                try
+                {
+                    MainWindow_ = new MainWindow();
+                    Application.Run(MainWindow_);
+                }
+                finally
+                {
+                    SteamData.Shutdown();
+                    Log.Close();
+                }
             }
         }
     }

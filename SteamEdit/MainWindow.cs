@@ -359,6 +359,7 @@ internal class MainWindow : LocalizableForm
 		string lang = Settings.Default.AiTargetLanguage switch
 		{
 			"zh-CN" => "中文名",
+			"zh-TW" => "繁體中文名",
 			"en" => "English name",
 			_ => "translated name"
 		};
@@ -372,7 +373,7 @@ internal class MainWindow : LocalizableForm
 		};
 		string url = baseUrl + query;
 		Log.WriteLine("Search: Opening {0}", url);
-		Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+		Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose();
 	}
 
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)
