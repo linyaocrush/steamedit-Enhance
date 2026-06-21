@@ -41,68 +41,61 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	internal Property? this[string name] => _propertyMap.TryGetValue(name, out var prop) ? prop : null;
 
+	/// <summary>
+	/// 沿路径遍历到父级 PropertyTable（路径中除最后一个元素外的所有元素）。
+	/// createMissing=true 时自动创建缺失的中间 Table；否则遇到缺失返回 null。
+	/// </summary>
+	private PropertyTable? TraverseToParent(string[] path, bool createMissing = false)
+	{
+		if (path.Length == 0) throw new ArgumentException("Path must not be empty.", nameof(path));
+		if (path.Length > MaxNestingDepth)
+			throw new InvalidDataException($"Path depth {path.Length} exceeds maximum {MaxNestingDepth}.");
+		PropertyTable current = this;
+		for (int i = 0; i < path.Length - 1; i++)
+		{
+			Property? prop = current[path[i]];
+			if (prop != null)
+			{
+				PropertyTable? next = prop.GetValue<PropertyTable>();
+				if (next == null) return null;
+				current = next;
+			}
+			else if (createMissing)
+			{
+				PropertyTable next = new PropertyTable();
+				current.SetPropertyValue(path[i], PropertyType.Table, next);
+				current = next;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		return current;
+	}
+
 	public bool HasProperty(params string[] PropertyPath)
 	{
 		if (PropertyPath.Length == 0) return false;
-		if (PropertyPath.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
-		PropertyTable propertyTable = this;
-		foreach (string name in PropertyPath)
-		{
-			if (propertyTable == null || propertyTable[name] == null)
-			{
-				return false;
-			}
-			propertyTable = propertyTable.GetPropertyValue<PropertyTable>(name);
-		}
-		return true;
+		PropertyTable? parent = TraverseToParent(PropertyPath);
+		return parent != null && parent[PropertyPath[PropertyPath.Length - 1]] != null;
 	}
 
 	public Property? GetRawProperty(params string[] PropertyPath)
 	{
-		if (PropertyPath.Length == 0) throw new ArgumentException("Property path must not be empty.", nameof(PropertyPath));
-		if (PropertyPath.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
-		PropertyTable propertyTable = this;
-		for (int i = 0; i < PropertyPath.Length - 1; i++)
-		{
-			Property? property = propertyTable[PropertyPath[i]];
-			if (property == null) return null;
-			propertyTable = property.GetValue<PropertyTable>();
-			if (propertyTable == null) return null;
-		}
-		return propertyTable[PropertyPath[PropertyPath.Length - 1]];
+		PropertyTable? parent = TraverseToParent(PropertyPath);
+		return parent?[PropertyPath[PropertyPath.Length - 1]];
 	}
 
 	public void SetRawProperty(Property prop, params string[] PropertyPath)
 	{
-		if (PropertyPath.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		if (prop == null)
 		{
 			RemoveProperty(PropertyPath);
 			return;
 		}
-		PropertyTable propertyTable = this;
-		for (int i = 0; i < PropertyPath.Length - 1; i++)
-		{
-			string item = PropertyPath[i];
-			if (propertyTable.HasProperty(item))
-			{
-				propertyTable = propertyTable.GetPropertyValue<PropertyTable>(item);
-			}
-			else
-			{
-				PropertyTable propertyTable2 = new PropertyTable();
-				propertyTable.SetPropertyValue(item, PropertyType.Table, propertyTable2);
-				propertyTable = propertyTable2;
-			}
-			if (propertyTable == null)
-			{
-				return;
-			}
-		}
-		propertyTable.SetPropertyValue(PropertyPath[PropertyPath.Length - 1], prop.PropertyType, prop.Value);
+		PropertyTable? parent = TraverseToParent(PropertyPath, createMissing: true);
+		parent?.SetPropertyValue(PropertyPath[PropertyPath.Length - 1], prop.PropertyType, prop.Value);
 	}
 
 	public T GetPropertyValue<T>(string name, T defValue = default!)
@@ -140,22 +133,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
 	{
 		if (PropertyPath.Length == 0) return DefaultValue;
-		if (PropertyPath.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
-		PropertyTable propertyTable = this;
-		for (int i = 0; i < PropertyPath.Length - 1; i++)
-		{
-			Property? property = propertyTable[PropertyPath[i]];
-			if (property != null)
-			{
-				propertyTable = property.GetValue<PropertyTable>();
-			}
-			if (property == null || propertyTable == null)
-			{
-				return DefaultValue;
-			}
-		}
-		return propertyTable.GetPropertyValue(PropertyPath[PropertyPath.Length - 1], DefaultValue);
+		PropertyTable? parent = TraverseToParent(PropertyPath);
+		return parent == null ? DefaultValue : parent.GetPropertyValue(PropertyPath[PropertyPath.Length - 1], DefaultValue);
 	}
 
 	public PropertyType GetPropertyType(string name)
@@ -197,28 +176,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public bool SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
-		if (propertyPath.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Property path depth {propertyPath.Length} exceeds maximum {MaxNestingDepth}.");
-		PropertyTable propertyTable = this;
-		for (int i = 0; i < propertyPath.Length - 1; i++)
-		{
-			string item = propertyPath[i];
-			if (propertyTable.HasProperty(item))
-			{
-				propertyTable = propertyTable.GetPropertyValue<PropertyTable>(item);
-			}
-			else
-			{
-				PropertyTable propertyTable2 = new PropertyTable();
-				propertyTable.SetPropertyValue(item, PropertyType.Table, propertyTable2);
-				propertyTable = propertyTable2;
-			}
-			if (propertyTable == null)
-			{
-				return false;
-			}
-		}
-		return propertyTable.SetPropertyValue(propertyPath[propertyPath.Length - 1], type, value);
+		PropertyTable? parent = TraverseToParent(propertyPath, createMissing: true);
+		if (parent == null) return false;
+		return parent.SetPropertyValue(propertyPath[propertyPath.Length - 1], type, value);
 	}
 
 	public void RemoveProperty(string name)
