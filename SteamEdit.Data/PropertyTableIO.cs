@@ -9,6 +9,8 @@ namespace SteamEdit.Data;
 
 internal static class PropertyTableIO
 {
+	private const int MaxZStringBuffer = 1024 * 1024; // 1MB cap to prevent OOM on malformed files
+
 	internal static string ReadZString(BinaryReader reader)
 	{
 		byte[] buf = new byte[256];
@@ -17,7 +19,12 @@ internal static class PropertyTableIO
 		byte value;
 		while (len < remaining && (value = reader.ReadByte()) != 0)
 		{
-			if (len == buf.Length) Array.Resize(ref buf, buf.Length * 2);
+			if (len == buf.Length)
+			{
+				if (buf.Length * 2 > MaxZStringBuffer)
+					throw new InvalidDataException("ReadZString: string exceeds maximum buffer size. File may be corrupted.");
+				Array.Resize(ref buf, buf.Length * 2);
+			}
 			buf[len++] = value;
 		}
 		if (len >= remaining)
@@ -125,7 +132,7 @@ internal static class PropertyTableIO
 				PropertyType.Uint64 => reader.ReadUInt64(),
 				PropertyType.Float => reader.ReadSingle(),
 				PropertyType.Color => ReadColor_0x00000000(reader),
-				_ => throw new NotImplementedException("The property type " + propertyType.ToString() + " has not been implemented."),
+				_ => throw new InvalidDataException("Unknown property type " + (byte)propertyType + " at position " + reader.BaseStream.Position + ". File may be corrupted."),
 			}, name: name, type: propertyType);
 		}
 		return propertyTable;
@@ -169,10 +176,10 @@ internal static class PropertyTableIO
 				WriteColor_0x00000000(writer, (Color)property.Value!);
 				break;
 			default:
-				throw new NotImplementedException("The value type " + property.PropertyType.ToString() + " has not been implemented.");
+				throw new InvalidDataException("The property type " + property.PropertyType.ToString() + " has not been implemented.");
 			}
 		}
-		writer.Write((byte)8);
+		writer.Write((byte)PropertyType._EndOfTable_);
 	}
 
 	// ── Public API: thin wrappers ──

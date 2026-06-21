@@ -43,6 +43,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public bool HasProperty(params string[] PropertyPath)
 	{
+		if (PropertyPath.Length == 0) return false;
 		if (PropertyPath.Length > MaxNestingDepth)
 			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
@@ -59,6 +60,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public Property? GetRawProperty(params string[] PropertyPath)
 	{
+		if (PropertyPath.Length == 0) throw new ArgumentException("Property path must not be empty.", nameof(PropertyPath));
 		if (PropertyPath.Length > MaxNestingDepth)
 			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
@@ -137,6 +139,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
 	{
+		if (PropertyPath.Length == 0) return DefaultValue;
 		if (PropertyPath.Length > MaxNestingDepth)
 			throw new InvalidDataException($"Property path depth {PropertyPath.Length} exceeds maximum {MaxNestingDepth}.");
 		PropertyTable propertyTable = this;
@@ -343,7 +346,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 				stringBuilder.AppendFormat("\t\t\"{0}\"", property.Value);
 				break;
 			default:
-				throw new NotImplementedException("The property type " + property.PropertyType.ToString() + " is invalid.");
+				throw new InvalidDataException("The property type " + property.PropertyType.ToString() + " is invalid.");
 			}
 			stringBuilder.Append("\n");
 		}

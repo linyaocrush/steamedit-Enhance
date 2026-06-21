@@ -14,6 +14,7 @@ internal static class AppHelper
 		for (int i = 1; i < commandLineArgs.Length; i++)
 		{
 			string text = commandLineArgs[i];
+			if (string.IsNullOrEmpty(text)) continue;
 			if (text == "--")
 			{
 				break;

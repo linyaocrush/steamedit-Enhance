@@ -25,8 +25,9 @@ internal class UndoManager
     private readonly Stack<UndoRecord> _undoStack = new();
 
     public bool CanUndo => _undoStack.Count > 0;
+    public int Count => _undoStack.Count;
 
-    public void Push(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object previousValue)
+    public void Push(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object? previousValue)
     {
         _undoStack.Push(new UndoRecord(entry, propertyPath, type, previousValue));
     }
@@ -34,5 +35,10 @@ internal class UndoManager
     public UndoRecord Pop()
     {
         return _undoStack.Pop();
+    }
+
+    public void Clear()
+    {
+        _undoStack.Clear();
     }
 }

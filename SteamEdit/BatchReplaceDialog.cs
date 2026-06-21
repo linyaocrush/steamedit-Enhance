@@ -11,6 +11,7 @@ namespace SteamEdit;
 
 internal class BatchReplaceDialog : LocalizableForm
 {
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
     private readonly IReadOnlyList<IAppInfoEntry> _entries;
     private IContainer components;
     private TextBox textFind;
@@ -321,7 +322,7 @@ internal class BatchReplaceDialog : LocalizableForm
             lblMatchCount.Text = string.Format(Strings.BatchReplace_MatchCount, count);
             btnReplaceAll.Enabled = count > 0;
         }
-        catch (ArgumentException ex)
+        catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
         {
             lblMatchCount.Text = string.Format(Strings.BatchReplace_InvalidRegex, ex.Message);
             btnReplaceAll.Enabled = false;
@@ -337,7 +338,7 @@ internal class BatchReplaceDialog : LocalizableForm
         if (_regexMode)
         {
             var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
-            return Regex.Replace(original, find, replace, options);
+            return Regex.Replace(original, find, replace, options, RegexTimeout);
         }
         else
         {
@@ -352,7 +353,7 @@ internal class BatchReplaceDialog : LocalizableForm
         if (_regexMode)
         {
             var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
-            foreach (Match m in Regex.Matches(text, pattern, options))
+            foreach (Match m in Regex.Matches(text, pattern, options, RegexTimeout))
             {
                 ranges.Add((m.Index, m.Length));
             }
@@ -377,7 +378,7 @@ internal class BatchReplaceDialog : LocalizableForm
         if (_regexMode)
         {
             var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
-            return Regex.IsMatch(text, pattern, options);
+            return Regex.IsMatch(text, pattern, options, RegexTimeout);
         }
         else
         {
@@ -401,7 +402,14 @@ internal class BatchReplaceDialog : LocalizableForm
             if (_regexMode)
             {
                 var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
-                result = Regex.Replace(original, find, replace, options);
+                try
+                {
+                    result = Regex.Replace(original, find, replace, options, RegexTimeout);
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    continue; // skip entries that cause regex timeout
+                }
             }
             else
             {
