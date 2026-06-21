@@ -331,17 +331,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ## 🔵 简化建议
 
-### 1. `AppInfo_0x07564427/28/29` — 容器类同样重复
-
-**简化点:** 三个 `AppInfo_0x...` 的 `Load` 方法结构完全相同，仅 magic number 和 entry 类型不同。
-
-**收益:** 消除约 60 行重复代码。
-
-**实现概要:** 在 `AppInfoBase<TEntry>` 中实现通用 `Load` 方法，子类仅提供 magic number 常量。
-
----
-
-### 3. `MainWindow` 保存/应用错误处理重复
+### 1. `MainWindow` 保存/应用错误处理重复
 
 **简化点:** `OnBtnSave_Click`、`OnBtnSaveApply_Click`、`OnBtnSaveApplyRestart_Click` 中相同的 try-catch 模式。
 
@@ -351,7 +341,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 3. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
+### 2. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
 
 **简化点:** 在代码中手动构建整个对话框（518-544 行），使用硬编码尺寸。
 
