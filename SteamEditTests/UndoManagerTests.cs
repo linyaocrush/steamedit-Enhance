@@ -115,4 +115,76 @@ public class UndoManagerTests
         var record = mgr.Pop();
         CollectionAssert.AreEqual(AppInfoPaths.IsHidden, record.PropertyPath);
     }
+
+    [TestMethod]
+    public void CompoundRecord_CreateCompound_SetsIsCompound()
+    {
+        var entry = new FakeEntry { ID = 1 };
+        var r1 = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, 1);
+        var r2 = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, 2);
+        var compound = UndoRecord.CreateCompound(r1, r2);
+        Assert.IsTrue(compound.IsCompound);
+        Assert.AreEqual(2, compound.SubRecords!.Length);
+    }
+
+    [TestMethod]
+    public void CompoundRecord_EntryFromFirstSubRecord()
+    {
+        var entry = new FakeEntry { ID = 42 };
+        var r1 = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, 1);
+        var r2 = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, 2);
+        var compound = UndoRecord.CreateCompound(r1, r2);
+        Assert.AreEqual(42, compound.Entry.ID);
+        CollectionAssert.AreEqual(AppInfoPaths.OpenVrSupport, compound.PropertyPath);
+        Assert.AreEqual(1, (int)compound.PreviousValue!);
+    }
+
+    [TestMethod]
+    public void PushCompound_PopReturnsCompound()
+    {
+        var mgr = new UndoManager();
+        var entry = new FakeEntry { ID = 1 };
+        var r1 = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, 1);
+        var r2 = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, 2);
+        mgr.PushCompound(UndoRecord.CreateCompound(r1, r2));
+        Assert.IsTrue(mgr.CanUndo);
+        var record = mgr.Pop();
+        Assert.IsTrue(record.IsCompound);
+        Assert.AreEqual(2, record.SubRecords!.Length);
+    }
+
+    [TestMethod]
+    public void PushCompound_MixedWithRegularPush_LIFOOrder()
+    {
+        var mgr = new UndoManager();
+        var entry = new FakeEntry { ID = 1 };
+        // 普通记录
+        mgr.Push(entry, AppInfoPaths.Name, PropertyType.String, "OldName");
+        // 复合记录
+        var r1 = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, 1);
+        var r2 = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, 2);
+        mgr.PushCompound(UndoRecord.CreateCompound(r1, r2));
+        // LIFO: 先弹出复合记录
+        var popped = mgr.Pop();
+        Assert.IsTrue(popped.IsCompound);
+        // 再弹出普通记录
+        popped = mgr.Pop();
+        Assert.IsFalse(popped.IsCompound);
+        Assert.AreEqual("OldName", popped.PreviousValue);
+    }
+
+    [TestMethod]
+    public void CreateCompound_Empty_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(() => UndoRecord.CreateCompound());
+    }
+
+    [TestMethod]
+    public void RegularRecord_IsCompound_ReturnsFalse()
+    {
+        var entry = new FakeEntry { ID = 1 };
+        var record = new UndoRecord(entry, AppInfoPaths.Name, PropertyType.String, "Old");
+        Assert.IsFalse(record.IsCompound);
+        Assert.IsNull(record.SubRecords);
+    }
 }

@@ -135,6 +135,20 @@ internal class EditController
 		if (!_undoManager.CanUndo) return;
 		var record = _undoManager.Pop();
 
+		// 复合记录：递归处理所有子记录
+		if (record.IsCompound)
+		{
+			foreach (var sub in record.SubRecords!)
+				ApplyUndoRecord(sub);
+		}
+		else
+		{
+			ApplyUndoRecord(record);
+		}
+	}
+
+	private void ApplyUndoRecord(UndoRecord record)
+	{
 		if (_listManager.GetSelectedEntry() != record.Entry)
 		{
 			int idx = _ctx.Entries.IndexOf(record.Entry);
@@ -374,9 +388,16 @@ internal class EditController
 		if (entry == null) return;
 		if (_snapshotValues.TryGetValue("vr", out var prev) && prev is int p)
 		{
-			_undoManager.Push(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, p);
+			var vrRecord = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, p);
 			if (_snapshotValues.TryGetValue("vr_base", out var basePrev) && basePrev is int bp)
-				_undoManager.Push(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, bp);
+			{
+				var baseRecord = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, bp);
+				_undoManager.PushCompound(UndoRecord.CreateCompound(vrRecord, baseRecord));
+			}
+			else
+			{
+				_undoManager.PushCompound(vrRecord);
+			}
 		}
 		SetEntryVR(entry, _listVR.SelectedIndex != 0);
 	}

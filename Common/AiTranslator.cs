@@ -30,20 +30,33 @@ internal static class AiTranslator
 		if (!string.IsNullOrWhiteSpace(apiKey))
 			request.Headers.Add("Authorization", $"Bearer {apiKey}");
 
-		using var response = await _httpClient.SendAsync(request, cancellationToken);
+		HttpResponseMessage response;
+		try
+		{
+			response = await _httpClient.SendAsync(request, cancellationToken);
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw; // 用户取消，直接传播
+		}
+		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+		{
+			Log.WriteLine("AI: Network error fetching models: {0}", ex.Message);
+			throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
+		}
 		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
 		if (!response.IsSuccessStatusCode)
 		{
 			Log.WriteLine("AI: Models fetch failed: {0}", (int)response.StatusCode);
-			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+			throw new AiTranslationException(AiErrorKind.ApiError, $"API error {(int)response.StatusCode}: {responseBody}", (int)response.StatusCode);
 		}
 
 		var contentType = response.Content.Headers.ContentType?.MediaType;
 		if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
 		{
 			Log.WriteLine("AI: Unexpected content type: {0}", contentType);
-			throw new Exception($"Expected JSON response but got {contentType}");
+			throw new AiTranslationException(AiErrorKind.ParseError, $"Expected JSON response but got {contentType}");
 		}
 
 		var models = new List<string>();
@@ -119,7 +132,20 @@ Rules:
 			request.Headers.Add("Authorization", $"Bearer {apiKey}");
 		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
-		using var response = await _httpClient.SendAsync(request, cancellationToken);
+		HttpResponseMessage response;
+		try
+		{
+			response = await _httpClient.SendAsync(request, cancellationToken);
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw; // 用户取消，直接传播
+		}
+		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+		{
+			Log.WriteLine("AI: Network error: {0}", ex.Message);
+			throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
+		}
 		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
 		Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
@@ -127,14 +153,14 @@ Rules:
 		if (!response.IsSuccessStatusCode)
 		{
 			Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
-			throw new Exception($"API error {(int)response.StatusCode}: {responseBody}");
+			throw new AiTranslationException(AiErrorKind.ApiError, $"API error {(int)response.StatusCode}: {responseBody}", (int)response.StatusCode);
 		}
 
 		var ct = response.Content.Headers.ContentType?.MediaType;
 		if (ct != null && !ct.Contains("json", StringComparison.OrdinalIgnoreCase))
 		{
 			Log.WriteLine("AI: Unexpected content type: {0}", ct);
-			throw new Exception($"Expected JSON response but got {ct}");
+			throw new AiTranslationException(AiErrorKind.ParseError, $"Expected JSON response but got {ct}");
 		}
 
 		using var doc = JsonDocument.Parse(responseBody);
@@ -159,7 +185,7 @@ Rules:
 		catch (Exception ex)
 		{
 			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
-			throw new Exception($"Failed to parse AI response: {ex.Message}", ex);
+			throw new AiTranslationException(AiErrorKind.ParseError, $"Failed to parse AI response: {ex.Message}", innerException: ex);
 		}
 
 		return result?.Trim() ?? "";

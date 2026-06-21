@@ -217,7 +217,12 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		_cachedType = null;
 	}
 
-	public byte[] GetOriginalDataCopy() => (byte[])_originalData.Clone();
+	public byte[] GetOriginalDataCopy()
+	{
+		if (_originalData == null)
+			throw new InvalidOperationException($"GetOriginalDataCopy called on entry {ID:X8} before original data was initialized.");
+		return (byte[])_originalData.Clone();
+	}
 
 	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
 	{
