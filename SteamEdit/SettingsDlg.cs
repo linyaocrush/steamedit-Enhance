@@ -180,12 +180,14 @@ internal class SettingsDlg : LocalizableForm
             Settings.Default.AiTranslationRules = textTranslationRules.Text;
             Settings.Default.AiBatchTranslateConcurrency = (int)numBatchConcurrency.Value;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
-            ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
+            if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+                MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             Settings.Default.Save();
         }
         else
         {
-            ApplyAutoStartRegistry(_snapshotAutoStart, _snapshotAutoFix, _snapshotForceStart);
+            if (!ApplyAutoStartRegistry(_snapshotAutoStart, _snapshotAutoFix, _snapshotForceStart))
+                MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -320,7 +322,8 @@ internal class SettingsDlg : LocalizableForm
     {
         if (_loading) return;
         UpdateAutoStartSubEnabled();
-        ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
+        if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+            MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private void checkAutoStartAutoFix_CheckedChanged(object sender, EventArgs e)
@@ -330,7 +333,8 @@ internal class SettingsDlg : LocalizableForm
         {
             checkAutoStartForceStart.Checked = false;
         }
-        ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
+        if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+            MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private void checkAutoStartForceStart_CheckedChanged(object sender, EventArgs e)
@@ -340,7 +344,8 @@ internal class SettingsDlg : LocalizableForm
         {
             checkAutoStartAutoFix.Checked = true;
         }
-        ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked);
+        if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+            MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private void UpdateAutoStartSubEnabled()
@@ -355,12 +360,12 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private static void ApplyAutoStartRegistry(bool autoStart, bool autoFix, bool forceStart)
+    private static bool ApplyAutoStartRegistry(bool autoStart, bool autoFix, bool forceStart)
     {
         try
         {
             using RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
-            if (key == null) return;
+            if (key == null) return false;
 
             if (autoStart)
             {
@@ -375,10 +380,12 @@ internal class SettingsDlg : LocalizableForm
             {
                 key.DeleteValue(RunValueName, throwOnMissingValue: false);
             }
+            return true;
         }
         catch (Exception ex)
         {
             Log.WriteLine("Failed to update auto-start registry: {0}", ex.Message);
+            return false;
         }
     }
 

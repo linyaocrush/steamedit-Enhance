@@ -592,7 +592,6 @@ internal class GameListManager : IDisposable
 		if (item.Checked) _currentFilters |= type;
 		else _currentFilters &= ~type;
 		Settings.Default.Filters = _currentFilters;
-		Settings.Default.Save();
 		RefreshGameList();
 	}
 
@@ -605,7 +604,6 @@ internal class GameListManager : IDisposable
 				mi.Checked = sm == mode;
 		}
 		Settings.Default.FiltersShowEntries = mode;
-		Settings.Default.Save();
 		RefreshGameList();
 	}
 

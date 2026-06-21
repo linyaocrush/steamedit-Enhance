@@ -14,7 +14,7 @@ internal class Settings
 	private static readonly PropertyInfo[] _cachedProperties = typeof(Settings).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 	public static readonly Settings Default = new Settings();
 
-	private readonly Dictionary<string, object> _values;
+	private readonly System.Collections.Concurrent.ConcurrentDictionary<string, object> _values;
 
 	private bool _isDirty;
 	private bool _suppressDirtyTracking;
@@ -123,7 +123,7 @@ internal class Settings
 
 	private Settings()
 	{
-		_values = new Dictionary<string, object>();
+		_values = new System.Collections.Concurrent.ConcurrentDictionary<string, object>();
 		_suppressDirtyTracking = true;
 
 		// 第一步：应用 [DefaultValue] 默认值

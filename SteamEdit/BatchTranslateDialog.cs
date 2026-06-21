@@ -246,7 +246,7 @@ internal class BatchTranslateDialog : LocalizableForm
 
     protected override void Dispose(bool disposing)
     {
-        _cts?.Dispose();
+        try { _cts?.Dispose(); } catch (ObjectDisposedException) { }
         _pauseEvent?.Dispose();
         if (disposing && components != null)
         {

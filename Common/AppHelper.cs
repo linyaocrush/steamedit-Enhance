@@ -69,7 +69,8 @@ internal static class AppHelper
 
 	public static string GetAppDirectory()
 	{
-		return _cachedAppDirectory ??= Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName) ?? "";
+		return _cachedAppDirectory ??= Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName)
+			?? throw new InvalidOperationException("Cannot determine application directory");
 	}
 
 	public static string MakePathRelative(string src, string relToFolder)

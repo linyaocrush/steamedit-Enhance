@@ -189,11 +189,7 @@ internal class MainWindow : LocalizableForm
 	protected override void ApplyLanguage()
 	{
 		_originalTitle = Strings.MainWindow_Title;
-		Text = _originalTitle;
-		if (SteamData.NeedsSave)
-			Text += Strings.MainWindow_UnsavedSuffix;
-		if (SteamData.NeedsApply)
-			Text += Strings.MainWindow_UnappliedSuffix;
+		SteamData_OnNeedsSaveOrApply(null, EventArgs.Empty);
 
 		checkHidden.Text = Strings.MainWindow_CheckHidden;
 		checkCompleted.Text = Strings.MainWindow_CheckCompleted;
@@ -610,6 +606,7 @@ internal class MainWindow : LocalizableForm
 	{
 		if (disposing)
 		{
+			_editController?.Dispose();
 			_listManager?.Dispose();
 			components?.Dispose();
 		}

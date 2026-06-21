@@ -127,40 +127,60 @@ Rules:
 
 		Log.WriteLine("AI: Requesting {0}", apiUrl);
 
-		using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
-		if (!string.IsNullOrWhiteSpace(apiKey))
-			request.Headers.Add("Authorization", $"Bearer {apiKey}");
-		request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+		const int maxRetries = 3;
+		string responseBody = null!;
+		for (int attempt = 0; ; attempt++)
+		{
+			using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
+			if (!string.IsNullOrWhiteSpace(apiKey))
+				request.Headers.Add("Authorization", $"Bearer {apiKey}");
+			request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
-		HttpResponseMessage response;
-		try
-		{
-			response = await _httpClient.SendAsync(request, cancellationToken);
-		}
-		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-		{
-			throw; // 用户取消，直接传播
-		}
-		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-		{
-			Log.WriteLine("AI: Network error: {0}", ex.Message);
-			throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
-		}
-		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+			HttpResponseMessage response;
+			try
+			{
+				response = await _httpClient.SendAsync(request, cancellationToken);
+			}
+			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+			{
+				throw; // 用户取消，直接传播
+			}
+			catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+			{
+				if (attempt < maxRetries - 1)
+				{
+					Log.WriteLine("AI: Network error (attempt {0}/{1}): {2}", attempt + 1, maxRetries, ex.Message);
+					await Task.Delay(1000 << attempt, cancellationToken);
+					continue;
+				}
+				Log.WriteLine("AI: Network error: {0}", ex.Message);
+				throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
+			}
+			responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
-		Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
+			Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
 
-		if (!response.IsSuccessStatusCode)
-		{
-			Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
-			throw new AiTranslationException(AiErrorKind.ApiError, $"API error {(int)response.StatusCode}: {responseBody}", (int)response.StatusCode);
-		}
+			if (!response.IsSuccessStatusCode)
+			{
+				int statusCode = (int)response.StatusCode;
+				if ((statusCode == 429 || statusCode == 503) && attempt < maxRetries - 1)
+				{
+					Log.WriteLine("AI: Transient error {0} (attempt {1}/{2}), retrying...", statusCode, attempt + 1, maxRetries);
+					await Task.Delay(1000 << attempt, cancellationToken);
+					continue;
+				}
+				Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
+				throw new AiTranslationException(AiErrorKind.ApiError, $"API error {statusCode}: {responseBody}", statusCode);
+			}
 
-		var ct = response.Content.Headers.ContentType?.MediaType;
-		if (ct != null && !ct.Contains("json", StringComparison.OrdinalIgnoreCase))
-		{
-			Log.WriteLine("AI: Unexpected content type: {0}", ct);
-			throw new AiTranslationException(AiErrorKind.ParseError, $"Expected JSON response but got {ct}");
+			var ct = response.Content.Headers.ContentType?.MediaType;
+			if (ct != null && !ct.Contains("json", StringComparison.OrdinalIgnoreCase))
+			{
+				Log.WriteLine("AI: Unexpected content type: {0}", ct);
+				throw new AiTranslationException(AiErrorKind.ParseError, $"Expected JSON response but got {ct}");
+			}
+
+			break;
 		}
 
 		using var doc = JsonDocument.Parse(responseBody);

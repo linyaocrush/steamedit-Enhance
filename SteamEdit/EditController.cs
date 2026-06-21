@@ -10,7 +10,7 @@ using SteamEdit.Data;
 
 namespace SteamEdit;
 
-internal class EditController
+internal class EditController : IDisposable
 {
 	private static readonly string[] ControllerRawValues = { "none", "partial", "full" };
 
@@ -83,6 +83,28 @@ internal class EditController
 		_listVR.Enter += OnEditControl_Enter;
 		_listEntryType.SelectedIndexChanged += OnListEntryType_SelectedIndexChanged;
 		_listEntryType.Enter += OnEditControl_Enter;
+	}
+
+	public void Dispose()
+	{
+		_textGameName.TextChanged -= OnTextGameName_TextChanged;
+		_textGameName.Enter -= OnEditControl_Enter;
+		_textGameName.ClearXClicked -= OnTextGameName_ClearXClicked;
+		_textSortAs.TextChanged -= OnTextSortAs_TextChanged;
+		_textSortAs.Enter -= OnEditControl_Enter;
+		_textSortAs.ClearXClicked -= OnTextSortAs_ClearXClicked;
+		_checkHidden.CheckedChanged -= OnCheckHidden_CheckedChanged;
+		_checkHidden.Enter -= OnEditControl_Enter;
+		_checkCompleted.CheckedChanged -= OnCheckCompleted_CheckedChanged;
+		_checkCompleted.Enter -= OnEditControl_Enter;
+		_listControllerSupport.SelectedIndexChanged -= OnListControllerSupport_SelectedIndexChanged;
+		_listControllerSupport.KeyDown -= OnGeneric_KeyDown;
+		_listControllerSupport.Enter -= OnEditControl_Enter;
+		_listVR.SelectedIndexChanged -= OnListVR_SelectedIndexChanged;
+		_listVR.KeyDown -= OnGeneric_KeyDown;
+		_listVR.Enter -= OnEditControl_Enter;
+		_listEntryType.SelectedIndexChanged -= OnListEntryType_SelectedIndexChanged;
+		_listEntryType.Enter -= OnEditControl_Enter;
 	}
 
 	public bool IsSettingUpEntry => _isSettingUpEntry;

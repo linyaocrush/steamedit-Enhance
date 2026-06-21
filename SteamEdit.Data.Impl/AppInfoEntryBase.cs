@@ -24,6 +24,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	private string? _cachedSortAs;
 	private bool _sortAsCached;
 	private AppInfoEntryType? _cachedType;
+	private PropertyTable? _cachedOriginalData;
 
 	protected byte[] _stuffBeforeHash = null!;
 	protected uint _changeNumber;
@@ -59,6 +60,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			}
 			ClearCachedProps();
 			_modifications = value;
+			_cachedOriginalData = null;
 			if (_modifications?.ApplyChanges(_properties) == true)
 			{
 				RaiseModified();
@@ -215,6 +217,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		_sortAsCached = false;
 		_cachedHasSortAs = null;
 		_cachedType = null;
+		_cachedOriginalData = null;
 	}
 
 	public byte[] GetOriginalDataCopy()
@@ -292,8 +295,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	private PropertyTable DeserializeOriginalData()
 	{
-		using var reader = new BinaryReader(new MemoryStream(_modifications!.OriginalData!));
-		return PropertyTableIO.ReadPropertyTable_Mods(reader);
+		return _cachedOriginalData ??= PropertyTableIO.ReadPropertyTable_Mods(new BinaryReader(new MemoryStream(_modifications!.OriginalData!)));
 	}
 
 	protected ModifiedEntry ModificationsCreate()

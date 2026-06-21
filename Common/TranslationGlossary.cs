@@ -43,6 +43,7 @@ internal static class TranslationGlossary
 
 	public static void Initialize(string dataDirectory)
 	{
+		if (_initialized) return;
 		_filePath = Path.Combine(dataDirectory, "glossary.json");
 		Load();
 		_initialized = true;
