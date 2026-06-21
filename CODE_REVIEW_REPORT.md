@@ -110,23 +110,7 @@ protected override async void OnLoad(EventArgs e)
 
 ---
 
-### 7. `EditController.LoadEntry` — `entry.Modification.Changes` 空引用风险
-
-**文件:** `SteamEdit/EditController.cs:107,110`
-
-```csharp
-_textGameName.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty(AppInfoPaths.Name);
-```
-
-如果 `IsModified` 为 true 但 `Modification` 为 null（理论上不应发生，但 `ModifiedEntry` 构造函数的 `Changes` 字段初始化为 `null!`），将抛出 `NullReferenceException`。对比 `MainWindow.cs:445` 使用了 `entry.Modification?.Changes != null` 的安全写法。
-
-**影响:** 在特定边界条件下可能导致 UI 崩溃。
-
-**修复建议:** 统一使用 `entry.Modification?.Changes?.HasProperty(...)` 模式。
-
----
-
-### 8. `AppInfoPaths` — 可变静态数组
+### 7. `AppInfoPaths` — 可变静态数组
 
 **文件:** `SteamEdit.Data/AppInfoPaths.cs:7-27`
 
@@ -142,7 +126,7 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 9. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
+### 8. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
 
 **文件:** `Common/Settings.cs:29`
 

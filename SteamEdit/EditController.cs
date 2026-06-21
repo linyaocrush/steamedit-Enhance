@@ -104,10 +104,10 @@ internal class EditController
 		_snapshotValues.Clear();
 
 		_textGameName.Text = entry.Name;
-		_textGameName.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty(AppInfoPaths.Name);
+		_textGameName.ClearXVisible = entry.IsModified && entry.Modification?.Changes?.HasProperty(AppInfoPaths.Name) == true;
 		_textSortAs.Text = entry.SortAs;
 		_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
-		_textSortAs.ClearXVisible = entry.IsModified && entry.Modification.Changes.HasProperty(AppInfoPaths.SortAs);
+		_textSortAs.ClearXVisible = entry.IsModified && entry.Modification?.Changes?.HasProperty(AppInfoPaths.SortAs) == true;
 		_checkHidden.Checked = entry.IsHidden;
 		_checkCompleted.Checked = entry.IsCompleted;
 
