@@ -8,23 +8,7 @@
 
 ## 🔴 严重问题（需优先处理）
 
-### 1. `LaunchTable.Add` — 删除后新增会导致键冲突覆盖
-
-**文件:** `SteamEdit.Data/LaunchTable.cs:72`
-
-```csharp
-_propertyTable.SetPropertyValue(_propertyTable.Count.ToString(), PropertyType.Table, propertyTable);
-```
-
-键由 `Count` 派生。如果先 `Clear()` 再逐步 `Add()`，Count 从 0 递增没有问题。但如果未来引入单条删除逻辑（如删除第 1 条后 Count 从 3 变 2），下一次 Add 会用键 `"2"` 覆盖已有的第 3 条数据，导致静默数据损坏。
-
-**影响:** 当前无单条删除接口，属于潜在风险。但如果代码演进不注意，极易触发。
-
-**修复建议:** 使用显式索引管理（如 `_nextIndex` 字段）或使用 GUID 作为键而非顺序数字。
-
----
-
-### 2. `SHA1` 哈希写入但从未校验
+### 1. `SHA1` 哈希写入但从未校验
 
 **文件:** `AppInfoEntry_0x07564427.cs:28-29`、`AppInfoEntry_0x07564428.cs:29-30`、`AppInfoEntry_0x07564429.cs:38-39`
 
@@ -36,7 +20,7 @@ _propertyTable.SetPropertyValue(_propertyTable.Count.ToString(), PropertyType.Ta
 
 ---
 
-### 3. `AppInfoPaths` — 可变静态数组
+### 2. `AppInfoPaths` — 可变静态数组
 
 **文件:** `SteamEdit.Data/AppInfoPaths.cs:7-27`
 
@@ -52,7 +36,7 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 4. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
+### 3. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
 
 **文件:** `Common/Settings.cs:29`
 
