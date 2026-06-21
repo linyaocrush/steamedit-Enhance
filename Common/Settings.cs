@@ -26,216 +26,101 @@ internal class Settings
 		Converters = { new JsonStringEnumConverter() }
 	};
 
-	private T Get<T>(string key) => _values.TryGetValue(key, out var val) ? (T)val : default!;
+	private T Get<T>([System.Runtime.CompilerServices.CallerMemberName] string key = "") =>
+		_values.TryGetValue(key, out var val) ? (T)val : default!;
 
-	private void Set<T>(string key, T value)
+	private void Set<T>(T value, [System.Runtime.CompilerServices.CallerMemberName] string key = "")
 	{
 		_values[key] = value!;
 		MarkDirty();
 	}
 
 	[DefaultValue(true)]
-	public bool EnableCompleted
-	{
-		get => Get<bool>("EnableCompleted");
-		set => Set("EnableCompleted", value);
-	}
+	public bool EnableCompleted { get => Get<bool>(); set => Set(value); }
 
 	[DefaultValue(true)]
-	public bool EnableHidden
-	{
-		get => Get<bool>("EnableHidden");
-		set => Set("EnableHidden", value);
-	}
+	public bool EnableHidden { get => Get<bool>(); set => Set(value); }
 
 	[DefaultValue(false)]
-	public bool ReplaceLocalizedNames
-	{
-		get => Get<bool>("ReplaceLocalizedNames");
-		set => Set("ReplaceLocalizedNames", value);
-	}
+	public bool ReplaceLocalizedNames { get => Get<bool>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string PassThroughArguments
-	{
-		get => Get<string>("PassThroughArguments");
-		set => Set("PassThroughArguments", value);
-	}
+	public string PassThroughArguments { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue(AppInfoEntryType.Game | AppInfoEntryType.Application | AppInfoEntryType.Video)]
-	public AppInfoEntryType Filters
-	{
-		get => Get<AppInfoEntryType>("Filters");
-		set => Set("Filters", value);
-	}
+	public AppInfoEntryType Filters { get => Get<AppInfoEntryType>(); set => Set(value); }
 
 	[DefaultValue(ShowEntriesMode.All)]
-	public ShowEntriesMode FiltersShowEntries
-	{
-		get => Get<ShowEntriesMode>("FiltersShowEntries");
-		set => Set("FiltersShowEntries", value);
-	}
+	public ShowEntriesMode FiltersShowEntries { get => Get<ShowEntriesMode>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string AppInfoPath
-	{
-		get => Get<string>("AppInfoPath");
-		set => Set("AppInfoPath", value);
-	}
+	public string AppInfoPath { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string ModsLocation
-	{
-		get => Get<string>("ModsLocation");
-		set => Set("ModsLocation", value);
-	}
+	public string ModsLocation { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string ShownVersion
-	{
-		get => Get<string>("ShownVersion");
-		set => Set("ShownVersion", value);
-	}
+	public string ShownVersion { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue(int.MaxValue)]
-	public int WindowLocationX
-	{
-		get => Get<int>("WindowLocationX");
-		set => Set("WindowLocationX", value);
-	}
+	public int WindowLocationX { get => Get<int>(); set => Set(value); }
 
 	[DefaultValue(int.MaxValue)]
-	public int WindowLocationY
-	{
-		get => Get<int>("WindowLocationY");
-		set => Set("WindowLocationY", value);
-	}
+	public int WindowLocationY { get => Get<int>(); set => Set(value); }
 
 	[DefaultValue(int.MaxValue)]
-	public int WindowSizeX
-	{
-		get => Get<int>("WindowSizeX");
-		set => Set("WindowSizeX", value);
-	}
+	public int WindowSizeX { get => Get<int>(); set => Set(value); }
 
 	[DefaultValue(int.MaxValue)]
-	public int WindowSizeY
-	{
-		get => Get<int>("WindowSizeY");
-		set => Set("WindowSizeY", value);
-	}
+	public int WindowSizeY { get => Get<int>(); set => Set(value); }
 
 	[DefaultValue(int.MaxValue)]
-	public int MainWindowSplitter
-	{
-		get => Get<int>("MainWindowSplitter");
-		set => Set("MainWindowSplitter", value);
-	}
+	public int MainWindowSplitter { get => Get<int>(); set => Set(value); }
 
 	[DefaultValue(false)]
-	public bool AutoStart
-	{
-		get => Get<bool>("AutoStart");
-		set => Set("AutoStart", value);
-	}
+	public bool AutoStart { get => Get<bool>(); set => Set(value); }
 
 	[DefaultValue(false)]
-	public bool AutoStartAutoFix
-	{
-		get => Get<bool>("AutoStartAutoFix");
-		set => Set("AutoStartAutoFix", value);
-	}
+	public bool AutoStartAutoFix { get => Get<bool>(); set => Set(value); }
 
 	[DefaultValue(false)]
-	public bool AutoStartForceStart
-	{
-		get => Get<bool>("AutoStartForceStart");
-		set => Set("AutoStartForceStart", value);
-	}
+	public bool AutoStartForceStart { get => Get<bool>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string Language
-	{
-		get => Get<string>("Language");
-		set => Set("Language", value);
-	}
+	public string Language { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string AiApiUrl
-	{
-		get => Get<string>("AiApiUrl");
-		set => Set("AiApiUrl", value);
-	}
+	public string AiApiUrl { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string AiApiKey
-	{
-		get => Get<string>("AiApiKey");
-		set => Set("AiApiKey", value);
-	}
+	public string AiApiKey { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("gpt-4o-mini")]
-	public string AiModel
-	{
-		get => Get<string>("AiModel");
-		set => Set("AiModel", value);
-	}
+	public string AiModel { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("Google")]
-	public string SearchEngine
-	{
-		get => Get<string>("SearchEngine");
-		set => Set("SearchEngine", value);
-	}
+	public string SearchEngine { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("zh-CN")]
-	public string AiTargetLanguage
-	{
-		get => Get<string>("AiTargetLanguage");
-		set => Set("AiTargetLanguage", value);
-	}
+	public string AiTargetLanguage { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string AiCustomSystemPrompt
-	{
-		get => Get<string>("AiCustomSystemPrompt");
-		set => Set("AiCustomSystemPrompt", value);
-	}
+	public string AiCustomSystemPrompt { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string AiCustomUserMessage
-	{
-		get => Get<string>("AiCustomUserMessage");
-		set => Set("AiCustomUserMessage", value);
-	}
+	public string AiCustomUserMessage { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue("")]
-	public string AiTranslationRules
-	{
-		get => Get<string>("AiTranslationRules");
-		set => Set("AiTranslationRules", value);
-	}
+	public string AiTranslationRules { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue(1)]
-	public int AiBatchTranslateConcurrency
-	{
-		get => Get<int>("AiBatchTranslateConcurrency");
-		set => Set("AiBatchTranslateConcurrency", Math.Max(value, 1));
-	}
+	public int AiBatchTranslateConcurrency { get => Get<int>(); set => Set(Math.Max(value, 1)); }
 
 	[DefaultValue("Name")]
-	public string SortField
-	{
-		get => Get<string>("SortField");
-		set => Set("SortField", value);
-	}
+	public string SortField { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue(false)]
-	public bool SortDescending
-	{
-		get => Get<bool>("SortDescending");
-		set => Set("SortDescending", value);
-	}
+	public bool SortDescending { get => Get<bool>(); set => Set(value); }
 
 	private Settings()
 	{

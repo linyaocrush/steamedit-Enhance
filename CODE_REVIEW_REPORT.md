@@ -351,17 +351,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 3. `Settings` 属性样板代码
-
-**简化点:** ~25 个属性，每个都有相同的 `Get<T>`/`Set<T>` + `[DefaultValue]` 模式。
-
-**收益:** 减少约 200 行样板代码。
-
-**实现概要:** 使用 `CallerMemberName` + 字典模式，或使用 C# Source Generator 自动生成属性。
-
----
-
-### 4. `MainWindow` 保存/应用错误处理重复
+### 3. `MainWindow` 保存/应用错误处理重复
 
 **简化点:** `OnBtnSave_Click`、`OnBtnSaveApply_Click`、`OnBtnSaveApplyRestart_Click` 中相同的 try-catch 模式。
 
@@ -371,7 +361,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 5. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
+### 4. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
 
 **简化点:** 在代码中手动构建整个对话框（518-544 行），使用硬编码尺寸。
 
