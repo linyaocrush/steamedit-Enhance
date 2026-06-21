@@ -35,6 +35,12 @@ internal class BatchTranslateDialog : LocalizableForm
     public int SkipCount => _skipCount;
     public int FailCount => _failCount;
 
+    private void InvokeOnUI(Action action)
+    {
+        if (InvokeRequired) BeginInvoke(action);
+        else action();
+    }
+
     public BatchTranslateDialog(List<IAppInfoEntry> entries, string targetLanguage)
     {
         _entries = entries;
@@ -78,10 +84,7 @@ internal class BatchTranslateDialog : LocalizableForm
         catch (Exception ex)
         {
             Log.WriteLine("BatchTranslate error: {0}", ex);
-            if (InvokeRequired)
-                BeginInvoke(() => MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error));
-            else
-                MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            InvokeOnUI(() => MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error));
         }
     }
 
@@ -139,24 +142,14 @@ internal class BatchTranslateDialog : LocalizableForm
 
         TranslationGlossary.Flush();
 
-        if (InvokeRequired)
-            BeginInvoke(() => { UpdateStatsDisplay(); btnPause.Enabled = false; btnCancel.Text = Strings.BatchTranslate_Close; });
-        else
-        {
-            UpdateStatsDisplay();
-            btnPause.Enabled = false;
-            btnCancel.Text = Strings.BatchTranslate_Close;
-        }
+        InvokeOnUI(() => { UpdateStatsDisplay(); btnPause.Enabled = false; btnCancel.Text = Strings.BatchTranslate_Close; });
     }
 
     private async Task TranslateOneAsync(IAppInfoEntry entry, string customSystemPrompt, string customUserMessage, CancellationToken ct)
     {
         string currentName = entry.Name;
 
-        if (InvokeRequired)
-            BeginInvoke(() => lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName));
-        else
-            lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName);
+        InvokeOnUI(() => lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName));
 
         // Check glossary fast path
         string? existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(currentName);
@@ -164,8 +157,7 @@ internal class BatchTranslateDialog : LocalizableForm
         {
             ApplyTranslation(entry, currentName, existingTranslation);
             Interlocked.Increment(ref _successCount);
-            if (InvokeRequired) BeginInvoke(UpdateStatsDisplay);
-            else UpdateStatsDisplay();
+            InvokeOnUI(UpdateStatsDisplay);
             return;
         }
 
@@ -201,28 +193,25 @@ internal class BatchTranslateDialog : LocalizableForm
             Interlocked.Increment(ref _failCount);
         }
 
-        if (InvokeRequired) BeginInvoke(UpdateStatsDisplay);
-        else UpdateStatsDisplay();
+        InvokeOnUI(UpdateStatsDisplay);
     }
 
     private void ApplyTranslation(IAppInfoEntry entry, string previousName, string translated)
     {
-        if (InvokeRequired)
+        void DoApply()
         {
-            BeginInvoke(() => ApplyTranslation(entry, previousName, translated));
-            return;
+            entry.Name = translated;
+            try
+            {
+                string originalName = entry.Modification?.GetOriginalName() ?? previousName;
+                TranslationGlossary.UpdateEntry(entry.ID, originalName, translated);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine("Batch glossary update failed for {0:X8}: {1}", entry.ID, ex.Message);
+            }
         }
-        entry.Name = translated;
-        // Update glossary
-        try
-        {
-            string originalName = entry.Modification?.GetOriginalName() ?? previousName;
-            TranslationGlossary.UpdateEntry(entry.ID, originalName, translated);
-        }
-        catch (Exception ex)
-        {
-            Log.WriteLine("Batch glossary update failed for {0:X8}: {1}", entry.ID, ex.Message);
-        }
+        InvokeOnUI(DoApply);
     }
 
     private void btnPause_Click(object sender, EventArgs e)

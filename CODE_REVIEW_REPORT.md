@@ -361,17 +361,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 4. `EditController`/`BatchTranslateDialog` — `InvokeRequired`/`BeginInvoke` 重复模式
-
-**简化点:** `BatchTranslateDialog` 中 5+ 处重复的 `if (InvokeRequired) BeginInvoke(...)` 模式。
-
-**收益:** 减少样板代码，统一异常处理。
-
-**实现概要:** 提取 `void InvokeOnUI(Action action)` 辅助方法。
-
----
-
-### 5. `MainWindow` 保存/应用错误处理重复
+### 4. `MainWindow` 保存/应用错误处理重复
 
 **简化点:** `OnBtnSave_Click`、`OnBtnSaveApply_Click`、`OnBtnSaveApplyRestart_Click` 中相同的 try-catch 模式。
 
@@ -381,7 +371,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 6. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
+### 5. `MainWindow.OnBtnShortcuts_Click` — 程序化构建快捷键对话框
 
 **简化点:** 在代码中手动构建整个对话框（518-544 行），使用硬编码尺寸。
 
