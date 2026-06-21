@@ -24,61 +24,7 @@ _propertyTable.SetPropertyValue(_propertyTable.Count.ToString(), PropertyType.Ta
 
 ---
 
-### 2. `AppInfoBase.Save` — 非原子写入，崩溃可导致文件丢失
-
-**文件:** `SteamEdit.Data.Impl/AppInfoBase.cs:35`
-
-```csharp
-using FileStream destination = File.Open(path, FileMode.Create, FileAccess.Write);
-```
-
-`FileMode.Create` 会立即截断原文件。如果程序在截断后、写入完成前崩溃（断电、进程被杀），`appinfo.vdf` 将损坏为空文件或不完整文件。这是用户 Steam 数据的核心文件。
-
-**影响:** 极端情况下可导致用户丢失 Steam 本地数据（虽然 Steam 可重新下载 appinfo）。
-
-**修复建议:** 先写入临时文件，完成后使用 `File.Replace` 原子替换（NTFS 支持）。
-
----
-
-### 3. `AppInfoBase.Save` — 整个文件缓冲到内存
-
-**文件:** `SteamEdit.Data.Impl/AppInfoBase.cs:29-38`
-
-```csharp
-using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
-// ... 写入整个文件到 MemoryStream
-binaryWriter.BaseStream.CopyTo(destination);
-```
-
-整个 `appinfo.vdf`（可达 100+ MB）先写入 `MemoryStream`，再复制到文件。峰值内存翻倍。
-
-**影响:** 大型 Steam 库（数万游戏）时可能导致 `OutOfMemoryException` 或显著内存压力。
-
-**修复建议:** 直接写入 `FileStream`，或使用带缓冲的流式写入。
-
----
-
-### 4. `SteamData.Apply` — 无错误处理
-
-**文件:** `SteamEdit.Data/SteamData.cs:177-183`
-
-```csharp
-public static void Apply()
-{
-    AppInfoData.Save(AppInfoPath);
-    NeedsApply = false;  // 如果 Save 抛异常，此行不执行
-}
-```
-
-与 `Save()` 方法不同，`Apply()` 没有 try-catch、没有备份、没有回滚机制。如果写入失败（磁盘满、权限不足），`NeedsApply` 标志不会被清除，但文件可能已被部分写入。
-
-**影响:** 用户可能看到"应用失败"但不知道文件状态。
-
-**修复建议:** 参照 `Save()` 的模式：先备份原文件，写入失败时恢复备份。
-
----
-
-### 5. `SHA1` 哈希写入但从未校验
+### 2. `SHA1` 哈希写入但从未校验
 
 **文件:** `AppInfoEntry_0x07564427.cs:28-29`、`AppInfoEntry_0x07564428.cs:29-30`、`AppInfoEntry_0x07564429.cs:38-39`
 
@@ -90,7 +36,7 @@ public static void Apply()
 
 ---
 
-### 6. `AppInfoPaths` — 可变静态数组
+### 3. `AppInfoPaths` — 可变静态数组
 
 **文件:** `SteamEdit.Data/AppInfoPaths.cs:7-27`
 
@@ -106,7 +52,7 @@ public static readonly string[] Name = { "appinfo", "common", "name" };
 
 ---
 
-### 7. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
+### 4. `Settings.Get<T>` — 潜在 `KeyNotFoundException`
 
 **文件:** `Common/Settings.cs:29`
 
