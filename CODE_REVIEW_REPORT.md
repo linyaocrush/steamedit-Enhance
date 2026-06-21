@@ -22,19 +22,7 @@
 
 ## 🟡 改进建议
 
-### 1. `SteamData` — 全静态可变状态，无线程同步
-
-**文件:** `SteamEdit.Data/SteamData.cs` 全文
-
-`_initProps`、`_modData`、`_needsSave`、`_needsApply` 等所有字段都是 static，且无任何同步机制。`NeedsSave` 的 setter 触发事件 `OnNeedsSave?.Invoke()`，如果多个线程同时读写，存在数据竞争。
-
-**收益:** 消除多线程环境下的数据损坏风险。
-
-**实现路径:** 对 `NeedsSave`/`NeedsApply` 使用 `volatile` 或 `Interlocked`；对 `_modData` 访问加锁或使用不可变引用模式。
-
----
-
-### 2. `PropertyTable` — 部分锁定，数据结构未受保护
+### 1. `PropertyTable` — 部分锁定，数据结构未受保护
 
 **文件:** `SteamEdit.Data/PropertyTable.cs`
 
@@ -46,7 +34,7 @@
 
 ---
 
-### 3. `PropertyTable.Equals` — 只锁定 `this`，不锁定 `other`
+### 2. `PropertyTable.Equals` — 只锁定 `this`，不锁定 `other`
 
 **文件:** `SteamEdit.Data/PropertyTable.cs:291-298`
 
@@ -56,7 +44,7 @@
 
 ---
 
-### 4. `TranslationGlossary.Save()` — 锁内执行同步 I/O
+### 3. `TranslationGlossary.Save()` — 锁内执行同步 I/O
 
 **文件:** `Common/TranslationGlossary.cs:187-207`
 
@@ -69,7 +57,7 @@
 ---
 
 
-### 5. `AiTranslator` — 无重试/退避机制
+### 4. `AiTranslator` — 无重试/退避机制
 
 **文件:** `Common/AiTranslator.cs:116-125`
 
@@ -81,7 +69,7 @@
 
 ---
 
-### 6. `AiTranslator` — API 密钥明文存储
+### 5. `AiTranslator` — API 密钥明文存储
 
 **文件:** `Common/Settings.cs` 中 `AiApiKey` 属性
 
@@ -93,7 +81,7 @@ API 密钥以明文存储在 `Settings.json` 中。任何能读取该文件的�
 
 ---
 
-### 7. `AppInfoEntryBase.RevertModifiedProperty` — 每次反序列化整个原始数据
+### 6. `AppInfoEntryBase.RevertModifiedProperty` — 每次反序列化整个原始数据
 
 **文件:** `SteamEdit.Data.Impl/AppInfoEntryBase.cs:229-249`
 
@@ -106,7 +94,7 @@ API 密钥以明文存储在 `Settings.json` 中。任何能读取该文件的�
 ---
 
 
-### 8. `AppInfoEntryBase.Launches` — 每次访问创建新对象
+### 7. `AppInfoEntryBase.Launches` — 每次访问创建新对象
 
 **文件:** `SteamEdit.Data.Impl/AppInfoEntryBase.cs:194-195`
 
@@ -122,7 +110,7 @@ get => new LaunchTable(GetLaunchPropertyTable());
 
 ---
 
-### 9. `WaitingDialog.ShowAndWait` — `Application.DoEvents` 重入风险
+### 8. `WaitingDialog.ShowAndWait` — `Application.DoEvents` 重入风险
 
 **文件:** `SteamEdit/WaitingDialog.cs:65-82`
 
@@ -134,7 +122,7 @@ get => new LaunchTable(GetLaunchPropertyTable());
 
 ---
 
-### 10. `Program.cs` — 任务取消后竞态条件
+### 9. `Program.cs` — 任务取消后竞态条件
 
 **文件:** `SteamEdit/Program.cs:86-88`
 
@@ -152,7 +140,7 @@ return false;
 ---
 
 
-### 11. `UndoManager` — 无撤销栈深度限制
+### 10. `UndoManager` — 无撤销栈深度限制
 
 **文件:** `Common/UndoManager.cs`
 
@@ -164,7 +152,7 @@ return false;
 
 ---
 
-### 12. `BatchReplaceDialog` — 批量替换无撤销支持
+### 11. `BatchReplaceDialog` — 批量替换无撤销支持
 
 **文件:** `SteamEdit/BatchReplaceDialog.cs:390-428`
 
@@ -176,7 +164,7 @@ return false;
 
 ---
 
-### 13. `Settings.SaveJson` — 临时文件替换在 Windows 上非原子
+### 12. `Settings.SaveJson` — 临时文件替换在 Windows 上非原子
 
 **文件:** `Common/Settings.cs:408-410`
 
@@ -193,7 +181,7 @@ Windows 上 `File.Move(overwrite: true)` 非原子。进程崩溃可能导致设
 
 ---
 
-### 14. `SteamData.Save` — 备份恢复本身可能失败
+### 13. `SteamData.Save` — 备份恢复本身可能失败
 
 **文件:** `SteamEdit.Data/SteamData.cs:167-172`
 
@@ -213,7 +201,7 @@ catch (Exception ex)
 
 ---
 
-### 15. `SettingsDlg.ApplyAutoStartRegistry` — Checkbox 变更立即写入注册表
+### 14. `SettingsDlg.ApplyAutoStartRegistry` — Checkbox 变更立即写入注册表
 
 **文件:** `SteamEdit/SettingsDlg.cs:323,333,344`
 
@@ -225,7 +213,7 @@ catch (Exception ex)
 
 ---
 
-### 16. `EditController._listEntryType.SelectedItem` — 未检查 null
+### 15. `EditController._listEntryType.SelectedItem` — 未检查 null
 
 **文件:** `SteamEdit/EditController.cs:391`
 
@@ -241,7 +229,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 17. `GameListManager.SortEntries` — 每次排序分配新 Dictionary
+### 16. `GameListManager.SortEntries` — 每次排序分配新 Dictionary
 
 **文件:** `SteamEdit/GameListManager.cs:315-316`
 
@@ -253,7 +241,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 18. `MainWindow` — 静态事件导致内存泄漏风险
+### 17. `MainWindow` — 静态事件导致内存泄漏风险
 
 **文件:** `SteamEdit/MainWindow.cs:132-133`
 
@@ -265,7 +253,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 19. `Settings._values` — 无线程安全
+### 18. `Settings._values` — 无线程安全
 
 **文件:** `Common/Settings.cs`
 
@@ -277,7 +265,7 @@ entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
 
 ---
 
-### 20. `LaunchTable.Items` — 每次枚举重新执行 LINQ 查询
+### 19. `LaunchTable.Items` — 每次枚举重新执行 LINQ 查询
 
 **文件:** `SteamEdit.Data/LaunchTable.cs:16`
 
