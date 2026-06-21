@@ -243,8 +243,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		_modifications.Changes.RemoveProperty(PropertyPath);
 		if (_modifications.OriginalData != null)
 		{
-			using BinaryReader reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
-			Property? rawProperty = PropertyTableIO.ReadPropertyTable_Mods(reader).GetRawProperty(PropertyPath);
+			Property? rawProperty = DeserializeOriginalData().GetRawProperty(PropertyPath);
 			_properties.SetRawProperty(rawProperty!, PropertyPath);
 		}
 		if (_modifications.Changes.Count == 0)
@@ -262,8 +261,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	private PropertyTable? TraverseToParent(string[] propertyPath)
 	{
 		if (_modifications?.OriginalData == null || propertyPath.Length == 0) return null;
-		using var reader = new BinaryReader(new MemoryStream(_modifications.OriginalData));
-		var table = PropertyTableIO.ReadPropertyTable_Mods(reader);
+		var table = DeserializeOriginalData();
 		for (int i = 0; i < propertyPath.Length - 1; i++)
 		{
 			var prop = table[propertyPath[i]];
@@ -285,6 +283,12 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		var table = TraverseToParent(PropertyPath);
 		return table?.GetPropertyAsObject(PropertyPath[PropertyPath.Length - 1]);
+	}
+
+	private PropertyTable DeserializeOriginalData()
+	{
+		using var reader = new BinaryReader(new MemoryStream(_modifications!.OriginalData!));
+		return PropertyTableIO.ReadPropertyTable_Mods(reader);
 	}
 
 	protected ModifiedEntry ModificationsCreate()
@@ -312,10 +316,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			{
 				return false;
 			}
-			using (BinaryReader reader = new BinaryReader(new MemoryStream(_modifications.OriginalData)))
-			{
-				_properties = PropertyTableIO.ReadPropertyTable_Mods(reader);
-			}
+			_properties = DeserializeOriginalData();
 			if (_properties != null)
 			{
 				ClearCachedProps();

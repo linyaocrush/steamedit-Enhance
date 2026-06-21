@@ -41,6 +41,12 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	internal Property? this[string name] => _propertyMap.TryGetValue(name, out var prop) ? prop : null;
 
+	private static void ValidatePathDepth(int length)
+	{
+		if (length > MaxNestingDepth)
+			throw new InvalidDataException($"Path depth {length} exceeds maximum {MaxNestingDepth}.");
+	}
+
 	/// <summary>
 	/// 沿路径遍历到父级 PropertyTable（路径中除最后一个元素外的所有元素）。
 	/// createMissing=true 时自动创建缺失的中间 Table；否则遇到缺失返回 null。
@@ -48,8 +54,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	private PropertyTable? TraverseToParent(string[] path, bool createMissing = false)
 	{
 		if (path.Length == 0) throw new ArgumentException("Path must not be empty.", nameof(path));
-		if (path.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Path depth {path.Length} exceeds maximum {MaxNestingDepth}.");
+		ValidatePathDepth(path.Length);
 		PropertyTable current = this;
 		for (int i = 0; i < path.Length - 1; i++)
 		{
@@ -194,8 +199,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public void RemoveProperty(params string[] propertyPath)
 	{
-		if (propertyPath.Length > MaxNestingDepth)
-			throw new InvalidDataException($"Property path depth {propertyPath.Length} exceeds maximum {MaxNestingDepth}.");
+		ValidatePathDepth(propertyPath.Length);
 		Stack<PropertyTable> stack = new Stack<PropertyTable>();
 		Stack<string> stack2 = new Stack<string>();
 		PropertyTable propertyTable = this;

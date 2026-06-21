@@ -63,59 +63,23 @@ internal static class SteamData
 
 	public static IAppInfo AppInfoData { get; private set; } = null!;
 
+	private static void SetDirtyFlag(ref bool field, EventHandler? handler, bool value, Action? onTrue = null)
+	{
+		bool changed;
+		lock (_lock) { changed = field != value; if (changed) field = value; }
+		if (changed) { handler?.Invoke(null, EventArgs.Empty); onTrue?.Invoke(); }
+	}
+
 	public static bool NeedsSave
 	{
 		get => _needsSave;
-		private set
-		{
-			EventHandler? handler;
-			bool changed;
-			lock (_lock)
-			{
-				changed = _needsSave != value;
-				if (changed)
-				{
-					_needsSave = value;
-					handler = OnNeedsSave;
-				}
-				else
-				{
-					handler = null;
-				}
-			}
-			if (changed)
-			{
-				handler?.Invoke(null, EventArgs.Empty);
-				NeedsApply = true;
-			}
-		}
+		private set => SetDirtyFlag(ref _needsSave, OnNeedsSave, value, value ? () => NeedsApply = true : null);
 	}
 
 	public static bool NeedsApply
 	{
 		get => _needsApply;
-		private set
-		{
-			EventHandler? handler;
-			bool changed;
-			lock (_lock)
-			{
-				changed = _needsApply != value;
-				if (changed)
-				{
-					_needsApply = value;
-					handler = OnNeedsApply;
-				}
-				else
-				{
-					handler = null;
-				}
-			}
-			if (changed)
-			{
-				handler?.Invoke(null, EventArgs.Empty);
-			}
-		}
+		private set => SetDirtyFlag(ref _needsApply, OnNeedsApply, value);
 	}
 
 	public static event EventHandler? OnNeedsSave;

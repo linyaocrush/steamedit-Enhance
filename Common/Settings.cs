@@ -6,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml;
 
 namespace Common;
 
@@ -139,26 +138,9 @@ internal class Settings
 
 		// 第二步：尝试加载配置文件
 		string jsonPath = GetJsonFilePath();
-		string xmlPath = GetXmlFilePath();
-
 		if (File.Exists(jsonPath))
 		{
 			LoadFromJson(jsonPath);
-		}
-		else if (File.Exists(xmlPath))
-		{
-			LoadFromXml(xmlPath);
-			// 迁移：直接写出 JSON 并删除旧 XML
-			try
-			{
-				SaveJson(jsonPath);
-				File.Delete(xmlPath);
-				Log.WriteLine("Settings: Migrated from XML to JSON");
-			}
-			catch (Exception ex)
-			{
-				Log.WriteLine("Settings: XML to JSON migration failed: {0}", ex.Message);
-			}
 		}
 
 		_suppressDirtyTracking = false;
@@ -231,55 +213,6 @@ internal class Settings
 		return null;
 	}
 
-	private void LoadFromXml(string xmlPath)
-	{
-		try
-		{
-			using XmlReader reader = XmlReader.Create(xmlPath);
-			XmlDocument xmlDocument = new XmlDocument();
-			xmlDocument.Load(reader);
-			XmlElement? documentElement = xmlDocument.DocumentElement;
-			if (documentElement == null) return;
-
-			foreach (PropertyInfo propertyInfo in _cachedProperties)
-			{
-				XmlElement? element = documentElement[propertyInfo.Name];
-				if (element == null) continue;
-
-				string text = element.InnerText;
-				object? currentValue = propertyInfo.GetValue(this, null);
-				object? parsed = ParseXmlValue(text, propertyInfo.PropertyType, currentValue);
-				if (parsed != null)
-				{
-					propertyInfo.SetValue(this, parsed, null);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("Settings: XML parse error, using defaults: {0}", ex.Message);
-		}
-	}
-
-	private static object? ParseXmlValue(string text, Type targetType, object? defaultValue)
-	{
-		if (targetType == typeof(string))
-			return text;
-
-		if (targetType == typeof(bool) && bool.TryParse(text, out var b))
-			return b;
-		if (targetType == typeof(int) && int.TryParse(text, out var i))
-			return i;
-
-		if (targetType.IsEnum)
-		{
-			try { return Enum.Parse(targetType, text); }
-			catch (Exception ex) when (ex is ArgumentException or OverflowException) { }
-		}
-
-		return defaultValue;
-	}
-
 	private void SaveJson(string path)
 	{
 		string? dir = Path.GetDirectoryName(path);
@@ -318,10 +251,5 @@ internal class Settings
 	{
 		if (!_suppressDirtyTracking)
 			_isDirty = true;
-	}
-
-	private string GetXmlFilePath()
-	{
-		return Path.Combine(AppHelper.GetAppDirectory(), "Settings.xml");
 	}
 }
