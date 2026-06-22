@@ -30,6 +30,8 @@ internal class Settings
 
 	private void Set<T>(T value, [System.Runtime.CompilerServices.CallerMemberName] string key = "")
 	{
+		if (_values.TryGetValue(key, out var existing) && existing is T typed && EqualityComparer<T>.Default.Equals(typed, value))
+			return;
 		_values[key] = value!;
 		MarkDirty();
 	}
@@ -112,7 +114,7 @@ internal class Settings
 	[DefaultValue("")]
 	public string AiTranslationRules { get => Get<string>(); set => Set(value); }
 
-	[DefaultValue(1)]
+	[DefaultValue(3)]
 	public int AiBatchTranslateConcurrency { get => Get<int>(); set => Set(Math.Max(value, 1)); }
 
 	[DefaultValue("Name")]

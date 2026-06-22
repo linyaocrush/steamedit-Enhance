@@ -9,21 +9,27 @@ internal class LaunchTable
 {
 	private PropertyTable _propertyTable;
 	private int _nextIndex;
+	private List<LaunchItem>? _cachedItems;
 
-	public PropertyTable PropertyTable => new PropertyTable(_propertyTable);
+	public PropertyTable PropertyTable => _propertyTable;
 
 	public int Count => _propertyTable.Count;
 
-	public IEnumerable<LaunchItem> Items => from prop in _propertyTable.Properties.Where((Property prop) => prop.PropertyType == PropertyType.Table).OrderBy((Property prop) => prop.Name, StringComparer.OrdinalIgnoreCase)
-		select prop.GetValue<PropertyTable>() into table
-		where !table.TryGetPropertyValue<PropertyTable>("config", out var result) || !result.TryGetPropertyValue<string>("oslist", out var result2) || result2 == "windows"
-		select new LaunchItem
-		{
-			Label = table.GetPropertyValue("description", ""),
-			Executable = table.GetPropertyValue("executable", ""),
-			Arguments = table.GetPropertyValue("arguments", ""),
-			WorkingDir = table.GetPropertyValue("workingdir", "")
-		};
+	public IEnumerable<LaunchItem> Items => _cachedItems ??= BuildItems();
+
+	private List<LaunchItem> BuildItems()
+	{
+		return (from prop in _propertyTable.Properties.Where((Property prop) => prop.PropertyType == PropertyType.Table).OrderBy((Property prop) => prop.Name, StringComparer.OrdinalIgnoreCase)
+			select prop.GetValue<PropertyTable>() into table
+			where !table.TryGetPropertyValue<PropertyTable>("config", out var result) || !result.TryGetPropertyValue<string>("oslist", out var result2) || result2 == "windows"
+			select new LaunchItem
+			{
+				Label = table.GetPropertyValue("description", ""),
+				Executable = table.GetPropertyValue("executable", ""),
+				Arguments = table.GetPropertyValue("arguments", ""),
+				WorkingDir = table.GetPropertyValue("workingdir", "")
+			}).ToList();
+	}
 
 	public LaunchTable()
 	{
@@ -56,6 +62,7 @@ internal class LaunchTable
 	{
 		_propertyTable.Clear();
 		_nextIndex = 0;
+		_cachedItems = null;
 	}
 
 	public void Add(LaunchItem item)
@@ -76,5 +83,6 @@ internal class LaunchTable
 		}
 		_propertyTable.SetPropertyValue(_nextIndex.ToString(), PropertyType.Table, propertyTable);
 		_nextIndex++;
+		_cachedItems = null;
 	}
 }

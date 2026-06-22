@@ -275,7 +275,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 				int num = GetType().GetHashCode();
 				foreach (Property property in _properties)
 				{
-					num ^= property.GetHashCode();
+					num = num * 31 + property.GetHashCode();
 				}
 				_hashCode = num;
 				_hashCodeDirty = false;
