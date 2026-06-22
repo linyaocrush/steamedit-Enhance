@@ -15,6 +15,11 @@ internal static class SteamData
 	private static volatile bool _needsSave;
 	private static volatile bool _needsApply;
 
+	/// <summary>
+	/// 文件系统抽象，默认使用真实文件系统。测试时可替换为 mock。
+	/// </summary>
+	internal static IFileSystem FileSystem { get; set; } = RealFileSystem.Instance;
+
 	public static string CompletedSuffix => " ✓";
 
 	public static string SteamDir { get; private set; } = "";
@@ -146,9 +151,9 @@ internal static class SteamData
 	{
 		Log.WriteLine("Saving Mods:");
 		string text = ModInfoPath + ".bak";
-		if (File.Exists(ModInfoPath))
+		if (FileSystem.FileExists(ModInfoPath))
 		{
-			File.Copy(ModInfoPath, text, overwrite: true);
+			FileSystem.FileCopy(ModInfoPath, text, overwrite: true);
 		}
 		try
 		{
@@ -157,7 +162,7 @@ internal static class SteamData
 		catch (Exception ex)
 		{
 			Log.WriteLine("Save failed: {0}", ex.ToString());
-			File.Copy(text, ModInfoPath, overwrite: true);
+			FileSystem.FileCopy(text, ModInfoPath, overwrite: true);
 			throw;
 		}
 		Log.WriteLine("  Mods saved");
@@ -170,9 +175,9 @@ internal static class SteamData
 		string backupPath = AppInfoPath + ".bak";
 		try
 		{
-			if (File.Exists(AppInfoPath))
+			if (FileSystem.FileExists(AppInfoPath))
 			{
-				File.Copy(AppInfoPath, backupPath, overwrite: true);
+				FileSystem.FileCopy(AppInfoPath, backupPath, overwrite: true);
 			}
 			AppInfoData.Save(AppInfoPath);
 			Log.WriteLine("  AppInfo saved");
@@ -183,9 +188,9 @@ internal static class SteamData
 			Log.WriteLine("Apply failed: {0}", ex.ToString());
 			try
 			{
-				if (File.Exists(backupPath))
+				if (FileSystem.FileExists(backupPath))
 				{
-					File.Copy(backupPath, AppInfoPath, overwrite: true);
+					FileSystem.FileCopy(backupPath, AppInfoPath, overwrite: true);
 					Log.WriteLine("  AppInfo restored from backup");
 				}
 			}
