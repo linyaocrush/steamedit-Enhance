@@ -209,13 +209,4 @@ internal static class PropertyTableIO
 		WritePropertyTable_0x07564429(binaryWriter, table, stringTable, stringLookup);
 		return ((MemoryStream)binaryWriter.BaseStream).ToArray();
 	}
-
-	public static PropertyTable ReadPropertyTable_Mods(BinaryReader reader)
-		=> ReadPropertyTable_0x00000000(reader);
-
-	public static void WritePropertyTable_Mods(BinaryWriter writer, PropertyTable table)
-		=> WritePropertyTable_0x00000000(writer, table);
-
-	public static byte[] WritePropertyTable_Mods(PropertyTable table)
-		=> WritePropertyTable_0x00000000(table);
 }

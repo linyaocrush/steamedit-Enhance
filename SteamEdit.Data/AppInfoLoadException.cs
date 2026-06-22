@@ -3,7 +3,6 @@ using System;
 
 namespace SteamEdit.Data;
 
-[Serializable]
 internal class AppInfoLoadException : Exception
 {
 	public AppInfoLoadException()

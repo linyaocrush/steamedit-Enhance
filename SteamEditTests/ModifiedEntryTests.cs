@@ -176,7 +176,7 @@ public class ModifiedEntryTests
     [TestMethod]
     public void GetOriginalName_ReadsFromBinaryData()
     {
-        // Build a binary blob using PropertyTableIO.WritePropertyTable_Mods
+        // Build a binary blob using PropertyTableIO.WritePropertyTable_0x00000000
         var table = new PropertyTable();
         var appinfo = new PropertyTable();
         var common = new PropertyTable();
@@ -187,7 +187,7 @@ public class ModifiedEntryTests
         using var ms = new MemoryStream();
         using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
         {
-            PropertyTableIO.WritePropertyTable_Mods(writer, table);
+            PropertyTableIO.WritePropertyTable_0x00000000(writer, table);
         }
 
         var entry = new ModifiedEntry(42);

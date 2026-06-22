@@ -36,7 +36,7 @@ public class AppInfoEntryTests
             common.AddPropertyValue("type", PropertyType.String, "game");
             appinfo.AddPropertyValue("common", PropertyType.Table, common);
             _properties.AddPropertyValue("appinfo", PropertyType.Table, appinfo);
-            _originalData = PropertyTableIO.WritePropertyTable_Mods(_properties);
+            _originalData = PropertyTableIO.WritePropertyTable_0x00000000(_properties);
             RestoreBaseProperties();
         }
     }

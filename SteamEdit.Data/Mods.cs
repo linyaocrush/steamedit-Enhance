@@ -57,7 +57,7 @@ internal class Mods
 		for (int i = 0; i < count; i++)
 		{
 			ModifiedEntry entry = new ModifiedEntry(reader.ReadInt32());
-			entry.Changes = PropertyTableIO.ReadPropertyTable_Mods(reader);
+			entry.Changes = PropertyTableIO.ReadPropertyTable_0x00000000(reader);
 
 			// V4: OriginalDataVersion 不在文件中，硬编码 0
 			entry.OriginalDataVersion = (version >= 5) ? reader.ReadUInt32() : 0u;
@@ -112,7 +112,7 @@ internal class Mods
 		{
 			var mod = item.Modification!;
 			binaryWriter.Write(mod.ID);
-			PropertyTableIO.WritePropertyTable_Mods(binaryWriter, mod.Changes);
+			PropertyTableIO.WritePropertyTable_0x00000000(binaryWriter, mod.Changes);
 			binaryWriter.Write(mod.OriginalDataVersion);
 			binaryWriter.Write(mod.OriginalDataChangeNumber);
 			binaryWriter.Write((mod.OriginalData != null) ? mod.OriginalData.Length : 0);

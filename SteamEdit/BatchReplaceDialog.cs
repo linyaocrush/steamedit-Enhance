@@ -30,6 +30,9 @@ internal class BatchReplaceDialog : LocalizableForm
     private bool _regexMode;
     private readonly Timer _debounceTimer;
 
+    private RegexOptions RegexOptionsValue => _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+    private StringComparison ComparisonValue => _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
     private static readonly Color HighlightColor = Color.FromArgb(80, 70, 130, 230);
     private static readonly Color HighlightColorSelected = Color.FromArgb(120, 70, 130, 230);
 
@@ -337,12 +340,12 @@ internal class BatchReplaceDialog : LocalizableForm
     {
         if (_regexMode)
         {
-            var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+            var options = RegexOptionsValue;
             return Regex.Replace(original, find, replace, options, RegexTimeout);
         }
         else
         {
-            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            var comparison = ComparisonValue;
             return ReplaceWithStringComparison(original, find, replace, comparison);
         }
     }
@@ -352,7 +355,7 @@ internal class BatchReplaceDialog : LocalizableForm
         var ranges = new List<(int Index, int Length)>();
         if (_regexMode)
         {
-            var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+            var options = RegexOptionsValue;
             foreach (Match m in Regex.Matches(text, pattern, options, RegexTimeout))
             {
                 ranges.Add((m.Index, m.Length));
@@ -360,7 +363,7 @@ internal class BatchReplaceDialog : LocalizableForm
         }
         else
         {
-            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            var comparison = ComparisonValue;
             int pos = 0;
             while (pos < text.Length)
             {
@@ -377,12 +380,12 @@ internal class BatchReplaceDialog : LocalizableForm
     {
         if (_regexMode)
         {
-            var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+            var options = RegexOptionsValue;
             return Regex.IsMatch(text, pattern, options, RegexTimeout);
         }
         else
         {
-            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            var comparison = ComparisonValue;
             return text.Contains(pattern, comparison);
         }
     }
@@ -401,7 +404,7 @@ internal class BatchReplaceDialog : LocalizableForm
 
             if (_regexMode)
             {
-                var options = _caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;
+                var options = RegexOptionsValue;
                 try
                 {
                     result = Regex.Replace(original, find, replace, options, RegexTimeout);
@@ -413,7 +416,7 @@ internal class BatchReplaceDialog : LocalizableForm
             }
             else
             {
-                var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+                var comparison = ComparisonValue;
                 if (!original.Contains(find, comparison)) continue;
                 result = ReplaceWithStringComparison(original, find, replace, comparison);
             }

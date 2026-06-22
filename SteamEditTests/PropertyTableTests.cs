@@ -178,12 +178,12 @@ public class PropertyTableTests
         using var ms = new MemoryStream();
         using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
         {
-            PropertyTableIO.WritePropertyTable_Mods(writer, original);
+            PropertyTableIO.WritePropertyTable_0x00000000(writer, original);
         }
 
         ms.Position = 0;
         using var reader = new BinaryReader(ms);
-        var loaded = PropertyTableIO.ReadPropertyTable_Mods(reader);
+        var loaded = PropertyTableIO.ReadPropertyTable_0x00000000(reader);
 
         Assert.AreEqual("Hello World", loaded.GetPropertyValue<string>("str"));
         Assert.AreEqual(-42, loaded.GetPropertyValue<int>("int"));

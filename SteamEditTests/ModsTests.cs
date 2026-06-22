@@ -29,7 +29,7 @@ public class ModsTests
 
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
-        PropertyTableIO.WritePropertyTable_Mods(writer, table);
+        PropertyTableIO.WritePropertyTable_0x00000000(writer, table);
         return ms.ToArray();
     }
 
@@ -55,7 +55,7 @@ public class ModsTests
                 bw.Write(6u);
                 bw.Write(1);
                 bw.Write(entry.ID);
-                PropertyTableIO.WritePropertyTable_Mods(bw, entry.Changes);
+                PropertyTableIO.WritePropertyTable_0x00000000(bw, entry.Changes);
                 bw.Write(entry.OriginalDataVersion);
                 bw.Write(entry.OriginalDataChangeNumber);
                 bw.Write(entry.OriginalData.Length);
@@ -67,7 +67,7 @@ public class ModsTests
             Assert.AreEqual(1, br.ReadInt32());
             Assert.AreEqual(12345, br.ReadInt32());
 
-            var loadedChanges = PropertyTableIO.ReadPropertyTable_Mods(br);
+            var loadedChanges = PropertyTableIO.ReadPropertyTable_0x00000000(br);
             Assert.IsTrue(loadedChanges.HasProperty("common", "name"));
             Assert.AreEqual("Modified Game Name", loadedChanges.GetPropertyValue<string>(null, "common", "name"));
 
@@ -131,7 +131,7 @@ public class ModsTests
                 foreach (var e in entries)
                 {
                     bw.Write(e.ID);
-                    PropertyTableIO.WritePropertyTable_Mods(bw, e.Changes);
+                    PropertyTableIO.WritePropertyTable_0x00000000(bw, e.Changes);
                     bw.Write(e.OriginalDataVersion);
                     bw.Write(e.OriginalDataChangeNumber);
                     bw.Write(e.OriginalData.Length);
@@ -145,7 +145,7 @@ public class ModsTests
             for (int i = 0; i < 5; i++)
             {
                 Assert.AreEqual(1000 + i, br.ReadInt32());
-                PropertyTableIO.ReadPropertyTable_Mods(br);
+                PropertyTableIO.ReadPropertyTable_0x00000000(br);
                 Assert.AreEqual(0x07564429u, br.ReadUInt32());
                 Assert.AreEqual((uint)i, br.ReadUInt32());
                 int len = br.ReadInt32();
@@ -169,7 +169,7 @@ public class ModsTests
                 bw.Write(6u);
                 bw.Write(1);
                 bw.Write(99999);
-                PropertyTableIO.WritePropertyTable_Mods(bw, new PropertyTable());
+                PropertyTableIO.WritePropertyTable_0x00000000(bw, new PropertyTable());
                 bw.Write(0u);
                 bw.Write(0u);
                 bw.Write(0);
@@ -179,7 +179,7 @@ public class ModsTests
             br.ReadUInt32();
             br.ReadInt32();
             br.ReadInt32();
-            PropertyTableIO.ReadPropertyTable_Mods(br);
+            PropertyTableIO.ReadPropertyTable_0x00000000(br);
             br.ReadUInt32();
             br.ReadUInt32();
             Assert.AreEqual(0, br.ReadInt32());

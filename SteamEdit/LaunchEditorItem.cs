@@ -16,8 +16,6 @@ internal class LaunchEditorItem : LocalizableUserControl
 
 	private bool _isFirst;
 
-	private Control _oldParent;
-
 	private IContainer components = null!;
 
 	private TextBox txtExec;
@@ -119,21 +117,7 @@ internal class LaunchEditorItem : LocalizableUserControl
 
 	private void LaunchEditorItem_ParentChanged(object sender, EventArgs e)
 	{
-		if (_oldParent != null)
-		{
-			_oldParent.Resize -= Parent_Resize;
-		}
-		if (base.Parent != null)
-		{
-			base.Parent.Resize += Parent_Resize;
-			FixSize();
-		}
-		_oldParent = base.Parent;
-	}
-
-	private void Parent_Resize(object sender, EventArgs e)
-	{
-		FixSize();
+		// resize 由父容器 flowLayout_Resize 统一处理，此处无需订阅
 	}
 
 	private void FixSize()

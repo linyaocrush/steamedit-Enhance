@@ -57,7 +57,7 @@ internal class ModifiedEntry
 	{
 		if (OriginalData == null) return null;
 		using var reader = new BinaryReader(new MemoryStream(OriginalData));
-		var props = PropertyTableIO.ReadPropertyTable_Mods(reader);
+		var props = PropertyTableIO.ReadPropertyTable_0x00000000(reader);
 		return props.GetPropertyValue<string>(null!, AppInfoPaths.Name);
 	}
 

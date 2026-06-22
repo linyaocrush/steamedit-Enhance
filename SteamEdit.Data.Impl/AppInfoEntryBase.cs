@@ -295,7 +295,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	private PropertyTable DeserializeOriginalData()
 	{
-		return _cachedOriginalData ??= PropertyTableIO.ReadPropertyTable_Mods(new BinaryReader(new MemoryStream(_modifications!.OriginalData!)));
+		return _cachedOriginalData ??= PropertyTableIO.ReadPropertyTable_0x00000000(new BinaryReader(new MemoryStream(_modifications!.OriginalData!)));
 	}
 
 	protected ModifiedEntry ModificationsCreate()
@@ -430,7 +430,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 				entry.RestoreBaseProperties();
 			}
 			postProcess?.Invoke(entry);
-			entry._originalData = PropertyTableIO.WritePropertyTable_Mods(entry._properties);
+			entry._originalData = PropertyTableIO.WritePropertyTable_0x00000000(entry._properties);
 			entry.ClearCachedProps();
 			return entry;
 		}

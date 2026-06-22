@@ -3,7 +3,6 @@ using System;
 
 namespace SteamEdit.Data;
 
-[Serializable]
 internal class UnknownAppInfoVersionException : Exception
 {
 	public string AppInfoPath { get; private set; }
