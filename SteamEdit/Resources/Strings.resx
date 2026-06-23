@@ -380,6 +380,12 @@ Page Down   Next game</value>
   <data name="Msg_ApplyFailed" xml:space="preserve">
     <value>Apply failed:&#10;{0}</value>
   </data>
+  <data name="Msg_KillSteamFailed" xml:space="preserve">
+    <value>Failed to close Steam:&#10;{0}&#10;&#10;Save and apply will be skipped.</value>
+  </data>
+  <data name="Msg_RestartFailed" xml:space="preserve">
+    <value>Failed to restart Steam:&#10;{0}</value>
+  </data>
   <data name="Msg_MakeItMatch" xml:space="preserve">
     <value>Do you want to change the working directory to match the executable's location?</value>
   </data>

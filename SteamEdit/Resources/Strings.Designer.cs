@@ -152,6 +152,8 @@ namespace SteamEdit {
         internal static string Msg_FailedRevertTitle => ResourceManager.GetString("Msg_FailedRevertTitle", resourceCulture);
         internal static string Msg_SaveFailed => ResourceManager.GetString("Msg_SaveFailed", resourceCulture);
         internal static string Msg_ApplyFailed => ResourceManager.GetString("Msg_ApplyFailed", resourceCulture);
+        internal static string Msg_KillSteamFailed => ResourceManager.GetString("Msg_KillSteamFailed", resourceCulture);
+        internal static string Msg_RestartFailed => ResourceManager.GetString("Msg_RestartFailed", resourceCulture);
         internal static string Msg_MakeItMatch => ResourceManager.GetString("Msg_MakeItMatch", resourceCulture);
         internal static string Msg_MakeItMatchTitle => ResourceManager.GetString("Msg_MakeItMatchTitle", resourceCulture);
         internal static string Msg_SelectAppInfoTitle => ResourceManager.GetString("Msg_SelectAppInfoTitle", resourceCulture);

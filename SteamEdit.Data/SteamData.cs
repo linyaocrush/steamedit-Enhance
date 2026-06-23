@@ -150,21 +150,7 @@ internal static class SteamData
 	public static void Save()
 	{
 		Log.WriteLine("Saving Mods:");
-		string text = ModInfoPath + ".bak";
-		if (FileSystem.FileExists(ModInfoPath))
-		{
-			FileSystem.FileCopy(ModInfoPath, text, overwrite: true);
-		}
-		try
-		{
-			_modData.Save(ModInfoPath);
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("Save failed: {0}", ex.ToString());
-			FileSystem.FileCopy(text, ModInfoPath, overwrite: true);
-			throw;
-		}
+		_modData.Save(ModInfoPath, FileSystem);
 		Log.WriteLine("  Mods saved");
 		NeedsSave = false;
 	}
@@ -198,6 +184,7 @@ internal static class SteamData
 			{
 				Log.WriteLine("  AppInfo backup restore also failed: {0}", restoreEx.ToString());
 			}
+			NeedsApply = true;
 			throw;
 		}
 	}

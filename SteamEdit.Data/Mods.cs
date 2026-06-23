@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -102,7 +103,7 @@ internal class Mods
 		}
 	}
 
-	public void Save(string path)
+	public void Save(string path, IFileSystem fileSystem)
 	{
 		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
 		binaryWriter.Write(6u);
@@ -122,11 +123,42 @@ internal class Mods
 			}
 		}
 		string tempPath = path + ".tmp";
-		using (FileStream destination = File.Open(tempPath, FileMode.Create, FileAccess.Write))
+		string backupPath = path + ".bak";
+		bool hasBackup = false;
+		try
 		{
-			binaryWriter.BaseStream.Position = 0L;
-			binaryWriter.BaseStream.CopyTo(destination);
+			if (fileSystem.FileExists(path))
+			{
+				fileSystem.FileCopy(path, backupPath, overwrite: true);
+				hasBackup = true;
+			}
+			using (var destination = fileSystem.CreateFile(tempPath))
+			{
+				binaryWriter.BaseStream.Position = 0L;
+				binaryWriter.BaseStream.CopyTo(destination);
+			}
+			fileSystem.FileMove(tempPath, path, overwrite: true);
 		}
-		File.Move(tempPath, path, overwrite: true);
+		catch (Exception ex)
+		{
+			Log.WriteLine("Mods.Save failed: {0}", ex.ToString());
+			// 清理临时文件
+			try { if (fileSystem.FileExists(tempPath)) fileSystem.FileDelete(tempPath); }
+			catch { /* best effort */ }
+			// 从备份恢复
+			if (hasBackup)
+			{
+				try
+				{
+					fileSystem.FileCopy(backupPath, path, overwrite: true);
+					Log.WriteLine("  Mods restored from backup");
+				}
+				catch (Exception restoreEx)
+				{
+					Log.WriteLine("  Mods backup restore also failed: {0}", restoreEx.ToString());
+				}
+			}
+			throw;
+		}
 	}
 }

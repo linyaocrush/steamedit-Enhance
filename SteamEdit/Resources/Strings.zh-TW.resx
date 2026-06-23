@@ -386,6 +386,12 @@ Page Down   下一個遊戲</value>
   <data name="Msg_ApplyFailed" xml:space="preserve">
     <value>套用失敗：&#10;{0}</value>
   </data>
+  <data name="Msg_KillSteamFailed" xml:space="preserve">
+    <value>關閉 Steam 失敗：&#10;{0}&#10;&#10;將跳過儲存和套用。</value>
+  </data>
+  <data name="Msg_RestartFailed" xml:space="preserve">
+    <value>重啟 Steam 失敗：&#10;{0}</value>
+  </data>
   <data name="Msg_MakeItMatch" xml:space="preserve">
     <value>請確保選擇正確的檔案</value>
   </data>

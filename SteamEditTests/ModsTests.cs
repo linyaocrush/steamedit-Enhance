@@ -1,7 +1,9 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SteamEdit.Data;
 
@@ -222,5 +224,162 @@ public class ModsTests
         public void Save(string path) { }
         public bool RevertEntry(IAppInfoEntry entry) => false;
         public void RemoveEntry(IAppInfoEntry entry) { }
+        public void AddEntry(IAppInfoEntry entry) => _entries.Add(entry);
+    }
+
+    private class MockFileSystem : IFileSystem
+    {
+        public Dictionary<string, byte[]> Files { get; } = new();
+        public List<string> Operations { get; } = new();
+        public bool FileExists(string path) => Files.ContainsKey(path);
+        public void FileCopy(string source, string dest, bool overwrite)
+        {
+            Operations.Add($"Copy:{source}->{dest}");
+            if (!Files.ContainsKey(source)) throw new FileNotFoundException(source);
+            Files[dest] = (byte[])Files[source].Clone();
+        }
+        public Stream OpenRead(string path)
+        {
+            if (!Files.ContainsKey(path)) throw new FileNotFoundException(path);
+            return new MemoryStream(Files[path]);
+        }
+        public Stream CreateFile(string path)
+        {
+            Operations.Add($"Create:{path}");
+            return new TrackedMemoryStream(data => Files[path] = data);
+        }
+        public void FileMove(string source, string dest, bool overwrite)
+        {
+            Operations.Add($"Move:{source}->{dest}");
+            if (!Files.ContainsKey(source)) throw new FileNotFoundException(source);
+            Files[dest] = Files[source];
+            Files.Remove(source);
+        }
+        public void FileDelete(string path)
+        {
+            Operations.Add($"Delete:{path}");
+            Files.Remove(path);
+        }
+        public void CreateDirectory(string path) { }
+    }
+
+    private class TrackedMemoryStream : MemoryStream
+    {
+        private readonly Action<byte[]> _onClose;
+        public TrackedMemoryStream(Action<byte[]> onClose) { _onClose = onClose; }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _onClose(GetBuffer().AsSpan(0, (int)Position).ToArray());
+            }
+            base.Dispose(disposing);
+        }
+    }
+
+    private class MockAppInfoEntry : IAppInfoEntry
+    {
+        public int ID { get; }
+        public uint AppInfoVersion => 0x07564429;
+        public uint ChangeNumber => 0;
+        public ModifiedEntry? Modification { get; set; }
+        public bool IsModified => Modification != null;
+        public bool IsHidden { get; set; }
+        public bool IsCompleted { get; set; }
+        public string Name { get; set; } = "";
+        public bool HasSortAs => false;
+        public string SortAs { get; set; } = "";
+        public string InstallPath => "";
+        public AppInfoEntryType Type { get; set; } = AppInfoEntryType.Game;
+        public LaunchTable Launches { get; set; } = new LaunchTable(new PropertyTable());
+        public event EventHandler? Modified;
+        public MockAppInfoEntry(int id) { ID = id; }
+        public byte[] GetOriginalDataCopy() => Array.Empty<byte>();
+        public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath) => DefaultValue;
+        public void SetPropertyValue(PropertyType Type, object? Value, params string[] PropertyPath) { }
+        public void RevertModifiedProperty(params string[] PropertyPath) { }
+        public bool Revert() => false;
+        public PropertyType? GetOriginalPropertyType(params string[] PropertyPath) => null;
+        public object? GetOriginalPropertyValue(params string[] PropertyPath) => null;
+    }
+
+    [TestMethod]
+    public void Save_CreatesBackup_WhenFileExists()
+    {
+        // 创建一个有效的 Mods 文件
+        var originalData = CreateValidModsFile();
+        var appInfo = new TestAppInfo();
+        var entry = new MockAppInfoEntry(12345)
+        {
+            Modification = new ModifiedEntry(12345)
+            {
+                Changes = CreateSampleChanges(),
+                OriginalData = CreateSampleOriginalData(),
+                OriginalDataVersion = 0x07564429,
+                OriginalDataChangeNumber = 100
+            }
+        };
+        appInfo.AddEntry(entry);
+
+        string tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllBytes(tempFile, originalData);
+            var mods = Mods.Load(tempFile, appInfo);
+            var mockFs = new MockFileSystem();
+            mockFs.Files[tempFile] = originalData;
+
+            mods.Save(tempFile, mockFs);
+
+            Assert.IsTrue(mockFs.Files.ContainsKey(tempFile + ".bak"));
+            CollectionAssert.AreEqual(originalData, mockFs.Files[tempFile + ".bak"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+            if (File.Exists(tempFile + ".bak")) File.Delete(tempFile + ".bak");
+        }
+    }
+
+    [TestMethod]
+    public void Save_NoBackup_WhenFileDoesNotExist()
+    {
+        var appInfo = new TestAppInfo();
+        var entry = new MockAppInfoEntry(12345)
+        {
+            Modification = new ModifiedEntry(12345)
+            {
+                Changes = CreateSampleChanges(),
+                OriginalData = CreateSampleOriginalData(),
+                OriginalDataVersion = 0x07564429,
+                OriginalDataChangeNumber = 100
+            }
+        };
+        appInfo.AddEntry(entry);
+
+        string tempFile = Path.GetTempFileName();
+        File.Delete(tempFile);
+        try
+        {
+            var mods = Mods.Load(tempFile, appInfo);
+            var mockFs = new MockFileSystem();
+
+            mods.Save(tempFile, mockFs);
+
+            Assert.IsFalse(mockFs.Files.ContainsKey(tempFile + ".bak"));
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    private byte[] CreateValidModsFile()
+    {
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+        bw.Write(6u); // version
+        bw.Write(0);  // 0 entries
+        return ms.ToArray();
     }
 }

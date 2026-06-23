@@ -207,6 +207,21 @@ public class SteamDataTests
 	}
 
 	[TestMethod]
+	public void Apply_SaveThrows_SetsNeedsApplyTrue_EvenIfWasFalse()
+	{
+		// 边界情况：NeedsApply 原本为 false 时调用 Apply() 失败
+		// 修复 R1：catch 块中显式设置 NeedsApply = true
+		ArrangeApply(appInfoPath: @"C:\steam\appcache\appinfo.vdf");
+		SetField("_needsApply", false); // 模拟异常边界
+		_fakeAppInfo.SaveShouldThrow = true;
+
+		try { SteamData.Apply(); }
+		catch (IOException) { /* expected */ }
+
+		Assert.IsTrue(SteamData.NeedsApply, "Apply 失败后 NeedsApply 必须为 true");
+	}
+
+	[TestMethod]
 	public void Apply_BackupRestoreFails_StillThrowsOriginal()
 	{
 		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";

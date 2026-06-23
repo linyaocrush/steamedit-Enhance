@@ -499,11 +499,14 @@ internal class MainWindow : LocalizableForm
 				using var dlg = new WaitingDialog(msg);
 				dlg.ShowAndWait(() => waitWhile());
 			});
-			SteamData.Save();
-			SteamData.Apply();
-			SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
 		}
-		catch (Exception ex) { Log.WriteLine("SaveApplyRestart failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
+		catch (Exception ex) { Log.WriteLine("KillSteam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_KillSteamFailed, ex.Message)); return; }
+		try { SteamData.Save(); }
+		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
+		try { SteamData.Apply(); }
+		catch (Exception ex) { Log.WriteLine("Apply failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex.Message)); return; }
+		try { SteamProcessManager.EnsureSteamRunning(focusIfRunning: true); }
+		catch (Exception ex) { Log.WriteLine("Restart Steam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_RestartFailed, ex.Message)); }
 	}
 
 	private void OnHelp_Click(object sender, EventArgs e)
