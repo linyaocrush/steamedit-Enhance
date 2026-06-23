@@ -37,8 +37,13 @@ internal class BatchTranslateDialog : LocalizableForm
 
     private void InvokeOnUI(Action action)
     {
-        if (InvokeRequired) BeginInvoke(action);
-        else action();
+        if (IsDisposed) return;
+        try
+        {
+            if (InvokeRequired) BeginInvoke(action);
+            else action();
+        }
+        catch (ObjectDisposedException) { }
     }
 
     public BatchTranslateDialog(List<IAppInfoEntry> entries, string targetLanguage)
@@ -84,7 +89,8 @@ internal class BatchTranslateDialog : LocalizableForm
         catch (Exception ex)
         {
             Log.WriteLine("BatchTranslate error: {0}", ex);
-            InvokeOnUI(() => MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error));
+            if (!IsDisposed)
+                InvokeOnUI(() => { if (!IsDisposed) MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error); });
         }
     }
 
