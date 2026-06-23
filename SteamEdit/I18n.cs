@@ -7,7 +7,7 @@ namespace SteamEdit;
 
 internal static class I18n
 {
-    public static event EventHandler LanguageChanged;
+    public static event EventHandler? LanguageChanged;
 
     public static CultureInfo CurrentCulture { get; private set; }
 

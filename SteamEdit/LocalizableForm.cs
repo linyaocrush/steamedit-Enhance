@@ -15,7 +15,7 @@ public class LocalizableForm : Form
         ApplyLanguage();
     }
 
-    private void OnLanguageChanged(object sender, EventArgs e)
+    private void OnLanguageChanged(object? sender, EventArgs e)
     {
         if (InvokeRequired) { BeginInvoke(new Action(ApplyLanguage)); return; }
         ApplyLanguage();

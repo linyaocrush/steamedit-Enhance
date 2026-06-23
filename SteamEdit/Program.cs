@@ -15,7 +15,7 @@ namespace SteamEdit;
 
 internal static class Program
 {
-    private static MainWindow MainWindow_;
+    private static MainWindow MainWindow_ = null!;
 
     private static string ResolveAppInfoPath(bool trySavedPath, bool allowManual)
     {
@@ -23,12 +23,12 @@ internal static class Program
         if (path.Length == 0)
         {
             Log.WriteLine("Missing AppInfoPath. Looking for default location.");
-            using RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("Software\\Valve\\Steam");
+            using RegistryKey? registryKey = Registry.CurrentUser.OpenSubKey("Software\\Valve\\Steam");
             if (registryKey != null)
             {
                 try
                 {
-                    string fullPath = Path.GetFullPath((string)registryKey.GetValue("SteamPath"));
+                    string fullPath = Path.GetFullPath((string)registryKey.GetValue("SteamPath")!);
                     Log.WriteLine("  Got steam path from registry: {0}", fullPath);
                     path = Path.GetFullPath(Path.Combine(fullPath, "appcache", "appinfo.vdf"));
                 }
@@ -47,7 +47,7 @@ internal static class Program
         }
         if (!File.Exists(path))
         {
-            if (!allowManual) return null;
+            if (!allowManual) return null!;
             return ShowPathDialog(path);
         }
         return path;
@@ -63,7 +63,7 @@ internal static class Program
         openFileDialog.ReadOnlyChecked = true;
         if (openFileDialog.ShowDialog() == DialogResult.Cancel)
         {
-            return null;
+            return null!;
         }
         return openFileDialog.FileName;
     }
@@ -72,7 +72,7 @@ internal static class Program
     {
         dataInit.AppInfoPath = appInfoPath;
         var initCopy = dataInit;
-        Exception loadError = null;
+        Exception? loadError = null;
 
         using (var loading = new WaitingDialog(Strings.WaitingDialog_Waiting))
         {
@@ -207,7 +207,7 @@ internal static class Program
         try
         {
             var adapters = SteamData.Instance.AppInfoData.Entries
-                .Where(e => e.IsModified && e.Modification.Changes.HasProperty(AppInfoPaths.Name))
+                .Where(e => e.IsModified && e.Modification!.Changes.HasProperty(AppInfoPaths.Name))
                 .Select(e => new GlossaryAdapter(e))
                 .ToList();
             TranslationGlossary.SyncFromMods(adapters);
@@ -221,7 +221,7 @@ internal static class Program
     private class GlossaryAdapter : IAppInfoEntryAdapter
     {
         private readonly SteamEdit.Data.IAppInfoEntry _entry;
-        private string _originalName;
+        private string _originalName = null!;
         private bool _originalNameParsed;
         public int ID => _entry.ID;
         public string TranslatedName => _entry.Name;
@@ -245,7 +245,7 @@ internal static class Program
 
         private static string GetOriginalName(SteamEdit.Data.IAppInfoEntry entry)
         {
-            return entry.Modification?.GetOriginalName();
+            return entry.Modification!.GetOriginalName()!;
         }
     }
 
@@ -272,23 +272,23 @@ internal static class Program
         }
         catch
         {
-            return null;
+            return null!;
         }
     }
 
-    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    private static void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
     {
         var ex = e.ExceptionObject as Exception;
-        string crashPath = ex != null ? WriteCrashFile(ex) : null;
-        string details = e.ExceptionObject.ToString();
+        string? crashPath = ex != null ? WriteCrashFile(ex) : null;
+        string? details = e.ExceptionObject.ToString();
         if (crashPath != null)
         {
             details = $"{Strings.CrashDialog_SavedTo}\r\n{crashPath}\r\n\r\n{details}";
         }
-        MessageBoxWithDetails.ShowWithExit(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, details);
+        MessageBoxWithDetails.ShowWithExit(Strings.Msg_UnhandledException, Strings.Msg_UnhandledExceptionTitle, details!);
     }
 
-    private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+    private static void Application_ThreadException(object? sender, ThreadExceptionEventArgs e)
     {
         string crashPath = WriteCrashFile(e.Exception);
         string details = e.Exception.ToString();

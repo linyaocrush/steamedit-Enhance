@@ -12,27 +12,27 @@ namespace SteamEdit;
 
 internal class LaunchEditorItem : LocalizableUserControl
 {
-	private string _gameName;
+	private string _gameName = null!;
 
 	private bool _isFirst;
 
 	private IContainer components = null!;
 
-	private TextBox txtExec;
+	private TextBox txtExec = null!;
 
-	private TextBox txtLabel;
+	private TextBox txtLabel = null!;
 
-	private TextBox txtArguments;
+	private TextBox txtArguments = null!;
 
-	private TextBox txtWorkingDir;
+	private TextBox txtWorkingDir = null!;
 
-	private Label lblExecutable;
+	private Label lblExecutable = null!;
 
-	private Label lblLabel;
+	private Label lblLabel = null!;
 
-	private Label lblWorkingDir;
+	private Label lblWorkingDir = null!;
 
-	private Label lblArguments;
+	private Label lblArguments = null!;
 
 	public string Label => txtLabel.Text;
 
@@ -42,17 +42,17 @@ internal class LaunchEditorItem : LocalizableUserControl
 
 	public string WorkingDir => txtWorkingDir.Text;
 
-	public event EventHandler OnMoveUp;
+	public event EventHandler? OnMoveUp;
 
-	public event EventHandler OnMoveDown;
+	public event EventHandler? OnMoveDown;
 
-	public event EventHandler OnDelete;
+	public event EventHandler? OnDelete;
 
-	public event EventHandler<SelectLaunchExecutableArgs> OnSelectExecutable;
+	public event EventHandler<SelectLaunchExecutableArgs>? OnSelectExecutable;
 
-	public event EventHandler<SelectLaunchDirArgs> OnSelectWorkingDir;
+	public event EventHandler<SelectLaunchDirArgs>? OnSelectWorkingDir;
 
-	public event EventHandler<CopyLaunchInfoArgs> OnCopyLaunchInfo;
+	public event EventHandler<CopyLaunchInfoArgs>? OnCopyLaunchInfo;
 
 	public LaunchEditorItem(LaunchItem info, string gameName, bool isFirst)
 	{
@@ -100,38 +100,38 @@ internal class LaunchEditorItem : LocalizableUserControl
 		txtWorkingDir.Text = info.WorkingDir;
 	}
 
-	private void btnMoveUp_Click(object sender, EventArgs e)
+	private void btnMoveUp_Click(object? sender, EventArgs e)
 	{
 		this.OnMoveUp?.Invoke(this, new EventArgs());
 	}
 
-	private void btnDown_Click(object sender, EventArgs e)
+	private void btnDown_Click(object? sender, EventArgs e)
 	{
 		this.OnMoveDown?.Invoke(this, new EventArgs());
 	}
 
-	private void btnDelete_Click(object sender, EventArgs e)
+	private void btnDelete_Click(object? sender, EventArgs e)
 	{
 		this.OnDelete?.Invoke(this, new EventArgs());
 	}
 
-	private void LaunchEditorItem_ParentChanged(object sender, EventArgs e)
+	private void LaunchEditorItem_ParentChanged(object? sender, EventArgs e)
 	{
 		// resize 由父容器 flowLayout_Resize 统一处理，此处无需订阅
 	}
 
 	private void FixSize()
 	{
-		base.Width = base.Parent.ClientSize.Width - base.Left * 2;
+		base.Width = base.Parent!.ClientSize.Width - base.Left * 2;
 	}
 
-	private void panel1_Paint(object sender, PaintEventArgs e)
+	private void panel1_Paint(object? sender, PaintEventArgs e)
 	{
 		using var pen = new Pen(SystemColors.ControlLight);
 		e.Graphics.DrawRectangle(pen, e.ClipRectangle.Left, e.ClipRectangle.Top, e.ClipRectangle.Width - 1, e.ClipRectangle.Height - 1);
 	}
 
-	private void btnSelectExec_Click(object sender, EventArgs e)
+	private void btnSelectExec_Click(object? sender, EventArgs e)
 	{
 		if (this.OnSelectExecutable != null)
 		{
@@ -148,7 +148,7 @@ internal class LaunchEditorItem : LocalizableUserControl
 		}
 	}
 
-	private void btnSelectDir_Click(object sender, EventArgs e)
+	private void btnSelectDir_Click(object? sender, EventArgs e)
 	{
 		if (this.OnSelectWorkingDir != null)
 		{
@@ -161,7 +161,7 @@ internal class LaunchEditorItem : LocalizableUserControl
 		}
 	}
 
-	private void btnCopy_Click(object sender, EventArgs e)
+	private void btnCopy_Click(object? sender, EventArgs e)
 	{
 		if (this.OnCopyLaunchInfo != null)
 		{

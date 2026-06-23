@@ -14,17 +14,17 @@ namespace SteamEdit;
 internal class LaunchEditor : LocalizableForm
 {
 	private readonly IAppInfoDataStore _dataStore;
-	private string _baseDir;
+	private string _baseDir = null!;
 
-	private string _gameName;
+	private string _gameName = null!;
 
 	private IContainer components = null!;
 
-	private FlowLayoutPanel flowLayout;
+	private FlowLayoutPanel flowLayout = null!;
 
-	private TextBox lblInstall;
+	private TextBox lblInstall = null!;
 
-	private Label lblInstallPath;
+	private Label lblInstallPath = null!;
 
 	public IEnumerable<LaunchItem> LaunchItems => from item in flowLayout.Controls.OfType<LaunchEditorItem>()
 		select new LaunchItem
@@ -74,7 +74,7 @@ internal class LaunchEditor : LocalizableForm
 		launchEditorItem.OnCopyLaunchInfo += uiItem_OnCopyLaunchInfo;
 	}
 
-	private void uiItem_OnCopyLaunchInfo(object sender, CopyLaunchInfoArgs e)
+	private void uiItem_OnCopyLaunchInfo(object? sender, CopyLaunchInfoArgs e)
 	{
 		using SelectAppLaunch selectAppLaunch = new SelectAppLaunch(_dataStore);
 		if (selectAppLaunch.ShowDialog(this) == DialogResult.OK)
@@ -90,7 +90,7 @@ internal class LaunchEditor : LocalizableForm
 		}
 	}
 
-	private void uiItem_OnSelectExecutable(object sender, SelectLaunchExecutableArgs e)
+	private void uiItem_OnSelectExecutable(object? sender, SelectLaunchExecutableArgs e)
 	{
 		using OpenFileDialog openFileDialog = new OpenFileDialog();
 		string path = Path.Combine(_baseDir, e.Executable);
@@ -108,7 +108,7 @@ internal class LaunchEditor : LocalizableForm
 		}
 	}
 
-	private void uiItem_OnSelectWorkingDir(object sender, SelectLaunchDirArgs e)
+	private void uiItem_OnSelectWorkingDir(object? sender, SelectLaunchDirArgs e)
 	{
 		using FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
 		string fullPath = Path.GetFullPath(Path.Combine(_baseDir, e.WorkingDir));
@@ -121,9 +121,9 @@ internal class LaunchEditor : LocalizableForm
 		}
 	}
 
-	private void uiItem_OnMoveUp(object sender, EventArgs e)
+	private void uiItem_OnMoveUp(object? sender, EventArgs e)
 	{
-		LaunchEditorItem child = (LaunchEditorItem)sender;
+		LaunchEditorItem child = (LaunchEditorItem)sender!;
 		int num = flowLayout.Controls.GetChildIndex(child) - 1;
 		if (num >= 0)
 		{
@@ -131,9 +131,9 @@ internal class LaunchEditor : LocalizableForm
 		}
 	}
 
-	private void uiItem_OnMoveDown(object sender, EventArgs e)
+	private void uiItem_OnMoveDown(object? sender, EventArgs e)
 	{
-		LaunchEditorItem child = (LaunchEditorItem)sender;
+		LaunchEditorItem child = (LaunchEditorItem)sender!;
 		int num = flowLayout.Controls.GetChildIndex(child) + 1;
 		if (num < flowLayout.Controls.Count)
 		{
@@ -141,9 +141,9 @@ internal class LaunchEditor : LocalizableForm
 		}
 	}
 
-	private void uiItem_OnDelete(object sender, EventArgs e)
+	private void uiItem_OnDelete(object? sender, EventArgs e)
 	{
-		LaunchEditorItem launchEditorItem = (LaunchEditorItem)sender;
+		LaunchEditorItem launchEditorItem = (LaunchEditorItem)sender!;
 		launchEditorItem.OnDelete -= uiItem_OnDelete;
 		launchEditorItem.OnMoveDown -= uiItem_OnMoveDown;
 		launchEditorItem.OnMoveUp -= uiItem_OnMoveUp;
@@ -153,26 +153,26 @@ internal class LaunchEditor : LocalizableForm
 		flowLayout.Controls.Remove(launchEditorItem);
 	}
 
-	private void btnAdd_Click(object sender, EventArgs e)
+	private void btnAdd_Click(object? sender, EventArgs e)
 	{
 		AddItem(new LaunchItem());
 	}
 
-	private void flowLayout_Resize(object sender, EventArgs e)
+	private void flowLayout_Resize(object? sender, EventArgs e)
 	{
 		foreach (LaunchEditorItem item in flowLayout.Controls.OfType<LaunchEditorItem>())
 		{
-			item.Width = item.Parent.ClientSize.Width - item.Left * 2;
+			item.Width = item.Parent!.ClientSize.Width - item.Left * 2;
 		}
 	}
 
-	private void btnOK_Click(object sender, EventArgs e)
+	private void btnOK_Click(object? sender, EventArgs e)
 	{
 		base.DialogResult = DialogResult.OK;
 		Close();
 	}
 
-	private void btnCancel_Click(object sender, EventArgs e)
+	private void btnCancel_Click(object? sender, EventArgs e)
 	{
 		base.DialogResult = DialogResult.Cancel;
 		Close();

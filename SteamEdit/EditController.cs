@@ -110,7 +110,7 @@ internal class EditController : IDisposable
 	public bool IsSettingUpEntry => _isSettingUpEntry;
 	public UndoManager UndoManager => _undoManager;
 
-	public void LoadEntry(IAppInfoEntry entry)
+	public void LoadEntry(IAppInfoEntry? entry)
 	{
 		bool hasEntry = entry != null;
 		_textGameName.Enabled = hasEntry;
@@ -120,12 +120,12 @@ internal class EditController : IDisposable
 		_listControllerSupport.Enabled = hasEntry;
 		_listVR.Enabled = hasEntry;
 		_listEntryType.Enabled = hasEntry;
-		if (!hasEntry) return;
+		if (entry == null) return;
 
 		_isSettingUpEntry = true;
 		_snapshotValues.Clear();
 
-		_textGameName.Text = entry.Name;
+		_textGameName.Text = entry.Name!;
 		_textGameName.ClearXVisible = entry.IsModified && entry.Modification?.Changes?.HasProperty(AppInfoPaths.Name) == true;
 		_textSortAs.Text = entry.SortAs;
 		_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
@@ -198,7 +198,7 @@ internal class EditController : IDisposable
 		_listManager.InvalidateItem(record.Entry);
 	}
 
-	public void RevertEntry(IAppInfoEntry entry)
+	public void RevertEntry(IAppInfoEntry? entry)
 	{
 		if (entry == null) return;
 		if (_dataStore.AppInfo.RevertEntry(entry))
@@ -259,9 +259,9 @@ internal class EditController : IDisposable
 	{
 		try
 		{
-			string originalName = entry.Modification?.GetOriginalName();
+			string? originalName = entry.Modification?.GetOriginalName();
 			if (string.IsNullOrWhiteSpace(originalName))
-				originalName = entry.GetPropertyValue<string>(null, AppInfoPaths.BaseName);
+				originalName = entry.GetPropertyValue<string>(null!, AppInfoPaths.BaseName);
 			if (string.IsNullOrWhiteSpace(originalName))
 				originalName = previousName;
 			TranslationGlossary.UpdateEntry(entry.ID, originalName, entry.Name);
@@ -297,7 +297,7 @@ internal class EditController : IDisposable
 
 	// --- 事件处理 ---
 
-	private void OnGeneric_KeyDown(object sender, KeyEventArgs e)
+	private void OnGeneric_KeyDown(object? sender, KeyEventArgs e)
 	{
 		if ((uint)(e.KeyCode - 33) <= 1u)
 		{
@@ -307,20 +307,20 @@ internal class EditController : IDisposable
 		}
 	}
 
-	private void OnEditControl_Enter(object sender, EventArgs e)
+	private void OnEditControl_Enter(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 
-		string key = null;
-		object value = null;
-		if (sender == _textGameName) { key = "name"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.Name); }
-		else if (sender == _textSortAs) { key = "sortas"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.SortAs); }
+		string? key = null;
+		object? value = null;
+		if (sender == _textGameName) { key = "name"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.Name); }
+		else if (sender == _textSortAs) { key = "sortas"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.SortAs); }
 		else if (sender == _checkHidden) { key = "hidden"; value = entry.GetPropertyValue(0, AppInfoPaths.IsHidden); }
 		else if (sender == _checkCompleted) { key = "completed"; value = entry.GetPropertyValue(0, AppInfoPaths.IsCompleted); }
-		else if (sender == _listEntryType) { key = "type"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.Type); }
-		else if (sender == _listControllerSupport) { key = "controller"; value = entry.GetPropertyValue<string>(null, AppInfoPaths.ControllerSupport); }
+		else if (sender == _listEntryType) { key = "type"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.Type); }
+		else if (sender == _listControllerSupport) { key = "controller"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.ControllerSupport); }
 		else if (sender == _listVR)
 		{
 			key = "vr";
@@ -328,10 +328,10 @@ internal class EditController : IDisposable
 			_snapshotValues["vr_base"] = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
 		}
 
-		if (key != null) _snapshotValues[key] = value;
+		if (key != null) _snapshotValues[key] = value!;
 	}
 
-	private void OnTextGameName_TextChanged(object sender, EventArgs e)
+	private void OnTextGameName_TextChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
@@ -353,7 +353,7 @@ internal class EditController : IDisposable
 		}
 	}
 
-	private void OnTextSortAs_TextChanged(object sender, EventArgs e)
+	private void OnTextSortAs_TextChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
@@ -369,7 +369,7 @@ internal class EditController : IDisposable
 		}
 	}
 
-	private void OnCheckHidden_CheckedChanged(object sender, EventArgs e)
+	private void OnCheckHidden_CheckedChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
@@ -380,7 +380,7 @@ internal class EditController : IDisposable
 		_listManager.NotifyStatusChanged();
 	}
 
-	private void OnCheckCompleted_CheckedChanged(object sender, EventArgs e)
+	private void OnCheckCompleted_CheckedChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
@@ -391,7 +391,7 @@ internal class EditController : IDisposable
 		_listManager.NotifyStatusChanged();
 	}
 
-	private void OnListControllerSupport_SelectedIndexChanged(object sender, EventArgs e)
+	private void OnListControllerSupport_SelectedIndexChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
@@ -403,7 +403,7 @@ internal class EditController : IDisposable
 		entry.SetPropertyValue(PropertyType.String, raw, AppInfoPaths.ControllerSupport);
 	}
 
-	private void OnListVR_SelectedIndexChanged(object sender, EventArgs e)
+	private void OnListVR_SelectedIndexChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
@@ -424,18 +424,18 @@ internal class EditController : IDisposable
 		SetEntryVR(entry, _listVR.SelectedIndex != 0);
 	}
 
-	private void OnListEntryType_SelectedIndexChanged(object sender, EventArgs e)
+	private void OnListEntryType_SelectedIndexChanged(object? sender, EventArgs e)
 	{
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		if (_snapshotValues.TryGetValue("type", out var prev) && prev is string p)
 			_undoManager.Push(entry, AppInfoPaths.Type, PropertyType.String, p);
-		entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem;
+		entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem!;
 		_listManager.RefreshGameList();
 	}
 
-	private void OnTextGameName_ClearXClicked(object sender, HandledEventArgs e)
+	private void OnTextGameName_ClearXClicked(object? sender, HandledEventArgs e)
 	{
 		e.Handled = true;
 		var entry = _listManager.GetSelectedEntry();
@@ -446,7 +446,7 @@ internal class EditController : IDisposable
 		LoadEntry(entry);
 	}
 
-	private void OnTextSortAs_ClearXClicked(object sender, HandledEventArgs e)
+	private void OnTextSortAs_ClearXClicked(object? sender, HandledEventArgs e)
 	{
 		e.Handled = true;
 		var entry = _listManager.GetSelectedEntry();

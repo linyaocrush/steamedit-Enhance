@@ -15,49 +15,49 @@ namespace SteamEdit;
 internal class MainWindow : LocalizableForm
 {
 	private readonly ISteamDataService _steamData;
-	private string _originalTitle;
+	private string _originalTitle = null!;
 
-	private GameDataContext _ctx;
-	private GameListManager _listManager;
-	private EditController _editController;
+	private GameDataContext _ctx = null!;
+	private GameListManager _listManager = null!;
+	private EditController _editController = null!;
 
-	private IContainer components;
+	private IContainer components = null!;
 
-	private ClearableTextBox textGameName;
-	private CheckBox checkHidden;
-	private CheckBox checkCompleted;
-	private ClearableTextBox textSortAs;
-	private Button btnEditLaunch;
-	private Button btnRevert;
-	private ToolTip toolTips;
-	private ComboBox listControllerSupport;
-	private Button btnSettings;
-	private Button btnHelp;
-	private Button btnShortcuts;
-	private Button btnTranslate;
-	private Button btnSearch;
-	private Button btnBatchTranslate;
-	private Button btnBatchReplace;
-	private ComboBox listVR;
-	private ContextMenuStrip filterSelectorMenu;
-	private Button filterSelector;
-	private ContextMenuStrip sortSelectorMenu;
-	private Button sortSelector;
-	private SplitContainer splitContainer1;
-	private ListBox appSelection;
-	private ClearableTextBox appFilterText;
-	private Panel panel1;
-	private FlowLayoutPanel flowLayoutPanel3;
-	private ComboBox listEntryType;
-	private ToolStripStatusLabel lblNumAppsShown;
-	private ToolStripStatusLabel lblModifiedCount;
-	private Label lblSortAs;
-	private Label lblName;
-	private Label lblControllerSupport;
-	private Label lblVRCategory;
-	private Button btnSave;
-	private Button btnSaveApply;
-	private Button btnSaveApplyRestart;
+	private ClearableTextBox textGameName = null!;
+	private CheckBox checkHidden = null!;
+	private CheckBox checkCompleted = null!;
+	private ClearableTextBox textSortAs = null!;
+	private Button btnEditLaunch = null!;
+	private Button btnRevert = null!;
+	private ToolTip toolTips = null!;
+	private ComboBox listControllerSupport = null!;
+	private Button btnSettings = null!;
+	private Button btnHelp = null!;
+	private Button btnShortcuts = null!;
+	private Button btnTranslate = null!;
+	private Button btnSearch = null!;
+	private Button btnBatchTranslate = null!;
+	private Button btnBatchReplace = null!;
+	private ComboBox listVR = null!;
+	private ContextMenuStrip filterSelectorMenu = null!;
+	private Button filterSelector = null!;
+	private ContextMenuStrip sortSelectorMenu = null!;
+	private Button sortSelector = null!;
+	private SplitContainer splitContainer1 = null!;
+	private ListBox appSelection = null!;
+	private ClearableTextBox appFilterText = null!;
+	private Panel panel1 = null!;
+	private FlowLayoutPanel flowLayoutPanel3 = null!;
+	private ComboBox listEntryType = null!;
+	private ToolStripStatusLabel lblNumAppsShown = null!;
+	private ToolStripStatusLabel lblModifiedCount = null!;
+	private Label lblSortAs = null!;
+	private Label lblName = null!;
+	private Label lblControllerSupport = null!;
+	private Label lblVRCategory = null!;
+	private Button btnSave = null!;
+	private Button btnSaveApply = null!;
+	private Button btnSaveApplyRestart = null!;
 
 	public MainWindow(ISteamDataService steamData)
 	{
@@ -135,7 +135,7 @@ internal class MainWindow : LocalizableForm
 		_steamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
 	}
 
-	private void SteamData_OnNeedsSaveOrApply(object sender, EventArgs e)
+	private void SteamData_OnNeedsSaveOrApply(object? sender, EventArgs e)
 	{
 		Text = _originalTitle;
 		if (_steamData.NeedsSave)
@@ -156,7 +156,7 @@ internal class MainWindow : LocalizableForm
 		return false;
 	}
 
-	private void MainWindow_Load(object sender, EventArgs e)
+	private void MainWindow_Load(object? sender, EventArgs e)
 	{
 		Point location = base.Location;
 		Point location2 = base.Location;
@@ -178,7 +178,7 @@ internal class MainWindow : LocalizableForm
 			base.Size = size;
 		if (Settings.Default.MainWindowSplitter != int.MaxValue)
 			splitContainer1.SplitterDistance = Settings.Default.MainWindowSplitter;
-		SteamData_OnNeedsSaveOrApply(null, null);
+		SteamData_OnNeedsSaveOrApply(null, EventArgs.Empty);
 		_listManager.RefreshGameList();
 		appSelection.Select();
 	}
@@ -233,7 +233,7 @@ internal class MainWindow : LocalizableForm
 		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
 
-	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
+	private void OnMainWindow_FormClosing(object? sender, FormClosingEventArgs e)
 	{
 		_steamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
 		_steamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
@@ -252,7 +252,7 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void OnMainWindow_KeyDown(object sender, KeyEventArgs e)
+	private void OnMainWindow_KeyDown(object? sender, KeyEventArgs e)
 	{
 		if (e.Control && e.KeyCode == Keys.S)
 		{
@@ -327,7 +327,7 @@ internal class MainWindow : LocalizableForm
 
 	// --- 对话框打开 ---
 
-	private void OnBtnEditLaunch_Click(object sender, EventArgs e)
+	private void OnBtnEditLaunch_Click(object? sender, EventArgs e)
 	{
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
@@ -336,19 +336,19 @@ internal class MainWindow : LocalizableForm
 			entry.Launches = new LaunchTable(launchEditor.LaunchItems);
 	}
 
-	private void OnBtnSettings_Click(object sender, EventArgs e)
+	private void OnBtnSettings_Click(object? sender, EventArgs e)
 	{
 		using (var dlg = new SettingsDlg()) dlg.ShowDialog(this);
 		_steamData.UseCompleted = Settings.Default.EnableCompleted;
 		_steamData.UseHidden = Settings.Default.EnableHidden;
 	}
 
-	private void OnBtnRevert_Click(object sender, EventArgs e)
+	private void OnBtnRevert_Click(object? sender, EventArgs e)
 	{
 		_editController.RevertEntry(_listManager.GetSelectedEntry());
 	}
 
-	private void OnBtnSearch_Click(object sender, EventArgs e)
+	private void OnBtnSearch_Click(object? sender, EventArgs e)
 	{
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
@@ -375,7 +375,7 @@ internal class MainWindow : LocalizableForm
 		catch (Exception ex) when (ex is Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 	}
 
-	private async void OnBtnTranslate_Click(object sender, EventArgs e)
+	private async void OnBtnTranslate_Click(object? sender, EventArgs e)
 	{
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
@@ -389,10 +389,10 @@ internal class MainWindow : LocalizableForm
 		try
 		{
 			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
-			string context = AiTranslator.BuildContext(
-				entry.GetPropertyValue<string>(null, AppInfoPaths.Developers),
-				entry.GetPropertyValue<string>(null, AppInfoPaths.Publishers),
-				entry.GetPropertyValue<string>(null, AppInfoPaths.Type));
+			string? context = AiTranslator.BuildContext(
+				entry.GetPropertyValue<string>(null!, AppInfoPaths.Developers),
+				entry.GetPropertyValue<string>(null!, AppInfoPaths.Publishers),
+				entry.GetPropertyValue<string>(null!, AppInfoPaths.Type));
 			string translated = await AiTranslator.TranslateWithContextAsync(
 				originalName, targetLang, context,
 				Settings.Default.AiCustomSystemPrompt,
@@ -428,7 +428,7 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void OnBtnBatchTranslate_Click(object sender, EventArgs e)
+	private void OnBtnBatchTranslate_Click(object? sender, EventArgs e)
 	{
 		if (string.IsNullOrWhiteSpace(Settings.Default.AiApiUrl) ||
 			string.IsNullOrWhiteSpace(Settings.Default.AiApiKey))
@@ -463,7 +463,7 @@ internal class MainWindow : LocalizableForm
 		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
 
-	private void OnBtnBatchReplace_Click(object sender, EventArgs e)
+	private void OnBtnBatchReplace_Click(object? sender, EventArgs e)
 	{
 		if (_ctx.Entries == null || _ctx.Entries.Count == 0) return;
 		using var dialog = new BatchReplaceDialog(_ctx.Entries);
@@ -479,13 +479,13 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void OnBtnSave_Click(object sender, EventArgs e)
+	private void OnBtnSave_Click(object? sender, EventArgs e)
 	{
 		try { _steamData.Save(); }
 		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
 	}
 
-	private void OnBtnSaveApply_Click(object sender, EventArgs e)
+	private void OnBtnSaveApply_Click(object? sender, EventArgs e)
 	{
 		try { _steamData.Save(); }
 		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
@@ -493,7 +493,7 @@ internal class MainWindow : LocalizableForm
 		catch (Exception ex2) { Log.WriteLine("Apply failed: {0}", ex2); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.Message)); }
 	}
 
-	private void OnBtnSaveApplyRestart_Click(object sender, EventArgs e)
+	private void OnBtnSaveApplyRestart_Click(object? sender, EventArgs e)
 	{
 		try
 		{
@@ -512,12 +512,12 @@ internal class MainWindow : LocalizableForm
 		catch (Exception ex) { Log.WriteLine("Restart Steam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_RestartFailed, ex.Message)); }
 	}
 
-	private void OnHelp_Click(object sender, EventArgs e)
+	private void OnHelp_Click(object? sender, EventArgs e)
 	{
 		using (var dlg = new About()) dlg.ShowDialog(this);
 	}
 
-	private void OnBtnShortcuts_Click(object sender, EventArgs e)
+	private void OnBtnShortcuts_Click(object? sender, EventArgs e)
 	{
 		using var dlg = new Form();
 		dlg.Text = Strings.Shortcuts_Title;
@@ -545,7 +545,7 @@ internal class MainWindow : LocalizableForm
 		dlg.ShowDialog(this);
 	}
 
-	private void OnFilterSelectorMenu_Click(object sender, EventArgs e)
+	private void OnFilterSelectorMenu_Click(object? sender, EventArgs e)
 	{
 		if (!filterSelectorMenu.Visible)
 		{
@@ -554,7 +554,7 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void OnSortSelectorMenu_Click(object sender, EventArgs e)
+	private void OnSortSelectorMenu_Click(object? sender, EventArgs e)
 	{
 		if (!sortSelectorMenu.Visible)
 		{
@@ -573,7 +573,7 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void panel1_Paint(object sender, PaintEventArgs e)
+	private void panel1_Paint(object? sender, PaintEventArgs e)
 	{
 		float dpiX = e.Graphics.DpiX;
 		float num = dpiX / 72f;
@@ -584,7 +584,7 @@ internal class MainWindow : LocalizableForm
 		e.Graphics.DrawImage(Resources.logo1, destRect, 0, 0, logo.Width, logo.Height, GraphicsUnit.Pixel, _listManager.BgLogoAttributes);
 	}
 
-	private void MainWindow_Move(object sender, EventArgs e)
+	private void MainWindow_Move(object? sender, EventArgs e)
 	{
 		if (base.WindowState != FormWindowState.Minimized)
 		{
@@ -593,7 +593,7 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void MainWindow_Resize(object sender, EventArgs e)
+	private void MainWindow_Resize(object? sender, EventArgs e)
 	{
 		if (base.WindowState != FormWindowState.Minimized)
 		{
@@ -603,7 +603,7 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
+	private void splitContainer1_SplitterMoved(object? sender, SplitterEventArgs e)
 	{
 		Settings.Default.MainWindowSplitter = splitContainer1.SplitterDistance;
 	}

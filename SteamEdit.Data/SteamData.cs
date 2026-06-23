@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.IO;
+using System.Threading;
 using Common;
 
 namespace SteamEdit.Data;
@@ -72,24 +73,29 @@ internal class SteamData : ISteamDataService
 
 	public IAppInfo AppInfoData { get; private set; } = null!;
 
-	private void SetDirtyFlag(ref bool field, EventHandler? handler, bool value, Action? onTrue = null)
-	{
-		bool changed;
-		lock (_lock) { changed = field != value; if (changed) field = value; }
-		if (changed) { handler?.Invoke(this, EventArgs.Empty); onTrue?.Invoke(); }
-	}
-
+#pragma warning disable CS0420 // Volatile.Read/Write 正确处理 volatile 字段，此警告为误报
 	public bool NeedsSave
 	{
-		get => _needsSave;
-		private set => SetDirtyFlag(ref _needsSave, OnNeedsSave, value, value ? () => NeedsApply = true : null);
+		get => Volatile.Read(ref _needsSave);
+		private set
+		{
+			bool changed;
+			lock (_lock) { changed = Volatile.Read(ref _needsSave) != value; if (changed) Volatile.Write(ref _needsSave, value); }
+			if (changed) { OnNeedsSave?.Invoke(this, EventArgs.Empty); if (value) NeedsApply = true; }
+		}
 	}
 
 	public bool NeedsApply
 	{
-		get => _needsApply;
-		private set => SetDirtyFlag(ref _needsApply, OnNeedsApply, value);
+		get => Volatile.Read(ref _needsApply);
+		private set
+		{
+			bool changed;
+			lock (_lock) { changed = Volatile.Read(ref _needsApply) != value; if (changed) Volatile.Write(ref _needsApply, value); }
+			if (changed) OnNeedsApply?.Invoke(this, EventArgs.Empty);
+		}
 	}
+#pragma warning restore CS0420
 
 	public event EventHandler? OnNeedsSave;
 

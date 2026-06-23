@@ -15,82 +15,82 @@ internal class SettingsDlg : LocalizableForm
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValueName = "SteamEdit-Enhance";
 
-    private IContainer components;
+    private IContainer components = null!;
 
-    private CheckBox checkEnableCompleted;
+    private CheckBox checkEnableCompleted = null!;
 
-    private ToolTip toolTip;
+    private ToolTip toolTip = null!;
 
-    private CheckBox checkEnabledHidden;
+    private CheckBox checkEnabledHidden = null!;
 
-    private TextBox textPassThroughArgs;
+    private TextBox textPassThroughArgs = null!;
 
-    private TextBox textAppInfoPath;
+    private TextBox textAppInfoPath = null!;
 
-    private CheckBox checkReplaceLocalizedNames;
+    private CheckBox checkReplaceLocalizedNames = null!;
 
-    private ComboBox comboLanguage;
+    private ComboBox comboLanguage = null!;
 
-    private Label lblLanguage;
+    private Label lblLanguage = null!;
 
-    private Label label1;
+    private Label label1 = null!;
 
-    private Label label2;
+    private Label label2 = null!;
 
-    private Label label4;
+    private Label label4 = null!;
 
-    private Label label5;
+    private Label label5 = null!;
 
-    private Label label6;
+    private Label label6 = null!;
 
-    private Label lblAutoStart;
+    private Label lblAutoStart = null!;
 
-    private CheckBox checkAutoStart;
+    private CheckBox checkAutoStart = null!;
 
-    private CheckBox checkAutoStartAutoFix;
+    private CheckBox checkAutoStartAutoFix = null!;
 
-    private CheckBox checkAutoStartForceStart;
+    private CheckBox checkAutoStartForceStart = null!;
 
-    private FlowLayoutPanel panelAutoStartSub;
+    private FlowLayoutPanel panelAutoStartSub = null!;
 
-    private Label lblAiApiUrl;
+    private Label lblAiApiUrl = null!;
 
-    private TextBox textAiApiUrl;
+    private TextBox textAiApiUrl = null!;
 
-    private Label lblAiApiKey;
+    private Label lblAiApiKey = null!;
 
-    private TextBox textAiApiKey;
+    private TextBox textAiApiKey = null!;
 
-    private Label lblAiTargetLanguage;
+    private Label lblAiTargetLanguage = null!;
 
-    private ComboBox comboAiTargetLanguage;
+    private ComboBox comboAiTargetLanguage = null!;
 
-    private Label lblAiModel;
+    private Label lblAiModel = null!;
 
-    private ComboBox comboAiModel;
+    private ComboBox comboAiModel = null!;
 
-    private Button btnFetchModels;
+    private Button btnFetchModels = null!;
 
-    private Label lblSearchEngine;
+    private Label lblSearchEngine = null!;
 
-    private ComboBox comboSearchEngine;
+    private ComboBox comboSearchEngine = null!;
 
-    private Label lblCustomSystemPrompt;
-    private TextBox textCustomSystemPrompt;
-    private Button btnResetPrompt;
-    private Label lblCustomUserMessage;
-    private TextBox textCustomUserMessage;
-    private Button btnResetUserMessage;
-    private Label lblTranslationRules;
-    private TextBox textTranslationRules;
-    private Button btnAnalyzeRules;
-    private Button btnClearRules;
-    private Label lblBatchConcurrency;
-    private NumericUpDown numBatchConcurrency;
+    private Label lblCustomSystemPrompt = null!;
+    private TextBox textCustomSystemPrompt = null!;
+    private Button btnResetPrompt = null!;
+    private Label lblCustomUserMessage = null!;
+    private TextBox textCustomUserMessage = null!;
+    private Button btnResetUserMessage = null!;
+    private Label lblTranslationRules = null!;
+    private TextBox textTranslationRules = null!;
+    private Button btnAnalyzeRules = null!;
+    private Button btnClearRules = null!;
+    private Label lblBatchConcurrency = null!;
+    private NumericUpDown numBatchConcurrency = null!;
 
-    private TabControl tabSettings;
-    private TabPage tabGeneral;
-    private TabPage tabAi;
+    private TabControl tabSettings = null!;
+    private TabPage tabGeneral = null!;
+    private TabPage tabAi = null!;
 
     private bool _loading;
     private bool _snapshotAutoStart;
@@ -102,7 +102,7 @@ internal class SettingsDlg : LocalizableForm
         InitializeComponent();
     }
 
-    private void Settings_Load(object sender, EventArgs e)
+    private void Settings_Load(object? sender, EventArgs e)
     {
         _loading = true;
         checkEnableCompleted.Checked = Settings.Default.EnableCompleted;
@@ -159,7 +159,7 @@ internal class SettingsDlg : LocalizableForm
         ApplyLanguage();
     }
 
-    private void SettingsDlg_FormClosing(object sender, FormClosingEventArgs e)
+    private void SettingsDlg_FormClosing(object? sender, FormClosingEventArgs e)
     {
         if (base.DialogResult == DialogResult.OK)
         {
@@ -191,17 +191,17 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private void btnOK_Click(object sender, EventArgs e)
+    private void btnOK_Click(object? sender, EventArgs e)
     {
         base.DialogResult = DialogResult.OK;
     }
 
-    private void btnCancel_Click(object sender, EventArgs e)
+    private void btnCancel_Click(object? sender, EventArgs e)
     {
         base.DialogResult = DialogResult.Cancel;
     }
 
-    private void btnSelectAppInfo_Click(object sender, EventArgs e)
+    private void btnSelectAppInfo_Click(object? sender, EventArgs e)
     {
         using OpenFileDialog openFileDialog = new OpenFileDialog();
         openFileDialog.CheckFileExists = true;
@@ -215,7 +215,7 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private async void btnFetchModels_Click(object sender, EventArgs e)
+    private async void btnFetchModels_Click(object? sender, EventArgs e)
     {
         btnFetchModels.Enabled = false;
         btnFetchModels.Text = "...";
@@ -242,22 +242,22 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private void btnResetPrompt_Click(object sender, EventArgs e)
+    private void btnResetPrompt_Click(object? sender, EventArgs e)
     {
         textCustomSystemPrompt.Text = AiTranslator.DefaultSystemPrompt;
     }
 
-    private void btnResetUserMessage_Click(object sender, EventArgs e)
+    private void btnResetUserMessage_Click(object? sender, EventArgs e)
     {
         textCustomUserMessage.Text = AiTranslator.DefaultUserMessage;
     }
 
-    private void btnClearRules_Click(object sender, EventArgs e)
+    private void btnClearRules_Click(object? sender, EventArgs e)
     {
         textTranslationRules.Text = "";
     }
 
-    private async void btnAnalyzeRules_Click(object sender, EventArgs e)
+    private async void btnAnalyzeRules_Click(object? sender, EventArgs e)
     {
         string glossaryPath = Path.Combine(AppHelper.GetAppDirectory(), "glossary.json");
         if (!File.Exists(glossaryPath))
@@ -307,7 +307,7 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private void comboLanguage_SelectedIndexChanged(object sender, EventArgs e)
+    private void comboLanguage_SelectedIndexChanged(object? sender, EventArgs e)
     {
         string cultureCode = comboLanguage.SelectedIndex switch
         {
@@ -318,7 +318,7 @@ internal class SettingsDlg : LocalizableForm
         I18n.SetLanguage(cultureCode);
     }
 
-    private void checkAutoStart_CheckedChanged(object sender, EventArgs e)
+    private void checkAutoStart_CheckedChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
         UpdateAutoStartSubEnabled();
@@ -326,7 +326,7 @@ internal class SettingsDlg : LocalizableForm
             MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
-    private void checkAutoStartAutoFix_CheckedChanged(object sender, EventArgs e)
+    private void checkAutoStartAutoFix_CheckedChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
         if (!checkAutoStartAutoFix.Checked)
@@ -337,7 +337,7 @@ internal class SettingsDlg : LocalizableForm
             MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
-    private void checkAutoStartForceStart_CheckedChanged(object sender, EventArgs e)
+    private void checkAutoStartForceStart_CheckedChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
         if (checkAutoStartForceStart.Checked)
@@ -364,7 +364,7 @@ internal class SettingsDlg : LocalizableForm
     {
         try
         {
-            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
             if (key == null) return false;
 
             if (autoStart)

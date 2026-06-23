@@ -6,5 +6,5 @@ namespace SteamEdit;
 
 internal class CopyLaunchInfoArgs : EventArgs
 {
-	public LaunchItem LaunchInfo;
+	public LaunchItem LaunchInfo = null!;
 }

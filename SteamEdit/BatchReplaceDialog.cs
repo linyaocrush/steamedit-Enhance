@@ -13,19 +13,19 @@ internal class BatchReplaceDialog : LocalizableForm
 {
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
     private readonly IReadOnlyList<IAppInfoEntry> _entries;
-    private IContainer components;
-    private TextBox textFind;
-    private TextBox textReplace;
-    private Button btnCaseSensitive;
-    private Button btnRegex;
-    private Button btnReplaceAll;
-    private Button btnCancel;
-    private Label lblMatchCount;
-    private Label lblFind;
-    private Label lblReplace;
-    private ListView listPreview;
+    private IContainer components = null!;
+    private TextBox textFind = null!;
+    private TextBox textReplace = null!;
+    private Button btnCaseSensitive = null!;
+    private Button btnRegex = null!;
+    private Button btnReplaceAll = null!;
+    private Button btnCancel = null!;
+    private Label lblMatchCount = null!;
+    private Label lblFind = null!;
+    private Label lblReplace = null!;
+    private ListView listPreview = null!;
 
-    private ToolTip toolTips;
+    private ToolTip toolTips = null!;
     private bool _caseSensitive;
     private bool _regexMode;
     private readonly Timer _debounceTimer;
@@ -205,7 +205,7 @@ internal class BatchReplaceDialog : LocalizableForm
         PerformLayout();
     }
 
-    private void OnTextFind_TextChanged(object sender, EventArgs e) => RestartDebounce();
+    private void OnTextFind_TextChanged(object? sender, EventArgs e) => RestartDebounce();
 
     private void RestartDebounce()
     {
@@ -213,7 +213,7 @@ internal class BatchReplaceDialog : LocalizableForm
         _debounceTimer.Start();
     }
 
-    private void OnBtnCaseSensitive_Click(object sender, EventArgs e)
+    private void OnBtnCaseSensitive_Click(object? sender, EventArgs e)
     {
         _caseSensitive = !_caseSensitive;
         btnCaseSensitive.BackColor = _caseSensitive ? SystemColors.Highlight : SystemColors.Control;
@@ -221,7 +221,7 @@ internal class BatchReplaceDialog : LocalizableForm
         UpdatePreview();
     }
 
-    private void OnBtnRegex_Click(object sender, EventArgs e)
+    private void OnBtnRegex_Click(object? sender, EventArgs e)
     {
         _regexMode = !_regexMode;
         btnRegex.BackColor = _regexMode ? SystemColors.Highlight : SystemColors.Control;
@@ -229,18 +229,18 @@ internal class BatchReplaceDialog : LocalizableForm
         UpdatePreview();
     }
 
-    private void OnListPreview_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
+    private void OnListPreview_DrawColumnHeader(object? sender, DrawListViewColumnHeaderEventArgs e)
     {
         e.DrawDefault = true;
     }
 
-    private void OnListPreview_DrawItem(object sender, DrawListViewItemEventArgs e)
+    private void OnListPreview_DrawItem(object? sender, DrawListViewItemEventArgs e)
     {
         e.DrawDefault = false;
         e.Graphics.FillRectangle(e.Item.Selected ? SystemBrushes.Highlight : SystemBrushes.Window, e.Bounds);
     }
 
-    private void OnListPreview_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+    private void OnListPreview_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
     {
         if (e.ColumnIndex == 0)
         {
@@ -248,14 +248,14 @@ internal class BatchReplaceDialog : LocalizableForm
             return;
         }
 
-        var ranges = e.Item.Tag as List<(int Index, int Length)>;
+        var ranges = e.Item!.Tag as List<(int Index, int Length)>;
         if (ranges == null || ranges.Count == 0)
         {
             e.DrawDefault = true;
             return;
         }
 
-        string text = e.SubItem.Text;
+        string text = e.SubItem!.Text;
         bool selected = e.Item.Selected;
         var textColor = selected ? SystemColors.HighlightText : SystemColors.WindowText;
         var bgColor = selected ? HighlightColorSelected : HighlightColor;

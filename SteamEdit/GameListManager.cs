@@ -43,11 +43,11 @@ internal class GameListManager : IDisposable
 	private int _tooltipCachedId = -1;
 	private string _tooltipCachedText = "";
 
-	public event EventHandler<IAppInfoEntry> SelectedEntryChanged;
-	public event EventHandler ContextMenuCopyName;
-	public event EventHandler ContextMenuCopyAppId;
-	public event EventHandler ContextMenuOpenInSteam;
-	public event EventHandler ContextMenuOpenInSteamDB;
+	public event EventHandler<IAppInfoEntry>? SelectedEntryChanged;
+	public event EventHandler? ContextMenuCopyName;
+	public event EventHandler? ContextMenuCopyAppId;
+	public event EventHandler? ContextMenuOpenInSteam;
+	public event EventHandler? ContextMenuOpenInSteamDB;
 
 	public GameListManager(
 		GameDataContext ctx,
@@ -212,7 +212,7 @@ internal class GameListManager : IDisposable
 
 	// --- 公开方法 ---
 
-	public IAppInfoEntry GetSelectedEntry()
+	public IAppInfoEntry? GetSelectedEntry()
 	{
 		int idx = _appSelection.SelectedIndex;
 		return idx >= 0 && idx < _ctx.Entries.Count ? _ctx.Entries[idx] : null;
@@ -221,7 +221,7 @@ internal class GameListManager : IDisposable
 	public string GetDisplayName(IAppInfoEntry entry)
 	{
 		if (_ctx.DisplayNames.TryGetValue(entry.ID, out var name)) return name;
-		name = entry.ToString();
+		name = entry.ToString()!;
 		_ctx.DisplayNames[entry.ID] = name;
 		return name;
 	}
@@ -470,7 +470,7 @@ internal class GameListManager : IDisposable
 		if (entry.ID == _tooltipCachedId) return _tooltipCachedText;
 		var sb = new StringBuilder();
 		sb.AppendFormat("{0}: {1}", entry.ID, entry.Name);
-		string oslist = entry.GetPropertyValue<string>(null, AppInfoPaths.OsList);
+		string oslist = entry.GetPropertyValue<string>(null!, AppInfoPaths.OsList);
 		if (oslist != null) sb.AppendFormat(" [{0}]", oslist);
 		_tooltipCachedId = entry.ID;
 		_tooltipCachedText = sb.ToString();
@@ -479,13 +479,13 @@ internal class GameListManager : IDisposable
 
 	// --- 事件处理 ---
 
-	private void OnAppSelection_SelectedIndexChanged(object sender, EventArgs e)
+	private void OnAppSelection_SelectedIndexChanged(object? sender, EventArgs e)
 	{
 		if (!_refreshingGamesListAfterEdit)
-			SelectedEntryChanged?.Invoke(this, GetSelectedEntry());
+			SelectedEntryChanged?.Invoke(this, GetSelectedEntry()!);
 	}
 
-	private void OnAppSelection_DrawItem(object sender, DrawItemEventArgs e)
+	private void OnAppSelection_DrawItem(object? sender, DrawItemEventArgs e)
 	{
 		e.DrawBackground();
 		if (e.Index < 0 || e.Index >= _ctx.Entries.Count) return;
@@ -528,7 +528,7 @@ internal class GameListManager : IDisposable
 		TextRenderer.DrawText(e.Graphics, text, font, bounds, foreColor, TextFormatFlags.EndEllipsis);
 	}
 
-	private void OnAppSelection_KeyPress(object sender, KeyPressEventArgs e)
+	private void OnAppSelection_KeyPress(object? sender, KeyPressEventArgs e)
 	{
 		e.Handled = true;
 		_appSearchTerm.Append(e.KeyChar);
@@ -548,7 +548,7 @@ internal class GameListManager : IDisposable
 		}
 	}
 
-	private void OnAppSelection_MouseMove(object sender, MouseEventArgs e)
+	private void OnAppSelection_MouseMove(object? sender, MouseEventArgs e)
 	{
 		Point p = _appSelection.PointToClient(Control.MousePosition);
 		int idx = _appSelection.IndexFromPoint(p);
@@ -564,12 +564,12 @@ internal class GameListManager : IDisposable
 		}
 		else
 		{
-			_toolTips.SetToolTip(_appSelection, null);
+			_toolTips.SetToolTip(_appSelection, (string?)null);
 			_appSelectionLastHoverI = -1;
 		}
 	}
 
-	private void OnAppSelection_MouseDown(object sender, MouseEventArgs e)
+	private void OnAppSelection_MouseDown(object? sender, MouseEventArgs e)
 	{
 		if (e.Button != MouseButtons.Right) return;
 		int idx = _appSelection.IndexFromPoint(e.Location);
@@ -579,25 +579,25 @@ internal class GameListManager : IDisposable
 		}
 	}
 
-	private void OnAppFilterText_TextChanged(object sender, EventArgs e)
+	private void OnAppFilterText_TextChanged(object? sender, EventArgs e)
 	{
 		_filterDebounceTimer.Stop();
 		_filterDebounceTimer.Start();
 	}
 
-	private void OnFilter_CheckedChanged(object sender, EventArgs e)
+	private void OnFilter_CheckedChanged(object? sender, EventArgs e)
 	{
-		var item = (ToolStripMenuItem)sender;
-		var type = (AppInfoEntryType)item.Tag;
+		var item = (ToolStripMenuItem)sender!;
+		var type = (AppInfoEntryType)item.Tag!;
 		if (item.Checked) _currentFilters |= type;
 		else _currentFilters &= ~type;
 		Settings.Default.Filters = _currentFilters;
 		RefreshGameList();
 	}
 
-	private void OnFilter_ShowEntriesModeChanged(object sender, EventArgs e)
+	private void OnFilter_ShowEntriesModeChanged(object? sender, EventArgs e)
 	{
-		var mode = (ShowEntriesMode)((ToolStripMenuItem)sender).Tag;
+		var mode = (ShowEntriesMode)((ToolStripMenuItem)sender!).Tag!;
 		foreach (object obj in _filterSelectorMenu.Items)
 		{
 			if (obj is ToolStripMenuItem mi && mi.Tag is ShowEntriesMode sm)
@@ -607,7 +607,7 @@ internal class GameListManager : IDisposable
 		RefreshGameList();
 	}
 
-	private void OnSortField_Click(object sender, EventArgs e)
+	private void OnSortField_Click(object? sender, EventArgs e)
 	{
 		if (sender is not ToolStripMenuItem item || item.Tag is not string field) return;
 		Settings.Default.SortField = field;
@@ -620,7 +620,7 @@ internal class GameListManager : IDisposable
 		SortEntries();
 	}
 
-	private void OnSortDirection_Click(object sender, EventArgs e)
+	private void OnSortDirection_Click(object? sender, EventArgs e)
 	{
 		if (sender is not ToolStripMenuItem item || item.Tag is not bool descending) return;
 		Settings.Default.SortDescending = descending;
@@ -633,7 +633,7 @@ internal class GameListManager : IDisposable
 		SortEntries();
 	}
 
-	private void OnEntryModified(object sender, EventArgs e)
+	private void OnEntryModified(object? sender, EventArgs e)
 	{
 		_modifiedCountDirty = true;
 		_statusBarDebounceTimer.Stop();

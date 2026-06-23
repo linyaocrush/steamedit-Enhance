@@ -8,7 +8,7 @@ namespace SteamEdit;
 
 internal class LogViewerForm : LocalizableForm
 {
-	private TextBox txtLog;
+	private TextBox txtLog = null!;
 
 	public LogViewerForm()
 	{

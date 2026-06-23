@@ -103,7 +103,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 				_cachedName = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Name);
 				_nameCached = true;
 			}
-			return _cachedName;
+			return _cachedName!;
 		}
 		set
 		{
@@ -138,7 +138,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 				}
 				_sortAsCached = true;
 			}
-			return _cachedSortAs;
+			return _cachedSortAs!;
 		}
 		set
 		{

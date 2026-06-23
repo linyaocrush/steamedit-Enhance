@@ -5,5 +5,5 @@ namespace SteamEdit;
 
 internal class SelectLaunchDirArgs : EventArgs
 {
-	public string WorkingDir;
+	public string WorkingDir = null!;
 }

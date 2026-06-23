@@ -13,17 +13,17 @@ namespace SteamEdit;
 
 internal class BatchTranslateDialog : LocalizableForm
 {
-    private IContainer components;
-    private Label lblProgress;
-    private ProgressBar progressBar;
-    private Label lblCurrent;
-    private Label lblStats;
-    private Button btnPause;
-    private Button btnCancel;
+    private IContainer components = null!;
+    private Label lblProgress = null!;
+    private ProgressBar progressBar = null!;
+    private Label lblCurrent = null!;
+    private Label lblStats = null!;
+    private Button btnPause = null!;
+    private Button btnCancel = null!;
 
     private readonly List<IAppInfoEntry> _entries;
     private readonly string _targetLanguage;
-    private CancellationTokenSource _cts;
+    private CancellationTokenSource _cts = null!;
     private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
     private bool _isPaused;
     private int _successCount;
@@ -214,7 +214,7 @@ internal class BatchTranslateDialog : LocalizableForm
         InvokeOnUI(DoApply);
     }
 
-    private void btnPause_Click(object sender, EventArgs e)
+    private void btnPause_Click(object? sender, EventArgs e)
     {
         if (_isPaused)
         {
@@ -230,7 +230,7 @@ internal class BatchTranslateDialog : LocalizableForm
         }
     }
 
-    private void btnCancel_Click(object sender, EventArgs e)
+    private void btnCancel_Click(object? sender, EventArgs e)
     {
         if (_isPaused) _pauseEvent.Set();
         _cts?.Cancel();

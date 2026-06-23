@@ -5,7 +5,7 @@ namespace SteamEdit;
 
 internal class SelectLaunchExecutableArgs : EventArgs
 {
-	public string Executable;
+	public string Executable = null!;
 
 	public bool MakeWorkingDirMatch;
 }

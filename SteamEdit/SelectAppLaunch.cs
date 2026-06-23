@@ -15,15 +15,15 @@ internal class SelectAppLaunch : LocalizableForm
 {
 	private IContainer components = null!;
 
-	private ComboBox appSelection;
+	private ComboBox appSelection = null!;
 
-	private ComboBox launchSelection;
+	private ComboBox launchSelection = null!;
 
-	private Button btnOK;
+	private Button btnOK = null!;
 
-	private Label lblLaunchItem;
+	private Label lblLaunchItem = null!;
 
-	public LaunchItem LaunchInfo { get; private set; }
+	public LaunchItem LaunchInfo { get; private set; } = null!;
 
 	public SelectAppLaunch(IAppInfoDataStore dataStore)
 	{
@@ -48,7 +48,7 @@ internal class SelectAppLaunch : LocalizableForm
 		if (btnCancel != null) btnCancel.Text = Strings.SelectAppLaunch_BtnCancel;
 	}
 
-	private void appSelection_SelectedIndexChanged(object sender, EventArgs e)
+	private void appSelection_SelectedIndexChanged(object? sender, EventArgs e)
 	{
 		Setup();
 	}
@@ -59,7 +59,7 @@ internal class SelectAppLaunch : LocalizableForm
 		launchSelection.Enabled = enabled;
 		btnOK.Enabled = false;
 		launchSelection.Items.Clear();
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry? appInfoEntry = appSelection.SelectedItem as IAppInfoEntry;
 		if (appInfoEntry != null)
 		{
 			ComboBox.ObjectCollection items = launchSelection.Items;
@@ -69,29 +69,29 @@ internal class SelectAppLaunch : LocalizableForm
 		if (launchSelection.Items.Count > 0)
 		{
 			launchSelection.SelectedIndex = 0;
-			Set(appInfoEntry, appInfoEntry.Launches.Items.First());
+			Set(appInfoEntry!, appInfoEntry!.Launches.Items.First());
 		}
 	}
 
-	private void launchSelection_SelectionChangeCommitted(object sender, EventArgs e)
+	private void launchSelection_SelectionChangeCommitted(object? sender, EventArgs e)
 	{
-		IAppInfoEntry appInfoEntry = (IAppInfoEntry)appSelection.SelectedItem;
+		IAppInfoEntry? appInfoEntry = appSelection.SelectedItem as IAppInfoEntry;
 		int selectedIndex = launchSelection.SelectedIndex;
-		Set(appInfoEntry, appInfoEntry.Launches.Items.ElementAtOrDefault(selectedIndex));
+		Set(appInfoEntry!, appInfoEntry!.Launches.Items.ElementAtOrDefault(selectedIndex)!);
 	}
 
-	private void Set(IAppInfoEntry entry, LaunchItem item)
+	private void Set(IAppInfoEntry? entry, LaunchItem? item)
 	{
 		btnOK.Enabled = item != null;
 		if (item == null)
 		{
-			LaunchInfo = null;
+			LaunchInfo = null!;
 			return;
 		}
 		LaunchInfo = new LaunchItem
 		{
 			Label = item.Label,
-			Executable = Path.GetFullPath(Path.Combine(entry.InstallPath, item.Executable)),
+			Executable = Path.GetFullPath(Path.Combine(entry!.InstallPath, item.Executable)),
 			Arguments = item.Arguments,
 			WorkingDir = Path.GetFullPath(Path.Combine(entry.InstallPath, item.WorkingDir))
 		};

@@ -13,19 +13,19 @@ public class MessageBoxWithDetails : LocalizableForm
 
 	private IContainer components = null!;
 
-	private Button btnClose;
+	private Button btnClose = null!;
 
-	private Button btnCopy;
+	private Button btnCopy = null!;
 
-	private Button btnExit;
+	private Button btnExit = null!;
 
-	private Label lblMessage;
+	private Label lblMessage = null!;
 
-	private TextBox tbDetails;
+	private TextBox tbDetails = null!;
 
 	private bool _exitRequested;
 
-	public MessageBoxWithDetails(string message, string title, string details = null, bool showExitButton = false)
+	public MessageBoxWithDetails(string message, string title, string? details = null, bool showExitButton = false)
 	{
 		InitializeComponent();
 		lblMessage.Text = message;
@@ -64,7 +64,7 @@ public class MessageBoxWithDetails : LocalizableForm
 		if (btnExit.Visible) btnExit.Text = Strings.CrashDialog_ExitButton;
 	}
 
-	public static void Show(string message, string title, string details = null)
+	public static void Show(string message, string title, string? details = null)
 	{
 		new MessageBoxWithDetails(message, title, details).ShowDialog();
 	}
@@ -85,17 +85,17 @@ public class MessageBoxWithDetails : LocalizableForm
 		}
 	}
 
-	private void btnClose_Click(object sender, EventArgs e)
+	private void btnClose_Click(object? sender, EventArgs e)
 	{
 		Close();
 	}
 
-	private void btnCopy_Click(object sender, EventArgs e)
+	private void btnCopy_Click(object? sender, EventArgs e)
 	{
 		Clipboard.SetText(tbDetails.Text);
 	}
 
-	private void btnExit_Click(object sender, EventArgs e)
+	private void btnExit_Click(object? sender, EventArgs e)
 	{
 		_exitRequested = true;
 		Close();

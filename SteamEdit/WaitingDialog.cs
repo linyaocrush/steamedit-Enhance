@@ -17,11 +17,11 @@ internal class WaitingDialog : LocalizableForm
 
 	private IContainer components = null!;
 
-	private Label message;
+	private Label message = null!;
 
-	private ProgressBar progressBar1;
+	private ProgressBar progressBar1 = null!;
 
-	private Button btnCancel;
+	private Button btnCancel = null!;
 
 	public string Message
 	{
@@ -86,10 +86,10 @@ internal class WaitingDialog : LocalizableForm
 
 	public bool ShowAndWait(WaitWhileDelegate waitWhile)
 	{
-		return ShowAndWait(null, waitWhile);
+		return ShowAndWait(null!, waitWhile);
 	}
 
-	private void WaitForUpdateThread_FormClosing(object sender, FormClosingEventArgs e)
+	private void WaitForUpdateThread_FormClosing(object? sender, FormClosingEventArgs e)
 	{
 		if (_isWaiting && !_cancelled)
 		{
@@ -97,7 +97,7 @@ internal class WaitingDialog : LocalizableForm
 		}
 	}
 
-	private void OnCancelClick(object sender, EventArgs e)
+	private void OnCancelClick(object? sender, EventArgs e)
 	{
 		_cancelled = true;
 	}

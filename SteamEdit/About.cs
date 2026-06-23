@@ -15,19 +15,19 @@ public class About : LocalizableForm
 
 	private Label lblVersion;
 
-	private Button btnViewLog;
+	private Button btnViewLog = null!;
 
-	private LinkLabel linkWebsite;
+	private LinkLabel linkWebsite = null!;
 
-	private LinkLabel linkModified;
+	private LinkLabel linkModified = null!;
 
-	private LinkLabel linkEnhance;
+	private LinkLabel linkEnhance = null!;
 
 	public About()
 	{
 		InitializeComponent();
-		linkWebsite.Text = Resources.WebsiteUrl;
-		lblVersion.Text = "v" + Application.ProductVersion;
+		linkWebsite!.Text = Resources.WebsiteUrl;
+		lblVersion!.Text = "v" + Application.ProductVersion;
 	}
 
 	protected override void ApplyLanguage()
@@ -53,22 +53,22 @@ public class About : LocalizableForm
 		}
 	}
 
-	private void linkEmail_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+	private void linkEmail_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)
 	{
 		Process.Start(new ProcessStartInfo("mailto:tim@tg-software.com?subject=[SteamEdit]") { UseShellExecute = true });
 	}
 
-	private void linkModified_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+	private void linkModified_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)
 	{
 		Process.Start(new ProcessStartInfo("mailto:xiaokuiace@gmail.com?subject=[steamedit-Enhance]") { UseShellExecute = true });
 	}
 
-	private void linkEnhance_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+	private void linkEnhance_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)
 	{
 		Process.Start(new ProcessStartInfo("https://github.com/linyaocrush/steamedit-Enhance") { UseShellExecute = true });
 	}
 
-	private void linkWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+	private void linkWebsite_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)
 	{
 		Process.Start(new ProcessStartInfo(Resources.WebsiteUrl) { UseShellExecute = true });
 	}

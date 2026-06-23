@@ -24,7 +24,7 @@ internal class ClearableTextBox : TextBox
 		}
 	}
 
-	public event HandledEventHandler ClearXClicked;
+	public event HandledEventHandler? ClearXClicked;
 
 	public ClearableTextBox()
 	{
@@ -46,7 +46,7 @@ internal class ClearableTextBox : TextBox
 		lblClearX.BringToFront();
 	}
 
-	private void LblClearX_Click(object sender, EventArgs e)
+	private void LblClearX_Click(object? sender, EventArgs e)
 	{
 		HandledEventArgs e2 = new HandledEventArgs(defaultHandledValue: false);
 		this.ClearXClicked?.Invoke(this, e2);
@@ -56,7 +56,7 @@ internal class ClearableTextBox : TextBox
 		}
 	}
 
-	private void ClearableTextBox_TextChanged(object sender, EventArgs e)
+	private void ClearableTextBox_TextChanged(object? sender, EventArgs e)
 	{
 		if (AutoClearX)
 		{
@@ -64,7 +64,7 @@ internal class ClearableTextBox : TextBox
 		}
 	}
 
-	private void ClearableTextBox_Resize(object sender, EventArgs e)
+	private void ClearableTextBox_Resize(object? sender, EventArgs e)
 	{
 		lblClearX.Location = new Point(base.Width - lblClearX.Width - 3, (base.Height - lblClearX.Height) / 2 - 3);
 	}
