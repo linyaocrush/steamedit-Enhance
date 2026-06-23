@@ -13,6 +13,7 @@ namespace SteamEdit;
 
 internal class LaunchEditor : LocalizableForm
 {
+	private readonly IAppInfoDataStore _dataStore;
 	private string _baseDir;
 
 	private string _gameName;
@@ -34,8 +35,9 @@ internal class LaunchEditor : LocalizableForm
 			WorkingDir = item.WorkingDir
 		};
 
-	public LaunchEditor(IEnumerable<LaunchItem> items, string baseDir, string gameName)
+	public LaunchEditor(IAppInfoDataStore dataStore, IEnumerable<LaunchItem> items, string baseDir, string gameName)
 	{
+		_dataStore = dataStore;
 		InitializeComponent();
 		DoubleBuffered = true;
 		_baseDir = baseDir;
@@ -74,7 +76,7 @@ internal class LaunchEditor : LocalizableForm
 
 	private void uiItem_OnCopyLaunchInfo(object sender, CopyLaunchInfoArgs e)
 	{
-		using SelectAppLaunch selectAppLaunch = new SelectAppLaunch(SteamData.DataStore);
+		using SelectAppLaunch selectAppLaunch = new SelectAppLaunch(_dataStore);
 		if (selectAppLaunch.ShowDialog(this) == DialogResult.OK)
 		{
 			LaunchItem launchInfo = selectAppLaunch.LaunchInfo;

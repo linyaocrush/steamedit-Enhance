@@ -114,136 +114,6 @@ public class SteamDataTests
 		public void RaiseModified() => Modified?.Invoke(this, EventArgs.Empty);
 	}
 
-	private MockFileSystem _mockFs = null!;
-	private FakeAppInfo _fakeAppInfo = null!;
-	private IFileSystem _originalFs = null!;
-	private IAppInfo _originalAppInfo = null!;
-	private string _originalAppInfoPath = null!;
-	private string _originalModInfoPath = null!;
-	private bool _originalNeedsSave;
-	private bool _originalNeedsApply;
-
-	[TestInitialize]
-	public void SetUp()
-	{
-		_mockFs = new MockFileSystem();
-		_fakeAppInfo = new FakeAppInfo();
-
-		// 保存原始状态
-		_originalFs = GetField<IFileSystem>("FileSystem")!;
-		_originalAppInfo = SteamData.AppInfoData;
-		_originalAppInfoPath = SteamData.AppInfoPath;
-		_originalModInfoPath = SteamData.ModInfoPath;
-		_originalNeedsSave = SteamData.NeedsSave;
-		_originalNeedsApply = SteamData.NeedsApply;
-	}
-
-	[TestCleanup]
-	public void TearDown()
-	{
-		// 恢复原始状态
-		SetStaticProperty("FileSystem", _originalFs);
-		SetStaticProperty("AppInfoData", _originalAppInfo);
-		SetStaticProperty("AppInfoPath", _originalAppInfoPath);
-		SetStaticProperty("ModInfoPath", _originalModInfoPath);
-		SetField("_needsSave", _originalNeedsSave);
-		SetField("_needsApply", _originalNeedsApply);
-	}
-
-	// ── Apply() 测试 ──
-
-	[TestMethod]
-	public void Apply_Success_SetsNeedsApplyFalse()
-	{
-		ArrangeApply(appInfoPath: @"C:\steam\appcache\appinfo.vdf");
-
-		SteamData.Apply();
-
-		Assert.IsFalse(SteamData.NeedsApply);
-		Assert.AreEqual(1, _fakeAppInfo.SaveCallCount);
-	}
-
-	[TestMethod]
-	public void Apply_Success_CreatesBackup()
-	{
-		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
-		_mockFs.Files[appInfoPath] = new byte[] { 1, 2, 3 };
-		ArrangeApply(appInfoPath);
-
-		SteamData.Apply();
-
-		string backupPath = appInfoPath + ".bak";
-		Assert.IsTrue(_mockFs.Files.ContainsKey(backupPath));
-		CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, _mockFs.Files[backupPath]);
-	}
-
-	[TestMethod]
-	public void Apply_SaveThrows_RestoresFromBackup()
-	{
-		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
-		byte[] originalData = { 1, 2, 3 };
-		_mockFs.Files[appInfoPath] = (byte[])originalData.Clone();
-		_fakeAppInfo.SaveShouldThrow = true;
-		ArrangeApply(appInfoPath);
-
-		try { SteamData.Apply(); }
-		catch (IOException) { /* expected */ }
-
-		// 备份应已恢复
-		CollectionAssert.AreEqual(originalData, _mockFs.Files[appInfoPath]);
-	}
-
-	[TestMethod]
-	public void Apply_SaveThrows_PreservesNeedsApply()
-	{
-		ArrangeApply(appInfoPath: @"C:\steam\appcache\appinfo.vdf");
-		_fakeAppInfo.SaveShouldThrow = true;
-
-		try { SteamData.Apply(); }
-		catch (IOException) { /* expected */ }
-
-		// 失败时 NeedsApply 应保持 true（未被清除）
-		Assert.IsTrue(SteamData.NeedsApply);
-	}
-
-	[TestMethod]
-	public void Apply_SaveThrows_SetsNeedsApplyTrue_EvenIfWasFalse()
-	{
-		// 边界情况：NeedsApply 原本为 false 时调用 Apply() 失败
-		// 修复 R1：catch 块中显式设置 NeedsApply = true
-		ArrangeApply(appInfoPath: @"C:\steam\appcache\appinfo.vdf");
-		SetField("_needsApply", false); // 模拟异常边界
-		_fakeAppInfo.SaveShouldThrow = true;
-
-		try { SteamData.Apply(); }
-		catch (IOException) { /* expected */ }
-
-		Assert.IsTrue(SteamData.NeedsApply, "Apply 失败后 NeedsApply 必须为 true");
-	}
-
-	[TestMethod]
-	public void Apply_BackupRestoreFails_StillThrowsOriginal()
-	{
-		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
-		_mockFs.Files[appInfoPath] = new byte[] { 1, 2, 3 };
-		_fakeAppInfo.SaveShouldThrow = true;
-		ArrangeApply(appInfoPath);
-
-		// 第二次 File.Copy（恢复）时也失败
-		int copyCount = 0;
-		var originalFs = _mockFs;
-		var wrappedFs = new CopyFailOnSecondCall(originalFs, () => ++copyCount >= 2);
-		SetStaticProperty("FileSystem", wrappedFs);
-
-		bool caught = false;
-		try { SteamData.Apply(); }
-		catch (IOException ex) when (ex.Message == "Simulated save failure")
-		{
-			caught = true;
-		}
-		Assert.IsTrue(caught, "Should re-throw the original save exception");
-	}
-
 	/// <summary>
 	/// 第 N 次 Copy 调用时抛出异常的包装文件系统。
 	/// </summary>
@@ -265,17 +135,148 @@ public class SteamDataTests
 		public void CreateDirectory(string path) => _inner.CreateDirectory(path);
 	}
 
-	// ── Save() 测试 ──
+	// ── 辅助方法 ──
+
+	/// <summary>
+	/// 创建一个配置好的 SteamData 实例用于测试。
+	/// </summary>
+	private static SteamData CreateSteamData(IFileSystem fs, FakeAppInfo appInfo, string appInfoPath, bool needsApply = true)
+	{
+		var svc = new SteamData();
+		// 通过反射设置私有字段/属性（因为 Initialize 需要真实的 appinfo.vdf 文件）
+		SetInstanceField(svc, "_initProps", new SteamDataInitProps { AppInfoPath = appInfoPath, DataDirectory = Path.GetDirectoryName(appInfoPath) ?? "" });
+		SetInstanceProperty(svc, "AppInfoData", appInfo);
+		SetInstanceProperty(svc, "AppInfoPath", appInfoPath);
+		SetInstanceProperty(svc, "ModInfoPath", Path.Combine(Path.GetDirectoryName(appInfoPath) ?? "", "mods.dat"));
+		SetInstanceProperty(svc, "SteamDir", Path.GetFullPath(Path.Combine(Path.GetDirectoryName(appInfoPath) ?? "", "..\\")));
+		SetInstanceField(svc, "_needsApply", needsApply);
+		SetInstanceField(svc, "_needsSave", false);
+		svc.FileSystem = fs;
+		return svc;
+	}
+
+	private static void SetInstanceField(object obj, string name, object? value)
+	{
+		var field = obj.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+		field?.SetValue(obj, value);
+	}
+
+	private static void SetInstanceProperty(object obj, string name, object? value)
+	{
+		var prop = obj.GetType().GetProperty(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+		prop?.SetValue(obj, value);
+	}
+
+	// ── Apply() 测试 ──
+
+	[TestMethod]
+	public void Apply_Success_SetsNeedsApplyFalse()
+	{
+		var fs = new MockFileSystem();
+		var appInfo = new FakeAppInfo();
+		var svc = CreateSteamData(fs, appInfo, @"C:\steam\appcache\appinfo.vdf");
+
+		svc.Apply();
+
+		Assert.IsFalse(svc.NeedsApply);
+		Assert.AreEqual(1, appInfo.SaveCallCount);
+	}
+
+	[TestMethod]
+	public void Apply_Success_CreatesBackup()
+	{
+		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
+		var fs = new MockFileSystem();
+		fs.Files[appInfoPath] = new byte[] { 1, 2, 3 };
+		var appInfo = new FakeAppInfo();
+		var svc = CreateSteamData(fs, appInfo, appInfoPath);
+
+		svc.Apply();
+
+		string backupPath = appInfoPath + ".bak";
+		Assert.IsTrue(fs.Files.ContainsKey(backupPath));
+		CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, fs.Files[backupPath]);
+	}
+
+	[TestMethod]
+	public void Apply_SaveThrows_RestoresFromBackup()
+	{
+		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
+		byte[] originalData = { 1, 2, 3 };
+		var fs = new MockFileSystem();
+		fs.Files[appInfoPath] = (byte[])originalData.Clone();
+		var appInfo = new FakeAppInfo { SaveShouldThrow = true };
+		var svc = CreateSteamData(fs, appInfo, appInfoPath);
+
+		try { svc.Apply(); }
+		catch (IOException) { /* expected */ }
+
+		// 备份应已恢复
+		CollectionAssert.AreEqual(originalData, fs.Files[appInfoPath]);
+	}
+
+	[TestMethod]
+	public void Apply_SaveThrows_PreservesNeedsApply()
+	{
+		var fs = new MockFileSystem();
+		var appInfo = new FakeAppInfo { SaveShouldThrow = true };
+		var svc = CreateSteamData(fs, appInfo, @"C:\steam\appcache\appinfo.vdf");
+
+		try { svc.Apply(); }
+		catch (IOException) { /* expected */ }
+
+		// 失败时 NeedsApply 应保持 true（未被清除）
+		Assert.IsTrue(svc.NeedsApply);
+	}
+
+	[TestMethod]
+	public void Apply_SaveThrows_SetsNeedsApplyTrue_EvenIfWasFalse()
+	{
+		// 边界情况：NeedsApply 原本为 false 时调用 Apply() 失败
+		// 修复 R1：catch 块中显式设置 NeedsApply = true
+		var fs = new MockFileSystem();
+		var appInfo = new FakeAppInfo { SaveShouldThrow = true };
+		var svc = CreateSteamData(fs, appInfo, @"C:\steam\appcache\appinfo.vdf", needsApply: false);
+
+		try { svc.Apply(); }
+		catch (IOException) { /* expected */ }
+
+		Assert.IsTrue(svc.NeedsApply, "Apply 失败后 NeedsApply 必须为 true");
+	}
+
+	[TestMethod]
+	public void Apply_BackupRestoreFails_StillThrowsOriginal()
+	{
+		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
+		var fs = new MockFileSystem();
+		fs.Files[appInfoPath] = new byte[] { 1, 2, 3 };
+		var appInfo = new FakeAppInfo { SaveShouldThrow = true };
+
+		// 第二次 File.Copy（恢复）时也失败
+		int copyCount = 0;
+		var wrappedFs = new CopyFailOnSecondCall(fs, () => ++copyCount >= 2);
+		var svc = CreateSteamData(wrappedFs, appInfo, appInfoPath);
+
+		bool caught = false;
+		try { svc.Apply(); }
+		catch (IOException ex) when (ex.Message == "Simulated save failure")
+		{
+			caught = true;
+		}
+		Assert.IsTrue(caught, "Should re-throw the original save exception");
+	}
 
 	[TestMethod]
 	public void Apply_CallsAppInfoSaveWithCorrectPath()
 	{
 		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
-		ArrangeApply(appInfoPath);
+		var fs = new MockFileSystem();
+		var appInfo = new FakeAppInfo();
+		var svc = CreateSteamData(fs, appInfo, appInfoPath);
 
-		SteamData.Apply();
+		svc.Apply();
 
-		Assert.AreEqual(appInfoPath, _fakeAppInfo.LastSavePath);
+		Assert.AreEqual(appInfoPath, appInfo.LastSavePath);
 	}
 
 	[TestMethod]
@@ -283,40 +284,13 @@ public class SteamDataTests
 	{
 		// appinfo.vdf 不存在时，不应创建备份
 		var appInfoPath = @"C:\steam\appcache\appinfo.vdf";
-		ArrangeApply(appInfoPath);
-		// 不添加文件到 mock
+		var fs = new MockFileSystem();
+		var appInfo = new FakeAppInfo();
+		var svc = CreateSteamData(fs, appInfo, appInfoPath);
 
-		SteamData.Apply();
+		svc.Apply();
 
 		string backupPath = appInfoPath + ".bak";
-		Assert.IsFalse(_mockFs.Files.ContainsKey(backupPath));
-	}
-
-	// ── 辅助方法 ──
-
-	private void ArrangeApply(string appInfoPath)
-	{
-		SetStaticProperty("FileSystem", _mockFs);
-		SetStaticProperty("AppInfoData", _fakeAppInfo);
-		SetStaticProperty("AppInfoPath", appInfoPath);
-		SetField("_needsApply", true);
-	}
-
-	private static T? GetField<T>(string name)
-	{
-		var field = typeof(SteamData).GetField(name, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-		return (T?)field?.GetValue(null);
-	}
-
-	private static void SetField(string name, object? value)
-	{
-		var field = typeof(SteamData).GetField(name, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-		field?.SetValue(null, value);
-	}
-
-	private static void SetStaticProperty(string name, object? value)
-	{
-		var prop = typeof(SteamData).GetProperty(name, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
-		prop?.SetValue(null, value);
+		Assert.IsFalse(fs.Files.ContainsKey(backupPath));
 	}
 }

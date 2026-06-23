@@ -14,6 +14,7 @@ namespace SteamEdit;
 
 internal class MainWindow : LocalizableForm
 {
+	private readonly ISteamDataService _steamData;
 	private string _originalTitle;
 
 	private GameDataContext _ctx;
@@ -58,8 +59,9 @@ internal class MainWindow : LocalizableForm
 	private Button btnSaveApply;
 	private Button btnSaveApplyRestart;
 
-	public MainWindow()
+	public MainWindow(ISteamDataService steamData)
 	{
+		_steamData = steamData;
 		InitializeComponent();
 
 		// 构建 EntryType 下拉框（依赖 filterImages，由 GameListManager 构建）
@@ -77,7 +79,7 @@ internal class MainWindow : LocalizableForm
 
 		// 创建游戏列表管理器
 		_listManager = new GameListManager(
-			_ctx, SteamData.DataStore, appSelection, filterSelectorMenu, sortSelectorMenu,
+			_ctx, _steamData.DataStore, appSelection, filterSelectorMenu, sortSelectorMenu,
 			toolTips, appFilterText, lblNumAppsShown, lblModifiedCount);
 
 		// 填充 EntryType 下拉框（依赖 _listManager 的 filterImages）
@@ -125,20 +127,20 @@ internal class MainWindow : LocalizableForm
 
 		// 创建编辑控制器
 		_editController = new EditController(
-			_ctx, SteamData.DataStore, _listManager, textGameName, textSortAs,
+			_ctx, _steamData.DataStore, _listManager, textGameName, textSortAs,
 			checkHidden, checkCompleted, listControllerSupport,
 			listVR, listEntryType);
 		// 订阅 SteamData 事件
-		SteamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
-		SteamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
+		_steamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
+		_steamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
 	}
 
 	private void SteamData_OnNeedsSaveOrApply(object sender, EventArgs e)
 	{
 		Text = _originalTitle;
-		if (SteamData.NeedsSave)
+		if (_steamData.NeedsSave)
 			Text += Strings.MainWindow_UnsavedSuffix;
-		if (SteamData.NeedsApply)
+		if (_steamData.NeedsApply)
 			Text += Strings.MainWindow_UnappliedSuffix;
 	}
 
@@ -233,15 +235,15 @@ internal class MainWindow : LocalizableForm
 
 	private void OnMainWindow_FormClosing(object sender, FormClosingEventArgs e)
 	{
-		SteamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
-		SteamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
+		_steamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
+		_steamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
 		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); MessageBox.Show(this, string.Format(Strings.Msg_SettingsSaveFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
-		if (SteamData.NeedsSave)
+		if (_steamData.NeedsSave)
 		{
 			switch (MessageBox.Show(Strings.Msg_UnsavedChanges, Strings.Msg_SaveFirst, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation))
 			{
 			case DialogResult.Yes:
-				SteamData.Save();
+				_steamData.Save();
 				break;
 			case DialogResult.Cancel:
 				e.Cancel = true;
@@ -256,7 +258,7 @@ internal class MainWindow : LocalizableForm
 		{
 			e.Handled = true;
 			e.SuppressKeyPress = true;
-			try { SteamData.Save(); }
+			try { _steamData.Save(); }
 			catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
 			return;
 		}
@@ -329,7 +331,7 @@ internal class MainWindow : LocalizableForm
 	{
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		using LaunchEditor launchEditor = new LaunchEditor(entry.Launches.Items, entry.InstallPath, entry.Name);
+		using LaunchEditor launchEditor = new LaunchEditor(_steamData.DataStore, entry.Launches.Items, entry.InstallPath, entry.Name);
 		if (launchEditor.ShowDialog(this) == DialogResult.OK)
 			entry.Launches = new LaunchTable(launchEditor.LaunchItems);
 	}
@@ -337,8 +339,8 @@ internal class MainWindow : LocalizableForm
 	private void OnBtnSettings_Click(object sender, EventArgs e)
 	{
 		using (var dlg = new SettingsDlg()) dlg.ShowDialog(this);
-		SteamData.UseCompleted = Settings.Default.EnableCompleted;
-		SteamData.UseHidden = Settings.Default.EnableHidden;
+		_steamData.UseCompleted = Settings.Default.EnableCompleted;
+		_steamData.UseHidden = Settings.Default.EnableHidden;
 	}
 
 	private void OnBtnRevert_Click(object sender, EventArgs e)
@@ -478,15 +480,15 @@ internal class MainWindow : LocalizableForm
 
 	private void OnBtnSave_Click(object sender, EventArgs e)
 	{
-		try { SteamData.Save(); }
+		try { _steamData.Save(); }
 		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
 	}
 
 	private void OnBtnSaveApply_Click(object sender, EventArgs e)
 	{
-		try { SteamData.Save(); }
+		try { _steamData.Save(); }
 		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
-		try { SteamData.Apply(); }
+		try { _steamData.Apply(); }
 		catch (Exception ex2) { Log.WriteLine("Apply failed: {0}", ex2); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.Message)); }
 	}
 
@@ -494,18 +496,18 @@ internal class MainWindow : LocalizableForm
 	{
 		try
 		{
-			SteamProcessManager.KillSteam(Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
+			SteamProcessManager.KillSteam(_steamData.SteamDir, Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
 			{
 				using var dlg = new WaitingDialog(msg);
 				dlg.ShowAndWait(() => waitWhile());
 			});
 		}
 		catch (Exception ex) { Log.WriteLine("KillSteam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_KillSteamFailed, ex.Message)); return; }
-		try { SteamData.Save(); }
+		try { _steamData.Save(); }
 		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
-		try { SteamData.Apply(); }
+		try { _steamData.Apply(); }
 		catch (Exception ex) { Log.WriteLine("Apply failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex.Message)); return; }
-		try { SteamProcessManager.EnsureSteamRunning(focusIfRunning: true); }
+		try { SteamProcessManager.EnsureSteamRunning(_steamData.SteamDir, focusIfRunning: true); }
 		catch (Exception ex) { Log.WriteLine("Restart Steam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_RestartFailed, ex.Message)); }
 	}
 

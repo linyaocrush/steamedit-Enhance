@@ -78,7 +78,13 @@ internal static class Program
         {
             var task = Task.Run(() =>
             {
-                try { SteamData.Initialize(ref initCopy); AppInfoEntryBase.DisplaySettings = SteamData.DisplaySettings; }
+                try
+                {
+                    var service = new SteamData();
+                    service.Initialize(ref initCopy);
+                    SteamData.Instance = service;
+                    AppInfoEntryBase.DisplaySettings = service.DisplaySettings;
+                }
                 catch (Exception ex) { loadError = ex; }
             });
             if (!loading.ShowAndWait(() => !task.IsCompleted))
@@ -145,32 +151,33 @@ internal static class Program
         {
             if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: true))
             {
+                var svc = SteamData.Instance;
                 bool flag2 = AppHelper.HasArgument("forcestart", cmdArgs);
-                if (SteamData.NeedsApply)
+                if (svc.NeedsApply)
                 {
                     Log.WriteLine("Changes detected, applying!");
-                    bool shouldRestart = flag2 || SteamProcessManager.IsSteamRunning();
+                    bool shouldRestart = flag2 || SteamProcessManager.IsSteamRunning(svc.SteamDir);
                     if (shouldRestart)
-                        SteamProcessManager.KillSteam(SteamEdit.Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
+                        SteamProcessManager.KillSteam(svc.SteamDir, SteamEdit.Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
                         {
                             using var dlg = new WaitingDialog(msg);
                             dlg.ShowAndWait(() => waitWhile());
                         });
-                    SteamData.Save();
-                    SteamData.Apply();
+                    svc.Save();
+                    svc.Apply();
                     if (shouldRestart)
-                        SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
+                        SteamProcessManager.EnsureSteamRunning(svc.SteamDir, focusIfRunning: true);
                     Log.WriteLine("Appcache updated");
                 }
                 else if (flag2)
                 {
-                    SteamProcessManager.EnsureSteamRunning(focusIfRunning: true);
+                    SteamProcessManager.EnsureSteamRunning(svc.SteamDir, focusIfRunning: true);
                 }
                 else
                 {
                     Log.WriteLine("No data changes, so nothing to do!");
                 }
-                SteamData.Shutdown();
+                svc.Shutdown();
                 Log.Close();
             }
         }
@@ -184,12 +191,12 @@ internal static class Program
                 Task.Run(() => SyncGlossaryFromEntries());
                 try
                 {
-                    MainWindow_ = new MainWindow();
+                    MainWindow_ = new MainWindow(SteamData.Instance);
                     Application.Run(MainWindow_);
                 }
                 finally
                 {
-                    SteamData.Shutdown();
+                    SteamData.Instance.Shutdown();
                     Log.Close();
                 }
             }
@@ -200,7 +207,7 @@ internal static class Program
     {
         try
         {
-            var adapters = SteamData.AppInfoData.Entries
+            var adapters = SteamData.Instance.AppInfoData.Entries
                 .Where(e => e.IsModified && e.Modification.Changes.HasProperty(AppInfoPaths.Name))
                 .Select(e => new GlossaryAdapter(e))
                 .ToList();

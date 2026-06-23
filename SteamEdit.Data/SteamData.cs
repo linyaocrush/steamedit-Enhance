@@ -5,30 +5,34 @@ using Common;
 
 namespace SteamEdit.Data;
 
-internal static class SteamData
+internal class SteamData : ISteamDataService
 {
 	public const string CompletedChar = "✓";
+	public static string CompletedSuffix => " ✓";
 
-	private static readonly object _lock = new();
-	private static SteamDataInitProps _initProps;
-	private static Mods _modData = null!;
-	private static volatile bool _needsSave;
-	private static volatile bool _needsApply;
+	/// <summary>
+	/// 全局单例访问器。由 Program.Main 在初始化时赋值。
+	/// </summary>
+	public static SteamData Instance { get; set; } = null!;
+
+	private readonly object _lock = new();
+	private SteamDataInitProps _initProps;
+	private Mods _modData = null!;
+	private volatile bool _needsSave;
+	private volatile bool _needsApply;
 
 	/// <summary>
 	/// 文件系统抽象，默认使用真实文件系统。测试时可替换为 mock。
 	/// </summary>
-	internal static IFileSystem FileSystem { get; set; } = RealFileSystem.Instance;
+	public IFileSystem FileSystem { get; set; } = RealFileSystem.Instance;
 
-	public static string CompletedSuffix => " ✓";
+	public string SteamDir { get; private set; } = "";
 
-	public static string SteamDir { get; private set; } = "";
+	public string AppInfoPath { get; private set; } = "";
 
-	public static string AppInfoPath { get; private set; } = "";
+	public string ModInfoPath { get; private set; } = "";
 
-	public static string ModInfoPath { get; private set; } = "";
-
-	public static bool UseCompleted
+	public bool UseCompleted
 	{
 		get
 		{
@@ -47,7 +51,7 @@ internal static class SteamData
 		}
 	}
 
-	public static bool UseHidden
+	public bool UseHidden
 	{
 		get
 		{
@@ -66,49 +70,49 @@ internal static class SteamData
 		}
 	}
 
-	public static IAppInfo AppInfoData { get; private set; } = null!;
+	public IAppInfo AppInfoData { get; private set; } = null!;
 
-	private static void SetDirtyFlag(ref bool field, EventHandler? handler, bool value, Action? onTrue = null)
+	private void SetDirtyFlag(ref bool field, EventHandler? handler, bool value, Action? onTrue = null)
 	{
 		bool changed;
 		lock (_lock) { changed = field != value; if (changed) field = value; }
-		if (changed) { handler?.Invoke(null, EventArgs.Empty); onTrue?.Invoke(); }
+		if (changed) { handler?.Invoke(this, EventArgs.Empty); onTrue?.Invoke(); }
 	}
 
-	public static bool NeedsSave
+	public bool NeedsSave
 	{
 		get => _needsSave;
 		private set => SetDirtyFlag(ref _needsSave, OnNeedsSave, value, value ? () => NeedsApply = true : null);
 	}
 
-	public static bool NeedsApply
+	public bool NeedsApply
 	{
 		get => _needsApply;
 		private set => SetDirtyFlag(ref _needsApply, OnNeedsApply, value);
 	}
 
-	public static event EventHandler? OnNeedsSave;
+	public event EventHandler? OnNeedsSave;
 
-	public static event EventHandler? OnNeedsApply;
+	public event EventHandler? OnNeedsApply;
 
-	public static IEntryDisplaySettings DisplaySettings { get; } = new DisplaySettingsImpl();
+	public IEntryDisplaySettings DisplaySettings { get; } = new DisplaySettingsImpl();
 
-	public static IAppInfoDataStore DataStore { get; } = new DataStoreImpl();
+	public IAppInfoDataStore DataStore { get; } = new DataStoreImpl();
 
 	private sealed class DisplaySettingsImpl : IEntryDisplaySettings
 	{
-		public string SteamDir => SteamData.SteamDir;
-		public bool UseCompleted => SteamData.UseCompleted;
+		public string SteamDir => Instance.SteamDir;
+		public bool UseCompleted => Instance.UseCompleted;
 		public string CompletedSuffix => SteamData.CompletedSuffix;
-		public bool UseHidden => SteamData.UseHidden;
+		public bool UseHidden => Instance.UseHidden;
 	}
 
 	private sealed class DataStoreImpl : IAppInfoDataStore
 	{
-		public IAppInfo AppInfo => SteamData.AppInfoData;
+		public IAppInfo AppInfo => Instance.AppInfoData;
 	}
 
-	public static void Initialize(ref SteamDataInitProps props)
+	public void Initialize(ref SteamDataInitProps props)
 	{
 		_initProps = props;
 		AppInfoPath = _initProps.AppInfoPath;
@@ -134,12 +138,12 @@ internal static class SteamData
 		NeedsSave = false;
 	}
 
-	private static void OnEntryModified(object? sender, EventArgs e)
+	private void OnEntryModified(object? sender, EventArgs e)
 	{
 		NeedsSave = true;
 	}
 
-	public static void Shutdown()
+	public void Shutdown()
 	{
 		if (AppInfoData != null)
 		{
@@ -147,7 +151,7 @@ internal static class SteamData
 		}
 	}
 
-	public static void Save()
+	public void Save()
 	{
 		Log.WriteLine("Saving Mods:");
 		_modData.Save(ModInfoPath, FileSystem);
@@ -155,7 +159,7 @@ internal static class SteamData
 		NeedsSave = false;
 	}
 
-	public static void Apply()
+	public void Apply()
 	{
 		Log.WriteLine("Saving SteamData:");
 		string backupPath = AppInfoPath + ".bak";

@@ -12,9 +12,8 @@ internal static class SteamProcessManager
     /// 获取已验证的 Steam 可执行文件路径。
     /// 验证文件存在且 CompanyName 为 "Valve Corporation"。
     /// </summary>
-    public static string? GetSteamExePath()
+    public static string? GetSteamExePath(string steamDir)
     {
-        string steamDir = SteamData.SteamDir;
         if (string.IsNullOrEmpty(steamDir)) return null;
 
         string exePath = Path.Combine(steamDir, "steam.exe");
@@ -42,9 +41,9 @@ internal static class SteamProcessManager
         return exePath;
     }
 
-    public static bool IsSteamRunning()
+    public static bool IsSteamRunning(string steamDir)
     {
-        string? expectedPath = GetSteamExePath();
+        string? expectedPath = GetSteamExePath(steamDir);
         if (expectedPath == null)
         {
             // 无法验证路径时回退到进程名匹配
@@ -70,9 +69,9 @@ internal static class SteamProcessManager
         return false;
     }
 
-    public static void KillSteam(string waitingMessage, Action<string, Func<bool>> showAndWait)
+    public static void KillSteam(string steamDir, string waitingMessage, Action<string, Func<bool>> showAndWait)
     {
-        string? expectedPath = GetSteamExePath();
+        string? expectedPath = GetSteamExePath(steamDir);
         string? normalizedExpected = expectedPath != null ? Path.GetFullPath(expectedPath) : null;
         if (normalizedExpected == null)
             Log.WriteLine("WARNING: Steam exe validation failed, falling back to name-only process matching");
@@ -107,16 +106,16 @@ internal static class SteamProcessManager
         }
 
         if (killed > 0)
-            showAndWait(waitingMessage, IsSteamRunning);
+            showAndWait(waitingMessage, () => IsSteamRunning(steamDir));
         else
             Log.WriteLine("No matching Steam processes found to kill");
     }
 
-    public static void EnsureSteamRunning(bool focusIfRunning)
+    public static void EnsureSteamRunning(string steamDir, bool focusIfRunning)
     {
-        if (focusIfRunning || !IsSteamRunning())
+        if (focusIfRunning || !IsSteamRunning(steamDir))
         {
-            string? exePath = GetSteamExePath();
+            string? exePath = GetSteamExePath(steamDir);
             if (exePath == null)
             {
                 Log.WriteLine("Cannot start Steam: exe path validation failed");
