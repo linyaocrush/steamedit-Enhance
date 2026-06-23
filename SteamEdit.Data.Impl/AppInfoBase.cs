@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Common;
 
 namespace SteamEdit.Data.Impl;
 
@@ -43,7 +44,7 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 		catch
 		{
 			try { if (File.Exists(tempPath)) File.Delete(tempPath); }
-			catch { /* 最佳努力清理 */ }
+			catch (Exception cleanupEx) { Log.WriteLine("AppInfoBase.Save cleanup failed: {0}", cleanupEx.Message); }
 			throw;
 		}
 	}

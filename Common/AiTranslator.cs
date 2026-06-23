@@ -97,12 +97,14 @@ Rules:
 	private static async Task<string> CallChatCompletionAsync(
 		string systemPrompt,
 		string userMessage,
+		string apiUrl,
+		string apiKey,
+		string model,
 		int maxTokens = 4096,
 		float temperature = 0.1f,
 		CancellationToken cancellationToken = default)
 	{
-		string? apiUrl = Settings.Default.AiApiUrl?.TrimEnd('/');
-		string apiKey = Settings.Default.AiApiKey;
+		apiUrl = apiUrl.TrimEnd('/');
 
 		if (string.IsNullOrWhiteSpace(apiUrl))
 			throw new InvalidOperationException("AI API URL is not configured.");
@@ -110,7 +112,6 @@ Rules:
 		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
 			apiUrl += "/chat/completions";
 
-		string model = Settings.Default.AiModel;
 		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
 
 		string requestBody = JsonSerializer.Serialize(new
@@ -263,7 +264,10 @@ Rules:
 
 		Log.WriteLine("AI: Translating \"{0}\" -> {1}", gameName, targetLanguage);
 
-		string result = await CallChatCompletionAsync(systemPrompt, userMessage, 4096, 0.1f, cancellationToken);
+		string apiUrl = Settings.Default.AiApiUrl ?? "";
+		string apiKey = Settings.Default.AiApiKey ?? "";
+		string model = Settings.Default.AiModel ?? "gpt-4o-mini";
+		string result = await CallChatCompletionAsync(systemPrompt, userMessage, apiUrl, apiKey, model, 4096, 0.1f, cancellationToken);
 		result = result.Trim('"', '\'', '\n', '\r');
 		Log.WriteLine("AI: Result: \"{0}\"", result);
 
@@ -315,9 +319,12 @@ Translation pairs:
 
 		Log.WriteLine("AI: Analyzing translation rules");
 
+		string apiUrl = Settings.Default.AiApiUrl ?? "";
+		string apiKey = Settings.Default.AiApiKey ?? "";
+		string model = Settings.Default.AiModel ?? "gpt-4o-mini";
 		string result = await CallChatCompletionAsync(
 			"You are a translation style analyst. Output ONLY the rules as a bullet list. Do NOT include any preamble, greeting, introduction, or concluding remarks. Start directly with the first rule.",
-			analysisPrompt, 4096, 0.3f, cancellationToken);
+			analysisPrompt, apiUrl, apiKey, model, 4096, 0.3f, cancellationToken);
 
 		Log.WriteLine("AI: Translation rules analysis complete, length={0}", result.Length);
 		return result;

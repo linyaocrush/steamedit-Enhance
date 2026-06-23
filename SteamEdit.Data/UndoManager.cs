@@ -1,9 +1,8 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using SteamEdit.Data;
 
-namespace Common;
+namespace SteamEdit.Data;
 
 internal class UndoRecord
 {

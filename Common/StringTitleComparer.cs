@@ -22,15 +22,15 @@ internal class StringTitleComparer : IComparer<string>
 	{
 		if (s == null) return "";
 		s = s.Trim();
-		if (s.StartsWith("the ", StringComparison.InvariantCultureIgnoreCase))
+		if (s.StartsWith("the ", StringComparison.CurrentCultureIgnoreCase))
 		{
 			s = s.Substring(4).Trim();
 		}
-		else if (s.StartsWith("a ", StringComparison.InvariantCultureIgnoreCase))
+		else if (s.StartsWith("a ", StringComparison.CurrentCultureIgnoreCase))
 		{
 			s = s.Substring(2).Trim();
 		}
-		else if (s.StartsWith("an ", StringComparison.InvariantCultureIgnoreCase))
+		else if (s.StartsWith("an ", StringComparison.CurrentCultureIgnoreCase))
 		{
 			s = s.Substring(3).Trim();
 		}

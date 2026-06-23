@@ -136,6 +136,7 @@ internal class SteamData : ISteamDataService
 		_modData = Mods.Load(ModInfoPath, AppInfoData);
 		Log.WriteLine("  SteamData initialized!");
 		NeedsSave = false;
+		SteamEdit.Data.Impl.AppInfoEntryBase.DisplaySettings = DisplaySettings;
 	}
 
 	private void OnEntryModified(object? sender, EventArgs e)

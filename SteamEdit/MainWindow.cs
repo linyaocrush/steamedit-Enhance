@@ -371,7 +371,8 @@ internal class MainWindow : LocalizableForm
 		};
 		string url = baseUrl + query;
 		Log.WriteLine("Search: Opening {0}", url);
-		Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose();
+		try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose(); }
+		catch (Exception ex) when (ex is Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 	}
 
 	private async void OnBtnTranslate_Click(object sender, EventArgs e)

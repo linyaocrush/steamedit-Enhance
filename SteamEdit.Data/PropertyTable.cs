@@ -158,8 +158,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		Property item = new Property(name, type, value);
 		_properties.Add(item);
 		_propertyMap[name] = item;
-		_hashCodeDirty = true;
-		lock (_cacheLock) { _propertyNamesCache = null; }
+		lock (_cacheLock) { _hashCodeDirty = true; _propertyNamesCache = null; }
 	}
 
 	public bool SetPropertyValue(string name, PropertyType type, object? value)
@@ -170,12 +169,12 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			property = new Property(name);
 			_properties.Add(property);
 			_propertyMap[name] = property;
-			lock (_cacheLock) { _propertyNamesCache = null; }
+			lock (_cacheLock) { _hashCodeDirty = true; _propertyNamesCache = null; }
 		}
 		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
 		property.Value = value;
-		_hashCodeDirty = true;
+		lock (_cacheLock) { _hashCodeDirty = true; }
 		return result;
 	}
 
@@ -192,8 +191,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		{
 			_properties.Remove(prop);
 			_propertyMap.Remove(name);
-			_hashCodeDirty = true;
-			lock (_cacheLock) { _propertyNamesCache = null; }
+			lock (_cacheLock) { _hashCodeDirty = true; _propertyNamesCache = null; }
 		}
 	}
 

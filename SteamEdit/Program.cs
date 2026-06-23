@@ -83,7 +83,6 @@ internal static class Program
                     var service = new SteamData();
                     service.Initialize(ref initCopy);
                     SteamData.Instance = service;
-                    AppInfoEntryBase.DisplaySettings = service.DisplaySettings;
                 }
                 catch (Exception ex) { loadError = ex; }
             });
