@@ -35,12 +35,65 @@ internal static class ThemeManager
     // Status bar
     public static Color StatusBarBack { get; } = Color.FromArgb(240, 242, 245);
 
-    // ── Helper Methods ──
+    // ── Shared Helpers ──
+
+    public static GraphicsPath GetRoundedRectangle(Rectangle rect, int radius)
+    {
+        var path = new GraphicsPath();
+        path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
+        path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
+        path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+        path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+
+    // ── Form / Dialog Styling ──
 
     public static void ApplyToForm(Form form)
     {
         form.BackColor = BackColor;
     }
+
+    public static void StyleDialog(Form form)
+    {
+        form.BackColor = BackColor;
+        StyleDialogControls(form.Controls);
+    }
+
+    private static void StyleDialogControls(Control.ControlCollection controls)
+    {
+        foreach (Control c in controls)
+        {
+            switch (c)
+            {
+                case Button btn:
+                    StyleButton(btn);
+                    break;
+                case LinkLabel link:
+                    link.BackColor = Color.Transparent;
+                    link.ForeColor = AccentColor;
+                    break;
+                case Label lbl:
+                    lbl.BackColor = Color.Transparent;
+                    lbl.ForeColor = TextColor;
+                    break;
+                case CheckBox chk:
+                    StyleCheckBox(chk);
+                    break;
+                case Panel p:
+                    if (p.BorderStyle == BorderStyle.Fixed3D)
+                        p.BorderStyle = BorderStyle.None;
+                    StyleDialogControls(p.Controls);
+                    break;
+                case GroupBox or FlowLayoutPanel or TabControl or TabPage:
+                    StyleDialogControls(c.Controls);
+                    break;
+            }
+        }
+    }
+
+    // ── Button Styling ──
 
     public static void StyleButton(Button btn, bool isPrimary = false)
     {
@@ -55,33 +108,10 @@ internal static class ThemeManager
         AttachRoundedCorners(btn, isPrimary);
     }
 
-    public static void StyleDialog(Form form)
-    {
-        form.BackColor = BackColor;
-        foreach (Control c in form.Controls)
-            StyleDialogControl(c);
-    }
-
-    private static void StyleDialogControl(Control c)
-    {
-        if (c is Button btn)
-        {
-            StyleButton(btn);
-            return;
-        }
-        if (c is Panel || c is GroupBox || c is FlowLayoutPanel || c is TabControl || c is TabPage)
-        {
-            foreach (Control child in c.Controls)
-                StyleDialogControl(child);
-        }
-    }
-
     private static void AttachRoundedCorners(Button btn, bool isPrimary)
     {
-        const int radius = 6;
         bool hovered = false;
         Color normalBack = isPrimary ? PrimaryButtonBack : DefaultButtonBack;
-        Color normalFore = isPrimary ? PrimaryButtonFore : DefaultButtonFore;
         Color hoverBack = isPrimary ? PrimaryButtonHover : DefaultButtonHover;
 
         btn.MouseEnter += (_, _) => { hovered = true; btn.Invalidate(); };
@@ -93,19 +123,16 @@ internal static class ThemeManager
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            // Clear background with the form's color (handles Transparent parent containers)
+            int radius = Math.Max(4, (int)Math.Round(6.0 * b.DeviceDpi / 96.0));
+
+            // Clear background with form color (handles Transparent parent containers)
             Color clearColor = b.FindForm()?.BackColor ?? SystemColors.Control;
             using (var bgBrush = new SolidBrush(clearColor))
                 g.FillRectangle(bgBrush, b.ClientRectangle);
 
             // Draw rounded fill
             var rect = new Rectangle(0, 0, b.Width - 1, b.Height - 1);
-            using var path = new GraphicsPath();
-            path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
-            path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
-            path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-            path.CloseFigure();
+            using var path = GetRoundedRectangle(rect, radius);
 
             Color back = hovered ? hoverBack : normalBack;
             using (var brush = new SolidBrush(back))
@@ -128,11 +155,13 @@ internal static class ThemeManager
             {
                 var textRect = b.ClientRectangle;
                 textRect.Y -= 1;
-                TextRenderer.DrawText(g, b.Text, b.Font, textRect, normalFore,
+                TextRenderer.DrawText(g, b.Text, b.Font, textRect, b.ForeColor,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             }
         };
     }
+
+    // ── Other Control Styling ──
 
     public static void StyleTextBox(TextBoxBase textBox)
     {

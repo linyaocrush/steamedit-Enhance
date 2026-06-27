@@ -447,7 +447,9 @@ internal class MainWindow : LocalizableForm
 
 	private void OnBtnSettings_Click(object? sender, EventArgs e)
 	{
-		using (var dlg = new SettingsDlg()) dlg.ShowDialog(this);
+		using var dlg = new SettingsDlg();
+		ThemeManager.StyleDialog(dlg);
+		dlg.ShowDialog(this);
 		_steamData.UseCompleted = Settings.Default.EnableCompleted;
 		_steamData.UseHidden = Settings.Default.EnableHidden;
 	}
@@ -763,6 +765,8 @@ internal class MainWindow : LocalizableForm
 		ThemeManager.StyleButton(btnSettings);
 		ThemeManager.StyleButton(btnHelp);
 		ThemeManager.StyleButton(btnShortcuts);
+		ThemeManager.StyleButton(filterSelector);
+		ThemeManager.StyleButton(sortSelector);
 
 		// ListBox
 		appSelection.BackColor = ThemeManager.ListBackColor;

@@ -15,13 +15,7 @@ internal static class ButtonPainter
 
         int radius = 6;
         var rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-        using var path = new GraphicsPath();
-        path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
-        path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
-        path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
-        path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-        path.CloseFigure();
-
+        using var path = ThemeManager.GetRoundedRectangle(rect, radius);
         using var bgBrush = new SolidBrush(btn.Parent!.BackColor);
         g.FillRectangle(bgBrush, btn.ClientRectangle);
 
