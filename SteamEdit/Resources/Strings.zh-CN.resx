@@ -621,4 +621,12 @@ Page Down   下一个游戏</value>
   <data name="CrashDialog_SavedTo" xml:space="preserve">
     <value>崩溃日志已保存到：</value>
   </data>
+
+  <!-- Steam Status -->
+  <data name="SteamStatus_Running" xml:space="preserve">
+    <value>Steam：运行中</value>
+  </data>
+  <data name="SteamStatus_NotRunning" xml:space="preserve">
+    <value>Steam：未运行</value>
+  </data>
 </root>

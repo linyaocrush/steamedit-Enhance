@@ -52,6 +52,8 @@ internal class MainWindow : LocalizableForm
 	private ToolStripStatusLabel lblNumAppsShown = null!;
 	private ToolStripStatusLabel lblModifiedCount = null!;
 	private ToolStripStatusLabel lblAppId = null!;
+	private Label lblSteamStatus = null!;
+	private Timer steamStatusTimer = null!;
 	private Label lblSortAs = null!;
 	private Label lblName = null!;
 	private Label lblControllerSupport = null!;
@@ -135,6 +137,10 @@ internal class MainWindow : LocalizableForm
 		// 订阅 SteamData 事件
 		_steamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
 		_steamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
+
+		// 启动 Steam 状态检测
+		UpdateSteamStatus();
+		steamStatusTimer.Start();
 	}
 
 	private void SteamData_OnNeedsSaveOrApply(object? sender, EventArgs e)
@@ -190,6 +196,13 @@ internal class MainWindow : LocalizableForm
 		_listManager.UpdateStatusBar();
 	}
 
+	private void UpdateSteamStatus()
+	{
+		bool running = SteamProcessManager.IsSteamRunning(_steamData.SteamDir);
+		lblSteamStatus.Text = running ? Strings.SteamStatus_Running : Strings.SteamStatus_NotRunning;
+		lblSteamStatus.ForeColor = running ? System.Drawing.Color.FromArgb(56, 163, 82) : System.Drawing.Color.Gray;
+	}
+
 	protected override void ApplyLanguage()
 	{
 		_originalTitle = Strings.MainWindow_Title;
@@ -231,6 +244,7 @@ internal class MainWindow : LocalizableForm
 		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
 
 		UpdateStatusBar();
+		UpdateSteamStatus();
 		_listManager.ClearDisplayNameCache();
 		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
@@ -693,6 +707,8 @@ internal class MainWindow : LocalizableForm
 		this.btnHelp = new System.Windows.Forms.Button();
 		this.btnShortcuts = new System.Windows.Forms.Button();
 		this.lblVRCategory = new System.Windows.Forms.Label();
+		this.lblSteamStatus = new System.Windows.Forms.Label();
+		this.steamStatusTimer = new System.Windows.Forms.Timer(this.components);
 		System.Windows.Forms.StatusStrip statusStrip = new System.Windows.Forms.StatusStrip();
 		flowLayoutPanel.SuspendLayout();
 		flowLayoutPanel2.SuspendLayout();
@@ -1000,11 +1016,23 @@ internal class MainWindow : LocalizableForm
 		this.textSortAs.Name = "textSortAs";
 		this.textSortAs.Size = new System.Drawing.Size(386, 20);
 		this.textSortAs.TabIndex = 1;
+		// Steam status label
+		this.lblSteamStatus.AutoSize = true;
+		this.lblSteamStatus.ForeColor = System.Drawing.Color.Gray;
+		this.lblSteamStatus.Font = new System.Drawing.Font("Segoe UI", 8F);
+		this.lblSteamStatus.Margin = new System.Windows.Forms.Padding(6, 10, 0, 0);
+		this.lblSteamStatus.Name = "lblSteamStatus";
+		this.lblSteamStatus.Text = "Steam: —";
+		// Steam status timer (check every 10 seconds)
+		this.steamStatusTimer.Interval = 10000;
+		this.steamStatusTimer.Tick += (_, _) => UpdateSteamStatus();
+
 		this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayoutPanel3.AutoSize = true;
 		this.flowLayoutPanel3.Controls.Add(this.btnShortcuts);
 		this.flowLayoutPanel3.Controls.Add(this.btnHelp);
 		this.flowLayoutPanel3.Controls.Add(this.btnSettings);
+		this.flowLayoutPanel3.Controls.Add(this.lblSteamStatus);
 		this.flowLayoutPanel3.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
 		this.flowLayoutPanel3.Location = new System.Drawing.Point(609, 0);
 		this.flowLayoutPanel3.Name = "flowLayoutPanel3";

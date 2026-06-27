@@ -230,5 +230,8 @@ namespace SteamEdit {
 
         internal static string CrashDialog_ExitButton => ResourceManager.GetString("CrashDialog_ExitButton", resourceCulture);
         internal static string CrashDialog_SavedTo => ResourceManager.GetString("CrashDialog_SavedTo", resourceCulture);
+
+        internal static string SteamStatus_Running => ResourceManager.GetString("SteamStatus_Running", resourceCulture);
+        internal static string SteamStatus_NotRunning => ResourceManager.GetString("SteamStatus_NotRunning", resourceCulture);
     }
 }

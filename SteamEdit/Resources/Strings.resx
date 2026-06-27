@@ -623,4 +623,12 @@ Page Down   Next game</value>
   <data name="CrashDialog_SavedTo" xml:space="preserve">
     <value>Crash log saved to:</value>
   </data>
+
+  <!-- Steam Status -->
+  <data name="SteamStatus_Running" xml:space="preserve">
+    <value>Steam: Running</value>
+  </data>
+  <data name="SteamStatus_NotRunning" xml:space="preserve">
+    <value>Steam: Not Running</value>
+  </data>
 </root>
