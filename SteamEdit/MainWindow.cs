@@ -51,6 +51,7 @@ internal class MainWindow : LocalizableForm
 	private ComboBox listEntryType = null!;
 	private ToolStripStatusLabel lblNumAppsShown = null!;
 	private ToolStripStatusLabel lblModifiedCount = null!;
+	private ToolStripStatusLabel lblAppId = null!;
 	private Label lblSortAs = null!;
 	private Label lblName = null!;
 	private Label lblControllerSupport = null!;
@@ -98,6 +99,7 @@ internal class MainWindow : LocalizableForm
 			btnRevert.Enabled = entry != null;
 			btnTranslate.Enabled = entry != null && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 			btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
+			lblAppId.Text = entry != null ? $"App ID: {entry.ID}" : "App ID: —";
 		};
 
 		_listManager.ContextMenuCopyName += (_, _) =>
@@ -852,7 +854,7 @@ internal class MainWindow : LocalizableForm
 		this.lblVRCategory.Size = new System.Drawing.Size(70, 13);
 		this.lblVRCategory.TabIndex = 24;
 		this.lblVRCategory.Text = "VR Category:";
-		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[3] { this.lblNumAppsShown, new System.Windows.Forms.ToolStripSeparator(), this.lblModifiedCount });
+		statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[5] { this.lblNumAppsShown, new System.Windows.Forms.ToolStripSeparator(), this.lblModifiedCount, new System.Windows.Forms.ToolStripSeparator(), this.lblAppId });
 		statusStrip.Location = new System.Drawing.Point(0, 306);
 		statusStrip.Name = "statusStrip1";
 		statusStrip.Size = new System.Drawing.Size(227, 22);
@@ -865,6 +867,9 @@ internal class MainWindow : LocalizableForm
 		this.lblModifiedCount.Name = "lblModifiedCount";
 		this.lblModifiedCount.Size = new System.Drawing.Size(90, 17);
 		this.lblModifiedCount.Text = "Modified: {0}";
+		this.lblAppId.Name = "lblAppId";
+		this.lblAppId.Size = new System.Drawing.Size(80, 17);
+		this.lblAppId.Text = "App ID: —";
 		this.checkCompleted.AutoSize = true;
 		this.checkCompleted.BackColor = System.Drawing.Color.Transparent;
 		this.checkCompleted.Location = new System.Drawing.Point(129, 59);
