@@ -777,7 +777,13 @@ internal class MainWindow : LocalizableForm
 		this.btnSaveApplyRestart.TabIndex = 2;
 		this.btnSaveApplyRestart.Text = "Save && Apply && Restart";
 		this.toolTips.SetToolTip(this.btnSaveApplyRestart, "Save edits, apply to Steam, and restart Steam.");
-		this.btnSaveApplyRestart.UseVisualStyleBackColor = true;
+		this.btnSaveApplyRestart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+		this.btnSaveApplyRestart.BackColor = System.Drawing.Color.FromArgb(88, 138, 27);
+		this.btnSaveApplyRestart.ForeColor = System.Drawing.Color.White;
+		this.btnSaveApplyRestart.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(76, 107, 34);
+		this.btnSaveApplyRestart.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(109, 184, 43);
+		this.btnSaveApplyRestart.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(76, 107, 34);
+		this.btnSaveApplyRestart.Font = new System.Drawing.Font(this.btnSaveApplyRestart.Font, System.Drawing.FontStyle.Bold);
 		this.btnSaveApplyRestart.Click += new System.EventHandler(OnBtnSaveApplyRestart_Click);
 		this.btnSettings.Image = SteamEdit.Properties.Resources.base_cog_32;
 		this.btnSettings.Location = new System.Drawing.Point(3, 3);
