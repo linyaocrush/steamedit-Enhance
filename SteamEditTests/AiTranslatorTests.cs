@@ -79,4 +79,42 @@ public class AiTranslatorTests
 		string? result = AiTranslator.BuildContext("  ", "  ", "  ");
 		Assert.IsNull(result);
 	}
+
+    [TestMethod]
+    public void DefaultSystemPrompt_ContainsTargetLangPlaceholder()
+    {
+        Assert.IsTrue(AiTranslator.DefaultSystemPrompt.Contains("{target_lang}"));
+    }
+
+    [TestMethod]
+    public void DefaultSystemPrompt_HasNoTranslationRulesByDefault()
+    {
+        // DefaultSystemPrompt should not reference translation rules, they are appended separately
+        Assert.IsFalse(AiTranslator.DefaultSystemPrompt.Contains("translation rules"));
+    }
+
+    [TestMethod]
+    public void DefaultUserMessage_IsGameNamePlaceholder()
+    {
+        Assert.AreEqual("{game_name}", AiTranslator.DefaultUserMessage);
+    }
+
+    [TestMethod]
+    public void BuildContext_SpecialCharacters_Handled()
+    {
+        string? result = AiTranslator.BuildContext("Valve, Inc.", "Valve (Steam)", "game/app");
+        Assert.IsNotNull(result);
+        Assert.IsTrue(result.Contains("Developer: Valve, Inc."));
+        Assert.IsTrue(result.Contains("Publisher: Valve (Steam)"));
+        Assert.IsTrue(result.Contains("Type: game/app"));
+    }
+
+    [TestMethod]
+    public void BuildContext_VeryLongStrings_NoTruncation()
+    {
+        string longStr = new string('A', 1000);
+        string? result = AiTranslator.BuildContext(longStr, "", "");
+        Assert.IsNotNull(result);
+        Assert.IsTrue(result.Contains(longStr));
+    }
 }

@@ -187,4 +187,54 @@ public class UndoManagerTests
         Assert.IsFalse(record.IsCompound);
         Assert.IsNull(record.SubRecords);
     }
+
+    [TestMethod]
+    public void MaxUndoLevel_DefaultIs500()
+    {
+        var mgr = new UndoManager();
+        Assert.AreEqual(500, mgr.MaxUndoLevel);
+    }
+
+    [TestMethod]
+    public void MaxUndoLevel_CustomValue_Applied()
+    {
+        var mgr = new UndoManager(10);
+        Assert.AreEqual(10, mgr.MaxUndoLevel);
+    }
+
+    [TestMethod]
+    public void MaxUndoLevel_MinClampedToOne()
+    {
+        var mgr = new UndoManager(0);
+        Assert.AreEqual(1, mgr.MaxUndoLevel);
+        var mgr2 = new UndoManager(-5);
+        Assert.AreEqual(1, mgr2.MaxUndoLevel);
+    }
+
+    [TestMethod]
+    public void Push_ExceedsLimit_TrimsOldest()
+    {
+        var mgr = new UndoManager(3);
+        var entry = new FakeEntry { ID = 1 };
+        mgr.Push(entry, AppInfoPaths.Name, PropertyType.String, 'A');
+        mgr.Push(entry, AppInfoPaths.Name, PropertyType.String, 'B');
+        mgr.Push(entry, AppInfoPaths.Name, PropertyType.String, 'C');
+        mgr.Push(entry, AppInfoPaths.Name, PropertyType.String, 'D');
+        Assert.AreEqual(3, mgr.Count);
+        Assert.AreEqual('D', mgr.Pop().PreviousValue);
+        Assert.AreEqual('C', mgr.Pop().PreviousValue);
+        Assert.AreEqual('B', mgr.Pop().PreviousValue);
+    }
+
+    [TestMethod]
+    public void PushCompound_ExceedsLimit_TrimsOldest()
+    {
+        var mgr = new UndoManager(2);
+        var entry = new FakeEntry { ID = 1 };
+        var r1 = new UndoRecord(entry, AppInfoPaths.Name, PropertyType.String, 'A');
+        var r2 = new UndoRecord(entry, AppInfoPaths.Name, PropertyType.String, 'B');
+        mgr.PushCompound(UndoRecord.CreateCompound(r1, r2));
+        mgr.Push(entry, AppInfoPaths.Name, PropertyType.String, 'C');
+        Assert.AreEqual(2, mgr.Count);
+    }
 }
