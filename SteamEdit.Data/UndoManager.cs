@@ -43,29 +43,52 @@ internal class UndoRecord
 
 internal class UndoManager
 {
-    private readonly Stack<UndoRecord> _undoStack = new();
+    public const int DefaultMaxUndoLevel = 500;
 
+    private readonly List<UndoRecord> _undoStack = new();
+    private readonly int _maxUndoLevel;
+
+    public int MaxUndoLevel => _maxUndoLevel;
     public bool CanUndo => _undoStack.Count > 0;
     public int Count => _undoStack.Count;
 
+    public UndoManager(int maxUndoLevel = DefaultMaxUndoLevel)
+    {
+        _maxUndoLevel = Math.Max(maxUndoLevel, 1);
+    }
+
     public void Push(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object? previousValue)
     {
-        _undoStack.Push(new UndoRecord(entry, propertyPath, type, previousValue));
+        _undoStack.Add(new UndoRecord(entry, propertyPath, type, previousValue));
+        TrimExcess();
     }
 
     public void PushCompound(UndoRecord compoundRecord)
     {
         if (compoundRecord == null) throw new ArgumentNullException(nameof(compoundRecord));
-        _undoStack.Push(compoundRecord);
+        _undoStack.Add(compoundRecord);
+        TrimExcess();
     }
 
     public UndoRecord Pop()
     {
-        return _undoStack.Pop();
+        if (_undoStack.Count == 0)
+            throw new InvalidOperationException("Undo stack is empty.");
+        int last = _undoStack.Count - 1;
+        var item = _undoStack[last];
+        _undoStack.RemoveAt(last);
+        return item;
     }
 
     public void Clear()
     {
         _undoStack.Clear();
+    }
+
+    private void TrimExcess()
+    {
+        int overflow = _undoStack.Count - _maxUndoLevel;
+        if (overflow > 0)
+            _undoStack.RemoveRange(0, overflow);
     }
 }
