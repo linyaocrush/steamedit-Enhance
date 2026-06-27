@@ -627,6 +627,11 @@ internal class MainWindow : LocalizableForm
 
 	private void OnBtnShortcuts_Click(object? sender, EventArgs e)
 	{
+		ShowShortcutsDialog(this);
+	}
+
+	private static void ShowShortcutsDialog(IWin32Window owner)
+	{
 		using var dlg = new Form();
 		dlg.Text = Strings.Shortcuts_Title;
 		dlg.StartPosition = FormStartPosition.CenterParent;
@@ -650,7 +655,7 @@ internal class MainWindow : LocalizableForm
 		dlg.CancelButton = btnClose;
 		dlg.Controls.Add(lbl);
 		dlg.Controls.Add(btnClose);
-		dlg.ShowDialog(this);
+		dlg.ShowDialog(owner);
 	}
 
 	private void OnFilterSelectorMenu_Click(object? sender, EventArgs e)
@@ -727,39 +732,6 @@ internal class MainWindow : LocalizableForm
 		base.Dispose(disposing);
 	}
 
-	private void OnGreenButton_Paint(object? sender, PaintEventArgs e)
-	{
-		var btn = (System.Windows.Forms.Button)sender!;
-		var g = e.Graphics;
-		g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-		int radius = 6;
-		var rect = new System.Drawing.Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-		using var path = new System.Drawing.Drawing2D.GraphicsPath();
-		path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
-		path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
-		path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
-		path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-		path.CloseFigure();
-
-		// 清除背景（用父容器颜色填充角落）
-		using var bgBrush = new System.Drawing.SolidBrush(btn.Parent!.BackColor);
-		g.FillRectangle(bgBrush, btn.ClientRectangle);
-
-		// 渐变填充
-		using var brush = new System.Drawing.Drawing2D.LinearGradientBrush(
-			new System.Drawing.Rectangle(0, 0, btn.Width, btn.Height),
-			System.Drawing.Color.FromArgb(109, 184, 43),
-			System.Drawing.Color.FromArgb(76, 107, 34),
-			System.Drawing.Drawing2D.LinearGradientMode.Vertical);
-		g.FillPath(brush, path);
-
-		// 绘制文字
-		var textRect = btn.ClientRectangle;
-		textRect.Y -= 1;
-		System.Windows.Forms.TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor,
-			System.Windows.Forms.TextFormatFlags.HorizontalCenter | System.Windows.Forms.TextFormatFlags.VerticalCenter);
-	}
 
 	private void InitializeComponent()
 	{
@@ -932,7 +904,7 @@ internal class MainWindow : LocalizableForm
 		this.btnSaveApplyRestart.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
 		this.btnSaveApplyRestart.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
 		this.btnSaveApplyRestart.Font = new System.Drawing.Font(this.btnSaveApplyRestart.Font, System.Drawing.FontStyle.Bold);
-		this.btnSaveApplyRestart.Paint += OnGreenButton_Paint;
+		this.btnSaveApplyRestart.Paint += ButtonPainter.PaintGreen;
 		this.btnSaveApplyRestart.Click += new System.EventHandler(OnBtnSaveApplyRestart_Click);
 		this.btnSettings.Image = SteamEdit.Properties.Resources.base_cog_32;
 		this.btnSettings.Location = new System.Drawing.Point(3, 3);
