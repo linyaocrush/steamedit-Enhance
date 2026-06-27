@@ -106,6 +106,9 @@ internal class MainWindow : LocalizableForm
 			lblAppId.Text = entry != null ? $"App ID: {entry.ID}" : "App ID: —";
 		};
 
+		// 双击列表聚焦 Name 输入框
+		appSelection.DoubleClick += (_, _) => textGameName.Focus();
+
 		_listManager.ContextMenuCopyName += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
