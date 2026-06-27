@@ -52,7 +52,9 @@ internal class MainWindow : LocalizableForm
 	private ToolStripStatusLabel lblNumAppsShown = null!;
 	private ToolStripStatusLabel lblModifiedCount = null!;
 	private ToolStripStatusLabel lblAppId = null!;
+	private Panel pnlSteamStatus = null!;
 	private Label lblSteamStatus = null!;
+	private Label lblSteamVersion = null!;
 	private Timer steamStatusTimer = null!;
 	private Label lblSortAs = null!;
 	private Label lblName = null!;
@@ -201,6 +203,28 @@ internal class MainWindow : LocalizableForm
 		bool running = SteamProcessManager.IsSteamRunning(_steamData.SteamDir);
 		lblSteamStatus.Text = running ? Strings.SteamStatus_Running : Strings.SteamStatus_NotRunning;
 		lblSteamStatus.ForeColor = running ? System.Drawing.Color.FromArgb(56, 163, 82) : System.Drawing.Color.Gray;
+
+		// 获取 Steam 版本
+		string version = GetSteamVersion();
+		lblSteamVersion.Text = version.Length > 0 ? $"v{version}" : "";
+		lblSteamVersion.ForeColor = System.Drawing.Color.Gray;
+	}
+
+	private static string GetSteamVersion()
+	{
+		try
+		{
+			using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam");
+			if (key == null) return "";
+			string? exePath = key.GetValue("SteamExe") as string;
+			if (string.IsNullOrEmpty(exePath) || !System.IO.File.Exists(exePath)) return "";
+			var versionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath);
+			return versionInfo.FileVersion ?? "";
+		}
+		catch
+		{
+			return "";
+		}
 	}
 
 	protected override void ApplyLanguage()
@@ -707,7 +731,9 @@ internal class MainWindow : LocalizableForm
 		this.btnHelp = new System.Windows.Forms.Button();
 		this.btnShortcuts = new System.Windows.Forms.Button();
 		this.lblVRCategory = new System.Windows.Forms.Label();
+		this.pnlSteamStatus = new System.Windows.Forms.Panel();
 		this.lblSteamStatus = new System.Windows.Forms.Label();
+		this.lblSteamVersion = new System.Windows.Forms.Label();
 		this.steamStatusTimer = new System.Windows.Forms.Timer(this.components);
 		System.Windows.Forms.StatusStrip statusStrip = new System.Windows.Forms.StatusStrip();
 		flowLayoutPanel.SuspendLayout();
@@ -1016,13 +1042,27 @@ internal class MainWindow : LocalizableForm
 		this.textSortAs.Name = "textSortAs";
 		this.textSortAs.Size = new System.Drawing.Size(386, 20);
 		this.textSortAs.TabIndex = 1;
+		// Steam status panel (contains status + version vertically)
+		this.pnlSteamStatus.AutoSize = true;
+		this.pnlSteamStatus.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+		this.pnlSteamStatus.Margin = new System.Windows.Forms.Padding(6, 0, 0, 0);
+		this.pnlSteamStatus.Name = "pnlSteamStatus";
+		this.pnlSteamStatus.Controls.Add(this.lblSteamStatus);
+		this.pnlSteamStatus.Controls.Add(this.lblSteamVersion);
 		// Steam status label
 		this.lblSteamStatus.AutoSize = true;
 		this.lblSteamStatus.ForeColor = System.Drawing.Color.Gray;
 		this.lblSteamStatus.Font = new System.Drawing.Font("Segoe UI", 8F);
-		this.lblSteamStatus.Margin = new System.Windows.Forms.Padding(6, 10, 0, 0);
+		this.lblSteamStatus.Location = new System.Drawing.Point(0, 4);
 		this.lblSteamStatus.Name = "lblSteamStatus";
 		this.lblSteamStatus.Text = "Steam: —";
+		// Steam version label (below status)
+		this.lblSteamVersion.AutoSize = true;
+		this.lblSteamVersion.ForeColor = System.Drawing.Color.Gray;
+		this.lblSteamVersion.Font = new System.Drawing.Font("Segoe UI", 7F);
+		this.lblSteamVersion.Location = new System.Drawing.Point(0, 18);
+		this.lblSteamVersion.Name = "lblSteamVersion";
+		this.lblSteamVersion.Text = "";
 		// Steam status timer (check every 10 seconds)
 		this.steamStatusTimer.Interval = 10000;
 		this.steamStatusTimer.Tick += (_, _) => UpdateSteamStatus();
@@ -1032,7 +1072,7 @@ internal class MainWindow : LocalizableForm
 		this.flowLayoutPanel3.Controls.Add(this.btnShortcuts);
 		this.flowLayoutPanel3.Controls.Add(this.btnHelp);
 		this.flowLayoutPanel3.Controls.Add(this.btnSettings);
-		this.flowLayoutPanel3.Controls.Add(this.lblSteamStatus);
+		this.flowLayoutPanel3.Controls.Add(this.pnlSteamStatus);
 		this.flowLayoutPanel3.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
 		this.flowLayoutPanel3.Location = new System.Drawing.Point(609, 0);
 		this.flowLayoutPanel3.Name = "flowLayoutPanel3";
