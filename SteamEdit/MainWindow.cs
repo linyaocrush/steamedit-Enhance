@@ -619,15 +619,38 @@ internal class MainWindow : LocalizableForm
 		base.Dispose(disposing);
 	}
 
-	private static System.Drawing.Region CreateRoundedRegion(System.Drawing.Size size, int radius)
+	private void OnGreenButton_Paint(object? sender, PaintEventArgs e)
 	{
+		var btn = (System.Windows.Forms.Button)sender!;
+		var g = e.Graphics;
+		g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+		int radius = 6;
+		var rect = new System.Drawing.Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
 		using var path = new System.Drawing.Drawing2D.GraphicsPath();
-		path.AddArc(0, 0, radius * 2, radius * 2, 180, 90);
-		path.AddArc(size.Width - radius * 2, 0, radius * 2, radius * 2, 270, 90);
-		path.AddArc(size.Width - radius * 2, size.Height - radius * 2, radius * 2, radius * 2, 0, 90);
-		path.AddArc(0, size.Height - radius * 2, radius * 2, radius * 2, 90, 90);
+		path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
+		path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
+		path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+		path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
 		path.CloseFigure();
-		return new System.Drawing.Region(path);
+
+		// 清除背景（用父容器颜色填充角落）
+		using var bgBrush = new System.Drawing.SolidBrush(btn.Parent!.BackColor);
+		g.FillRectangle(bgBrush, btn.ClientRectangle);
+
+		// 渐变填充
+		using var brush = new System.Drawing.Drawing2D.LinearGradientBrush(
+			new System.Drawing.Rectangle(0, 0, btn.Width, btn.Height),
+			System.Drawing.Color.FromArgb(109, 184, 43),
+			System.Drawing.Color.FromArgb(76, 107, 34),
+			System.Drawing.Drawing2D.LinearGradientMode.Vertical);
+		g.FillPath(brush, path);
+
+		// 绘制文字
+		var textRect = btn.ClientRectangle;
+		textRect.Y -= 1;
+		System.Windows.Forms.TextRenderer.DrawText(g, btn.Text, btn.Font, textRect, btn.ForeColor,
+			System.Windows.Forms.TextFormatFlags.HorizontalCenter | System.Windows.Forms.TextFormatFlags.VerticalCenter);
 	}
 
 	private void InitializeComponent()
@@ -789,26 +812,14 @@ internal class MainWindow : LocalizableForm
 		this.btnSaveApplyRestart.Text = "Save && Apply && Restart";
 		this.toolTips.SetToolTip(this.btnSaveApplyRestart, "Save edits, apply to Steam, and restart Steam.");
 		this.btnSaveApplyRestart.UseVisualStyleBackColor = false;
-		this.btnSaveApplyRestart.BackColor = System.Drawing.Color.FromArgb(88, 138, 27);
+		this.btnSaveApplyRestart.BackColor = System.Drawing.Color.Transparent;
 		this.btnSaveApplyRestart.ForeColor = System.Drawing.Color.White;
 		this.btnSaveApplyRestart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 		this.btnSaveApplyRestart.FlatAppearance.BorderSize = 0;
+		this.btnSaveApplyRestart.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
+		this.btnSaveApplyRestart.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
 		this.btnSaveApplyRestart.Font = new System.Drawing.Font(this.btnSaveApplyRestart.Font, System.Drawing.FontStyle.Bold);
-		this.btnSaveApplyRestart.Region = CreateRoundedRegion(this.btnSaveApplyRestart.Size, 6);
-		this.btnSaveApplyRestart.Paint += (s, e) =>
-		{
-			var btn = (System.Windows.Forms.Button)s!;
-			using var brush = new System.Drawing.Drawing2D.LinearGradientBrush(
-				btn.ClientRectangle,
-				System.Drawing.Color.FromArgb(109, 184, 43),
-				System.Drawing.Color.FromArgb(76, 107, 34),
-				System.Drawing.Drawing2D.LinearGradientMode.Vertical);
-			e.Graphics.FillRectangle(brush, btn.ClientRectangle);
-			var textRect = btn.ClientRectangle;
-			textRect.Y -= 1;
-			System.Windows.Forms.TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, textRect, btn.ForeColor,
-				System.Windows.Forms.TextFormatFlags.HorizontalCenter | System.Windows.Forms.TextFormatFlags.VerticalCenter);
-		};
+		this.btnSaveApplyRestart.Paint += OnGreenButton_Paint;
 		this.btnSaveApplyRestart.Click += new System.EventHandler(OnBtnSaveApplyRestart_Click);
 		this.btnSettings.Image = SteamEdit.Properties.Resources.base_cog_32;
 		this.btnSettings.Location = new System.Drawing.Point(3, 3);
