@@ -16,7 +16,8 @@ internal class Settings
 
 	private readonly System.Collections.Concurrent.ConcurrentDictionary<string, object> _values;
 
-	private bool _isDirty;
+	private readonly object _saveLock = new();
+	private volatile bool _isDirty;
 	private bool _suppressDirtyTracking;
 
 	private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -233,14 +234,18 @@ internal class Settings
 	public void Save()
 	{
 		if (!_isDirty) return;
-		try
+		lock (_saveLock)
 		{
-			SaveJson(GetJsonFilePath());
-			_isDirty = false;
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("Settings: Save failed: {0}", ex.Message);
+			if (!_isDirty) return;
+			try
+			{
+				SaveJson(GetJsonFilePath());
+				_isDirty = false;
+			}
+			catch (Exception ex)
+			{
+				Log.WriteLine("Settings: Save failed: {0}", ex.Message);
+			}
 		}
 	}
 
