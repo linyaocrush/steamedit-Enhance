@@ -47,6 +47,7 @@ internal class WaitingDialog : LocalizableForm
 	public WaitingDialog(string message)
 	{
 		InitializeComponent();
+			ThemeManager.StyleDialog(this);
 		Message = message;
 	}
 

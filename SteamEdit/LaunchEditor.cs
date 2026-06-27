@@ -39,6 +39,7 @@ internal class LaunchEditor : LocalizableForm
 	{
 		_dataStore = dataStore;
 		InitializeComponent();
+		ThemeManager.StyleDialog(this);
 		DoubleBuffered = true;
 		_baseDir = baseDir;
 		_gameName = gameName;

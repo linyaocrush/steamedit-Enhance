@@ -13,6 +13,7 @@ internal class LogViewerForm : LocalizableForm
 	public LogViewerForm()
 	{
 		InitializeComponent();
+			ThemeManager.StyleDialog(this);
 		LoadLog();
 	}
 

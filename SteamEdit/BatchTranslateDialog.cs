@@ -51,6 +51,7 @@ internal class BatchTranslateDialog : LocalizableForm
         _entries = entries;
         _targetLanguage = targetLanguage;
         InitializeComponent();
+        ThemeManager.StyleDialog(this);
     }
 
     protected override void ApplyLanguage()

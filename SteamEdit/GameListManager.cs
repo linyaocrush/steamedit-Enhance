@@ -194,6 +194,11 @@ internal class GameListManager : IDisposable
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 		_sortSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 
+		// 主题化上下文菜单
+		ThemeManager.StyleContextMenuStrip(_filterSelectorMenu);
+		ThemeManager.StyleContextMenuStrip(_sortSelectorMenu);
+		ThemeManager.StyleContextMenuStrip(_appSelection.ContextMenuStrip!);
+
 		_dataStore.AppInfo.Modified += OnEntryModified;
 
 		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)

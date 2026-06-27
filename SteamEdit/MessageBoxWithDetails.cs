@@ -28,6 +28,7 @@ public class MessageBoxWithDetails : LocalizableForm
 	public MessageBoxWithDetails(string message, string title, string? details = null, bool showExitButton = false)
 	{
 		InitializeComponent();
+			ThemeManager.StyleDialog(this);
 		lblMessage.Text = message;
 		Text = title;
 		if (details != null)

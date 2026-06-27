@@ -40,6 +40,19 @@ internal class BatchReplaceDialog : LocalizableForm
     {
         _entries = entries;
         InitializeComponent();
+        ThemeManager.ApplyToForm(this);
+        ThemeManager.StyleTextBox(textFind);
+        ThemeManager.StyleTextBox(textReplace);
+        ThemeManager.StyleButton(btnReplaceAll);
+        ThemeManager.StyleButton(btnCancel);
+        foreach (Control c in Controls)
+        {
+            if (c is Label l)
+            {
+                l.BackColor = Color.Transparent;
+                l.ForeColor = ThemeManager.TextColor;
+            }
+        }
         _debounceTimer = new Timer { Interval = 200 };
         _debounceTimer.Tick += (_, _) => { _debounceTimer.Stop(); UpdatePreview(); };
         UpdatePreview();
@@ -216,16 +229,16 @@ internal class BatchReplaceDialog : LocalizableForm
     private void OnBtnCaseSensitive_Click(object? sender, EventArgs e)
     {
         _caseSensitive = !_caseSensitive;
-        btnCaseSensitive.BackColor = _caseSensitive ? SystemColors.Highlight : SystemColors.Control;
-        btnCaseSensitive.ForeColor = _caseSensitive ? SystemColors.HighlightText : SystemColors.ControlText;
+        btnCaseSensitive.BackColor = _caseSensitive ? ThemeManager.AccentLight : SystemColors.Control;
+        btnCaseSensitive.ForeColor = _caseSensitive ? ThemeManager.AccentColor : SystemColors.ControlText;
         UpdatePreview();
     }
 
     private void OnBtnRegex_Click(object? sender, EventArgs e)
     {
         _regexMode = !_regexMode;
-        btnRegex.BackColor = _regexMode ? SystemColors.Highlight : SystemColors.Control;
-        btnRegex.ForeColor = _regexMode ? SystemColors.HighlightText : SystemColors.ControlText;
+        btnRegex.BackColor = _regexMode ? ThemeManager.AccentLight : SystemColors.Control;
+        btnRegex.ForeColor = _regexMode ? ThemeManager.AccentColor : SystemColors.ControlText;
         UpdatePreview();
     }
 
@@ -237,7 +250,8 @@ internal class BatchReplaceDialog : LocalizableForm
     private void OnListPreview_DrawItem(object? sender, DrawListViewItemEventArgs e)
     {
         e.DrawDefault = false;
-        e.Graphics.FillRectangle(e.Item.Selected ? SystemBrushes.Highlight : SystemBrushes.Window, e.Bounds);
+        using var brush = new SolidBrush(e.Item.Selected ? ThemeManager.AccentLight : Color.White);
+        e.Graphics.FillRectangle(brush, e.Bounds);
     }
 
     private void OnListPreview_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
@@ -257,7 +271,7 @@ internal class BatchReplaceDialog : LocalizableForm
 
         string text = e.SubItem!.Text;
         bool selected = e.Item.Selected;
-        var textColor = selected ? SystemColors.HighlightText : SystemColors.WindowText;
+        var textColor = selected ? Color.White : ThemeManager.TextColor;
         var bgColor = selected ? HighlightColorSelected : HighlightColor;
 
         int x = e.Bounds.X + 2;

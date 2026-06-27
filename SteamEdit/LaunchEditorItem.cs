@@ -59,6 +59,7 @@ internal class LaunchEditorItem : LocalizableUserControl
 		_gameName = gameName;
 		_isFirst = isFirst;
 		InitializeComponent();
+			ThemeManager.StyleUserControl(this);
 		Set(info);
 	}
 
@@ -127,7 +128,7 @@ internal class LaunchEditorItem : LocalizableUserControl
 
 	private void panel1_Paint(object? sender, PaintEventArgs e)
 	{
-		using var pen = new Pen(SystemColors.ControlLight);
+		using var pen = new Pen(ThemeManager.BorderColor);
 		e.Graphics.DrawRectangle(pen, e.ClipRectangle.Left, e.ClipRectangle.Top, e.ClipRectangle.Width - 1, e.ClipRectangle.Height - 1);
 	}
 

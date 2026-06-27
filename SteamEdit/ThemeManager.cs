@@ -81,6 +81,15 @@ internal static class ThemeManager
                 case CheckBox chk:
                     StyleCheckBox(chk);
                     break;
+                case TextBoxBase tb:
+                    StyleTextBox(tb);
+                    break;
+                case ComboBox cb:
+                    StyleComboBox(cb);
+                    break;
+                case NumericUpDown nud:
+                    StyleNumericUpDown(nud);
+                    break;
                 case Panel p:
                     if (p.BorderStyle == BorderStyle.Fixed3D)
                         p.BorderStyle = BorderStyle.None;
@@ -181,9 +190,64 @@ internal static class ThemeManager
         checkBox.BackColor = Color.Transparent;
     }
 
+    public static void StyleNumericUpDown(NumericUpDown nud)
+    {
+        nud.BackColor = Color.White;
+    }
+
     public static void StyleToolStrip(StatusStrip statusStrip)
     {
         statusStrip.BackColor = StatusBarBack;
         statusStrip.GripStyle = ToolStripGripStyle.Hidden;
+    }
+
+    // ── Context Menu Styling ──
+
+    public static void StyleContextMenuStrip(ContextMenuStrip menu)
+    {
+        menu.Renderer = s_themeRenderer;
+        menu.ForeColor = TextColor;
+    }
+
+    private static readonly ToolStripProfessionalRenderer s_themeRenderer = new ThemeMenuRenderer();
+
+    private sealed class ThemeMenuRenderer : ToolStripProfessionalRenderer
+    {
+        public ThemeMenuRenderer() : base(new ThemeMenuColorTable()) { }
+
+        protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
+        {
+            using var pen = new Pen(BorderColor);
+            e.Graphics.DrawRectangle(pen,
+                e.AffectedBounds.X, e.AffectedBounds.Y,
+                e.AffectedBounds.Width - 1, e.AffectedBounds.Height - 1);
+            base.OnRenderToolStripBorder(e);
+        }
+    }
+
+    private sealed class ThemeMenuColorTable : ProfessionalColorTable
+    {
+        public override Color ToolStripDropDownBackground => PanelBackColor;
+        public override Color ImageMarginGradientBegin => PanelBackColor;
+        public override Color ImageMarginGradientMiddle => PanelBackColor;
+        public override Color ImageMarginGradientEnd => PanelBackColor;
+        public override Color MenuItemSelected => AccentLight;
+        public override Color MenuItemSelectedGradientBegin => AccentLight;
+        public override Color MenuItemSelectedGradientEnd => AccentLight;
+        public override Color MenuItemPressedGradientBegin => AccentLightAlt;
+        public override Color MenuItemPressedGradientEnd => AccentLightAlt;
+        public override Color MenuItemBorder => AccentColor;
+        public override Color CheckBackground => AccentLight;
+        public override Color CheckPressedBackground => AccentLightAlt;
+        public override Color CheckSelectedBackground => AccentLight;
+        public override Color SeparatorDark => BorderColor;
+        public override Color SeparatorLight => PanelBackColor;
+    }
+
+    // ── UserControl Styling ──
+
+    public static void StyleUserControl(UserControl uc)
+    {
+        StyleDialogControls(uc.Controls);
     }
 }
