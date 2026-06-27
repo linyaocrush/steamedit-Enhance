@@ -631,4 +631,19 @@ Page Down           下一个游戏</value>
   <data name="SteamStatus_NotRunning" xml:space="preserve">
     <value>Steam：未运行</value>
   </data>
+  <data name="SteamLaunch_ConfirmTitle" xml:space="preserve">
+    <value>启动 Steam</value>
+  </data>
+  <data name="SteamLaunch_ConfirmMessage" xml:space="preserve">
+    <value>是否启动 Steam？</value>
+  </data>
+  <data name="SteamLaunch_LaunchButton" xml:space="preserve">
+    <value>启动</value>
+  </data>
+  <data name="SteamLaunch_CancelButton" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SteamLaunch_PathError" xml:space="preserve">
+    <value>无法找到 Steam 安装路径。</value>
+  </data>
 </root>
