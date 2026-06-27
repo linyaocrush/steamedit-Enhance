@@ -12,7 +12,9 @@ namespace Common;
 
 internal static class AiTranslator
 {
-	private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
+	private static readonly HttpClient _httpClient = new HttpClient(
+			new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) })
+		{ Timeout = TimeSpan.FromSeconds(120) };
 
 	public static async Task<List<string>> FetchModelsAsync(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
 	{
