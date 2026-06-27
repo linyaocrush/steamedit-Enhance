@@ -1010,7 +1010,7 @@ internal class MainWindow : LocalizableForm
 		base.Controls.Add(this.splitContainer1);
 		base.Controls.Add(flowLayoutPanel2);
 		base.KeyPreview = true;
-		base.MaximizeBox = false;
+		base.MaximizeBox = true;
 		this.MinimumSize = new System.Drawing.Size(518, 289);
 		base.Name = "MainWindow";
 		this.Text = "SteamEdit";
