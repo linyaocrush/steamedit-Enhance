@@ -349,16 +349,18 @@
     <value>快速鍵</value>
   </data>
   <data name="Shortcuts_Content" xml:space="preserve">
-    <value>Ctrl+S      儲存
-Ctrl+Enter  儲存並套用
-Ctrl+Z      復原
-Ctrl+T      翻譯遊戲名稱
-Ctrl+B      批量翻譯
-Ctrl+R      回滾修改
-Ctrl+F      聚焦搜尋框
-Ctrl+C      複製遊戲名稱
-Page Up     上一個遊戲
-Page Down   下一個遊戲</value>
+    <value>Ctrl+S              儲存
+Ctrl+Enter          儲存並套用
+Ctrl+Shift+Enter    儲存套用並重啟 Steam
+Ctrl+Z              復原
+Ctrl+T              翻譯遊戲名稱
+Ctrl+B              批量翻譯
+Ctrl+R              回滾修改
+Ctrl+F              聚焦搜尋框
+Ctrl+C              複製遊戲名稱
+雙擊列表            聚焦名稱輸入框
+Page Up             上一個遊戲
+Page Down           下一個遊戲</value>
   </data>
 
   <!-- Messages -->

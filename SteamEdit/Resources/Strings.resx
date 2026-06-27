@@ -349,16 +349,18 @@
     <value>Keyboard Shortcuts</value>
   </data>
   <data name="Shortcuts_Content" xml:space="preserve">
-    <value>Ctrl+S      Save
-Ctrl+Enter  Save &amp; Apply
-Ctrl+Z      Undo
-Ctrl+T      Translate game name
-Ctrl+B      Batch translate
-Ctrl+R      Revert changes
-Ctrl+F      Focus search box
-Ctrl+C      Copy game name
-Page Up     Previous game
-Page Down   Next game</value>
+    <value>Ctrl+S              Save
+Ctrl+Enter          Save &amp; Apply
+Ctrl+Shift+Enter    Save &amp; Apply &amp; Restart
+Ctrl+Z              Undo
+Ctrl+T              Translate game name
+Ctrl+B              Batch translate
+Ctrl+R              Revert changes
+Ctrl+F              Focus search box
+Ctrl+C              Copy game name
+Double-click list   Focus name field
+Page Up             Previous game
+Page Down           Next game</value>
   </data>
 
   <!-- Messages -->
