@@ -665,6 +665,7 @@ internal class MainWindow : LocalizableForm
 		this.btnBatchTranslate = new System.Windows.Forms.Button();
 		this.lblNumAppsShown = new System.Windows.Forms.ToolStripStatusLabel();
 		this.lblModifiedCount = new System.Windows.Forms.ToolStripStatusLabel();
+		this.lblAppId = new System.Windows.Forms.ToolStripStatusLabel();
 		this.checkCompleted = new System.Windows.Forms.CheckBox();
 		this.checkHidden = new System.Windows.Forms.CheckBox();
 		this.toolTips = new System.Windows.Forms.ToolTip(this.components);
