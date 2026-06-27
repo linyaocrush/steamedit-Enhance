@@ -186,6 +186,11 @@ internal static class Program
             Application.SetCompatibleTextRenderingDefault(defaultValue: false);
             if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: false))
             {
+                if (SteamData.Instance.NeedsApply)
+                {
+                    Log.WriteLine("Startup auto-apply: unapplied changes detected, applying...");
+                    SteamData.Instance.Apply();
+                }
                 TranslationGlossary.Initialize(dataInit.DataDirectory);
                 Task.Run(() => SyncGlossaryFromEntries());
                 try
