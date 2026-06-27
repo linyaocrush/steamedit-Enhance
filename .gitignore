@@ -1,7 +1,8 @@
-/docs
 **/bin/
 **/obj/
 CLAUDE.md
 /.claude
 CODE_REVIEW_REPORT.md
 instructions.md
+/specs
+/docs
