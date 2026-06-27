@@ -27,7 +27,6 @@ internal class EditController : IDisposable
 	private readonly ComboBox _listEntryType;
 
 	private readonly UndoManager _undoManager = new();
-	private readonly Dictionary<string, object> _snapshotValues = new();
 
 	private bool _isSettingUpEntry;
 	private Color _defaultSortAsColor;
@@ -66,45 +65,31 @@ internal class EditController : IDisposable
 
 		// 订阅事件
 		_textGameName.TextChanged += OnTextGameName_TextChanged;
-		_textGameName.Enter += OnEditControl_Enter;
 		_textGameName.ClearXClicked += OnTextGameName_ClearXClicked;
 		_textSortAs.TextChanged += OnTextSortAs_TextChanged;
-		_textSortAs.Enter += OnEditControl_Enter;
 		_textSortAs.ClearXClicked += OnTextSortAs_ClearXClicked;
 		_checkHidden.CheckedChanged += OnCheckHidden_CheckedChanged;
-		_checkHidden.Enter += OnEditControl_Enter;
 		_checkCompleted.CheckedChanged += OnCheckCompleted_CheckedChanged;
-		_checkCompleted.Enter += OnEditControl_Enter;
 		_listControllerSupport.SelectedIndexChanged += OnListControllerSupport_SelectedIndexChanged;
 		_listControllerSupport.KeyDown += OnGeneric_KeyDown;
-		_listControllerSupport.Enter += OnEditControl_Enter;
 		_listVR.SelectedIndexChanged += OnListVR_SelectedIndexChanged;
 		_listVR.KeyDown += OnGeneric_KeyDown;
-		_listVR.Enter += OnEditControl_Enter;
 		_listEntryType.SelectedIndexChanged += OnListEntryType_SelectedIndexChanged;
-		_listEntryType.Enter += OnEditControl_Enter;
 	}
 
 	public void Dispose()
 	{
 		_textGameName.TextChanged -= OnTextGameName_TextChanged;
-		_textGameName.Enter -= OnEditControl_Enter;
 		_textGameName.ClearXClicked -= OnTextGameName_ClearXClicked;
 		_textSortAs.TextChanged -= OnTextSortAs_TextChanged;
-		_textSortAs.Enter -= OnEditControl_Enter;
 		_textSortAs.ClearXClicked -= OnTextSortAs_ClearXClicked;
 		_checkHidden.CheckedChanged -= OnCheckHidden_CheckedChanged;
-		_checkHidden.Enter -= OnEditControl_Enter;
 		_checkCompleted.CheckedChanged -= OnCheckCompleted_CheckedChanged;
-		_checkCompleted.Enter -= OnEditControl_Enter;
 		_listControllerSupport.SelectedIndexChanged -= OnListControllerSupport_SelectedIndexChanged;
 		_listControllerSupport.KeyDown -= OnGeneric_KeyDown;
-		_listControllerSupport.Enter -= OnEditControl_Enter;
 		_listVR.SelectedIndexChanged -= OnListVR_SelectedIndexChanged;
 		_listVR.KeyDown -= OnGeneric_KeyDown;
-		_listVR.Enter -= OnEditControl_Enter;
 		_listEntryType.SelectedIndexChanged -= OnListEntryType_SelectedIndexChanged;
-		_listEntryType.Enter -= OnEditControl_Enter;
 	}
 
 	public bool IsSettingUpEntry => _isSettingUpEntry;
@@ -123,7 +108,6 @@ internal class EditController : IDisposable
 		if (entry == null) return;
 
 		_isSettingUpEntry = true;
-		_snapshotValues.Clear();
 
 		_textGameName.Text = entry.Name!;
 		_textGameName.ClearXVisible = entry.IsModified && entry.Modification?.Changes?.HasProperty(AppInfoPaths.Name) == true;
@@ -307,29 +291,7 @@ internal class EditController : IDisposable
 		}
 	}
 
-	private void OnEditControl_Enter(object? sender, EventArgs e)
-	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
-		if (entry == null) return;
 
-		string? key = null;
-		object? value = null;
-		if (sender == _textGameName) { key = "name"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.Name); }
-		else if (sender == _textSortAs) { key = "sortas"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.SortAs); }
-		else if (sender == _checkHidden) { key = "hidden"; value = entry.GetPropertyValue(0, AppInfoPaths.IsHidden); }
-		else if (sender == _checkCompleted) { key = "completed"; value = entry.GetPropertyValue(0, AppInfoPaths.IsCompleted); }
-		else if (sender == _listEntryType) { key = "type"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.Type); }
-		else if (sender == _listControllerSupport) { key = "controller"; value = entry.GetPropertyValue<string>(null!, AppInfoPaths.ControllerSupport); }
-		else if (sender == _listVR)
-		{
-			key = "vr";
-			value = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
-			_snapshotValues["vr_base"] = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
-		}
-
-		if (key != null) _snapshotValues[key] = value!;
-	}
 
 	private void OnTextGameName_TextChanged(object? sender, EventArgs e)
 	{
@@ -374,8 +336,8 @@ internal class EditController : IDisposable
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		if (_snapshotValues.TryGetValue("hidden", out var prev) && prev is int p)
-			_undoManager.Push(entry, AppInfoPaths.IsHidden, PropertyType.Int32, p);
+		int p2 = entry.GetPropertyValue(0, AppInfoPaths.IsHidden);
+		_undoManager.Push(entry, AppInfoPaths.IsHidden, PropertyType.Int32, p2);
 		entry.IsHidden = _checkHidden.Checked;
 		_listManager.NotifyStatusChanged();
 	}
@@ -385,8 +347,8 @@ internal class EditController : IDisposable
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		if (_snapshotValues.TryGetValue("completed", out var prev) && prev is int p)
-			_undoManager.Push(entry, AppInfoPaths.IsCompleted, PropertyType.Int32, p);
+		int cp = entry.GetPropertyValue(0, AppInfoPaths.IsCompleted);
+		_undoManager.Push(entry, AppInfoPaths.IsCompleted, PropertyType.Int32, cp);
 		entry.IsCompleted = _checkCompleted.Checked;
 		_listManager.NotifyStatusChanged();
 	}
@@ -398,8 +360,8 @@ internal class EditController : IDisposable
 		if (entry == null) return;
 		int idx = _listControllerSupport.SelectedIndex;
 		string raw = idx >= 0 && idx < ControllerRawValues.Length ? ControllerRawValues[idx] : "none";
-		if (_snapshotValues.TryGetValue("controller", out var prev) && prev is string p)
-			_undoManager.Push(entry, AppInfoPaths.ControllerSupport, PropertyType.String, p);
+		string prevCtrl = entry.GetPropertyValue<string>(null!, AppInfoPaths.ControllerSupport);
+		_undoManager.Push(entry, AppInfoPaths.ControllerSupport, PropertyType.String, prevCtrl);
 		entry.SetPropertyValue(PropertyType.String, raw, AppInfoPaths.ControllerSupport);
 	}
 
@@ -408,18 +370,17 @@ internal class EditController : IDisposable
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		if (_snapshotValues.TryGetValue("vr", out var prev) && prev is int p)
+		int prevVr = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
+		int prevVrBase = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
+		var vrRecord = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, prevVr);
+		if (prevVrBase != int.MaxValue)
 		{
-			var vrRecord = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, p);
-			if (_snapshotValues.TryGetValue("vr_base", out var basePrev) && basePrev is int bp)
-			{
-				var baseRecord = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, bp);
-				_undoManager.PushCompound(UndoRecord.CreateCompound(vrRecord, baseRecord));
-			}
-			else
-			{
-				_undoManager.PushCompound(vrRecord);
-			}
+		var baseRecord = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, prevVrBase);
+		_undoManager.PushCompound(UndoRecord.CreateCompound(vrRecord, baseRecord));
+		}
+		else
+		{
+		_undoManager.PushCompound(vrRecord);
 		}
 		SetEntryVR(entry, _listVR.SelectedIndex != 0);
 	}
@@ -429,8 +390,8 @@ internal class EditController : IDisposable
 		if (_isSettingUpEntry) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		if (_snapshotValues.TryGetValue("type", out var prev) && prev is string p)
-			_undoManager.Push(entry, AppInfoPaths.Type, PropertyType.String, p);
+		string prevType = entry.GetPropertyValue<string>(null!, AppInfoPaths.Type);
+		_undoManager.Push(entry, AppInfoPaths.Type, PropertyType.String, prevType);
 		entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem!;
 		_listManager.RefreshGameList();
 	}
