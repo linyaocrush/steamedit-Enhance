@@ -771,6 +771,7 @@ internal class MainWindow : LocalizableForm
 		// ListBox
 		appSelection.BackColor = ThemeManager.ListBackColor;
 		appSelection.BorderStyle = BorderStyle.None;
+		appSelection.ItemHeight = 22;
 
 		// TextBoxes
 		ThemeManager.StyleTextBox(textGameName);

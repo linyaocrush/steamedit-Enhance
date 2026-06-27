@@ -501,7 +501,11 @@ internal class GameListManager : IDisposable
 		bool focused = _appSelection.Focused;
 		bool hover = e.Index == _appSelectionLastHoverI && !selected;
 
-		// Draw background
+		Rectangle bounds = e.Bounds;
+		const int padding = 4;
+		const int iconGap = 4;
+
+		// --- Background ---
 		Color backColor;
 		if (selected)
 			backColor = focused ? ThemeManager.ListSelectedBackColor : ThemeManager.ListSelectedUnfocusedBackColor;
@@ -512,46 +516,77 @@ internal class GameListManager : IDisposable
 		else
 			backColor = ThemeManager.ListBackColor;
 
-		using (var backBrush = new SolidBrush(backColor))
-			e.Graphics.FillRectangle(backBrush, e.Bounds);
+		if (selected)
+		{
+			// Rounded selection highlight
+			var rowRect = new Rectangle(bounds.X + 1, bounds.Y + 1, bounds.Width - 2, bounds.Height - 2);
+			int radius = Math.Max(2, (int)Math.Round(4.0 * _appSelection.DeviceDpi / 96.0));
+			using var path = ThemeManager.GetRoundedRectangle(rowRect, radius);
+			using var brush = new SolidBrush(backColor);
+			e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+			e.Graphics.FillPath(brush, path);
+			e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
 
-		if (selected && focused)
-			ControlPaint.DrawFocusRectangle(e.Graphics, e.Bounds);
+			if (focused)
+				ControlPaint.DrawFocusRectangle(e.Graphics, e.Bounds);
+		}
+		else
+		{
+			using var brush = new SolidBrush(backColor);
+			e.Graphics.FillRectangle(brush, bounds);
+		}
 
+		// --- Row separator ---
+		using (var sepPen = new Pen(ThemeManager.BorderColor))
+			e.Graphics.DrawLine(sepPen, bounds.X, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+
+		// --- Icons and Text ---
 		Color foreColor = _appSelection.ForeColor;
 		Font font = _defaultAppSelectionFont;
-		Rectangle bounds = e.Bounds;
-		int iconSize = e.Bounds.Height - IconSpacing;
+		int iconSize = bounds.Height - 8;
+		int leftX = bounds.X + padding;
 
+		// Left side: filter type icon
 		if ((_currentFilters & (_currentFilters - 1)) != 0)
 		{
 			if (_filterImages.TryGetValue(entry.Type, out var icon))
-				e.Graphics.DrawImage(icon, e.Bounds.X + 3, e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.X += e.Bounds.Height;
-			bounds.Width -= e.Bounds.Height;
+				e.Graphics.DrawImage(icon, leftX, bounds.Y + (bounds.Height - iconSize) / 2, iconSize, iconSize);
+			leftX += iconSize + iconGap;
 		}
-		int totalWidth = bounds.Width;
-		if (entry.IsModified)
+
+		// Right side: status icons (hidden, completed, modified — from rightmost inward)
+		int rightX = bounds.Right - padding - iconSize;
+		bool hidden = entry.IsHidden;
+		bool completed = entry.IsCompleted;
+		bool modified = entry.IsModified;
+
+		if (hidden)
 		{
-			e.Graphics.DrawImage(Resources.icon_modified, bounds.X + totalWidth - (iconSize + IconSpacing), e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.Width = totalWidth - (iconSize + IconSpacing);
-			font = _boldAppSelectionFont;
-		}
-		if (entry.IsCompleted)
-		{
-			e.Graphics.DrawImage(Resources.icon_completed, bounds.X + totalWidth - (iconSize + IconSpacing) * 2, e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.Width = totalWidth - (iconSize + IconSpacing) * 2;
-		}
-		if (entry.IsHidden)
-		{
-			e.Graphics.DrawImage(Resources.icon_hidden, bounds.X + totalWidth - (iconSize + IconSpacing) * 3, e.Bounds.Y + 3, iconSize, iconSize);
-			bounds.Width = totalWidth - (iconSize + IconSpacing) * 3;
+			e.Graphics.DrawImage(Resources.icon_hidden, rightX, bounds.Y + (bounds.Height - iconSize) / 2, iconSize, iconSize);
+			rightX -= iconSize + iconGap;
 			foreColor = Color.FromArgb(255 - (255 - foreColor.R) / 2, 255 - (255 - foreColor.G) / 2, 255 - (255 - foreColor.B) / 2);
 			font = _hiddenAppSelectionFont;
 		}
-		Size textSize = TextRenderer.MeasureText(text, font);
-		bounds.Inflate(0, -((bounds.Height - textSize.Height) / 2));
-		TextRenderer.DrawText(e.Graphics, text, font, bounds, foreColor, TextFormatFlags.EndEllipsis);
+		if (completed)
+		{
+			e.Graphics.DrawImage(Resources.icon_completed, rightX, bounds.Y + (bounds.Height - iconSize) / 2, iconSize, iconSize);
+			rightX -= iconSize + iconGap;
+		}
+		if (modified)
+		{
+			e.Graphics.DrawImage(Resources.icon_modified, rightX, bounds.Y + (bounds.Height - iconSize) / 2, iconSize, iconSize);
+			font = _boldAppSelectionFont;
+		}
+
+		// Text
+		int textWidth = rightX - leftX;
+		if (textWidth > 0)
+		{
+			var textBounds = new Rectangle(leftX, bounds.Y, textWidth, bounds.Height);
+			Size textSize = TextRenderer.MeasureText(text, font);
+			textBounds.Inflate(0, -((textBounds.Height - textSize.Height) / 2));
+			TextRenderer.DrawText(e.Graphics, text, font, textBounds, foreColor, TextFormatFlags.EndEllipsis);
+		}
 	}
 
 	private void OnAppSelection_KeyPress(object? sender, KeyPressEventArgs e)
