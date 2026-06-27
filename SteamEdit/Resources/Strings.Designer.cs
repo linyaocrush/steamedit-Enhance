@@ -233,5 +233,10 @@ namespace SteamEdit {
 
         internal static string SteamStatus_Running => ResourceManager.GetString("SteamStatus_Running", resourceCulture);
         internal static string SteamStatus_NotRunning => ResourceManager.GetString("SteamStatus_NotRunning", resourceCulture);
+        internal static string SteamLaunch_ConfirmTitle => ResourceManager.GetString("SteamLaunch_ConfirmTitle", resourceCulture);
+        internal static string SteamLaunch_ConfirmMessage => ResourceManager.GetString("SteamLaunch_ConfirmMessage", resourceCulture);
+        internal static string SteamLaunch_LaunchButton => ResourceManager.GetString("SteamLaunch_LaunchButton", resourceCulture);
+        internal static string SteamLaunch_CancelButton => ResourceManager.GetString("SteamLaunch_CancelButton", resourceCulture);
+        internal static string SteamLaunch_PathError => ResourceManager.GetString("SteamLaunch_PathError", resourceCulture);
     }
 }

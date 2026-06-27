@@ -212,6 +212,64 @@ internal class MainWindow : LocalizableForm
 		lblSteamVersion.Text = version.Length > 0 ? $"v{version}" : "";
 		lblSteamVersion.ForeColor = System.Drawing.Color.Gray;
 	}
+	private void SetSteamStatusLinkStyle(bool isHover)
+	{
+		if (isHover)
+		{
+			lblSteamStatus.ForeColor = System.Drawing.Color.FromArgb(0, 102, 204);
+			lblSteamStatus.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Underline);
+			lblSteamStatus.Cursor = System.Windows.Forms.Cursors.Hand;
+		}
+		else
+		{
+			bool running = SteamProcessManager.IsSteamRunning(_steamData.SteamDir);
+			lblSteamStatus.ForeColor = running ? System.Drawing.Color.FromArgb(56, 163, 82) : System.Drawing.Color.Gray;
+			lblSteamStatus.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular);
+			lblSteamStatus.Cursor = System.Windows.Forms.Cursors.Default;
+		}
+	}
+
+	private void lblSteamStatus_MouseEnter(object? sender, EventArgs e)
+	{
+		SetSteamStatusLinkStyle(true);
+	}
+
+	private void lblSteamStatus_MouseLeave(object? sender, EventArgs e)
+	{
+		SetSteamStatusLinkStyle(false);
+	}
+
+	private void lblSteamStatus_Click(object? sender, EventArgs e)
+	{
+		if (SteamProcessManager.IsSteamRunning(_steamData.SteamDir))
+		{
+			SteamProcessManager.EnsureSteamRunning(_steamData.SteamDir, true);
+		}
+		else
+		{
+			var result = MessageBox.Show(
+				Strings.SteamLaunch_ConfirmMessage,
+				Strings.SteamLaunch_ConfirmTitle,
+				MessageBoxButtons.YesNo,
+				MessageBoxIcon.Question);
+
+			if (result == DialogResult.Yes)
+			{
+				string? exePath = SteamProcessManager.GetSteamExePath(_steamData.SteamDir);
+				if (exePath == null)
+				{
+					MessageBox.Show(
+						Strings.SteamLaunch_PathError,
+						Strings.SteamLaunch_ConfirmTitle,
+						MessageBoxButtons.OK,
+						MessageBoxIcon.Error);
+					return;
+				}
+
+				SteamProcessManager.EnsureSteamRunning(_steamData.SteamDir, true);
+			}
+		}
+	}
 
 	private static string GetSteamVersion()
 	{
@@ -1066,6 +1124,10 @@ internal class MainWindow : LocalizableForm
 		this.lblSteamStatus.Location = new System.Drawing.Point(0, 4);
 		this.lblSteamStatus.Name = "lblSteamStatus";
 		this.lblSteamStatus.Text = "Steam: —";
+		// 事件绑定（点击和悬停）
+		this.lblSteamStatus.Click += lblSteamStatus_Click;
+		this.lblSteamStatus.MouseEnter += lblSteamStatus_MouseEnter;
+		this.lblSteamStatus.MouseLeave += lblSteamStatus_MouseLeave;
 		// Steam version label (below status)
 		this.lblSteamVersion.AutoSize = true;
 		this.lblSteamVersion.ForeColor = System.Drawing.Color.Gray;
