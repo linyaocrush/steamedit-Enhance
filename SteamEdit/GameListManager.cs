@@ -165,7 +165,12 @@ internal class GameListManager : IDisposable
 		_appSelection.SizeChanged += (_, _) => _appSelection.Invalidate();
 		_appSelection.KeyPress += OnAppSelection_KeyPress;
 		_appSelection.MouseMove += OnAppSelection_MouseMove;
-		_appSelection.MouseLeave += (_, _) => _appSelectionLastHoverI = -1;
+		_appSelection.MouseLeave += (_, _) =>
+		{
+			if (_appSelectionLastHoverI >= 0)
+				_appSelection.Invalidate(_appSelection.GetItemRectangle(_appSelectionLastHoverI));
+			_appSelectionLastHoverI = -1;
+		};
 		_appSelection.MouseDown += OnAppSelection_MouseDown;
 		_appFilterText.TextChanged += OnAppFilterText_TextChanged;
 
@@ -487,11 +492,32 @@ internal class GameListManager : IDisposable
 
 	private void OnAppSelection_DrawItem(object? sender, DrawItemEventArgs e)
 	{
-		e.DrawBackground();
 		if (e.Index < 0 || e.Index >= _ctx.Entries.Count) return;
 
 		IAppInfoEntry entry = _ctx.Entries[e.Index];
 		string text = GetDisplayName(entry).Replace("&", "&&");
+
+		bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+		bool focused = _appSelection.Focused;
+		bool hover = e.Index == _appSelectionLastHoverI && !selected;
+
+		// Draw background
+		Color backColor;
+		if (selected)
+			backColor = focused ? ThemeManager.ListSelectedBackColor : ThemeManager.ListSelectedUnfocusedBackColor;
+		else if (hover)
+			backColor = ThemeManager.AccentLightAlt;
+		else if (e.Index % 2 == 1)
+			backColor = ThemeManager.ListAlternateBackColor;
+		else
+			backColor = ThemeManager.ListBackColor;
+
+		using (var backBrush = new SolidBrush(backColor))
+			e.Graphics.FillRectangle(backBrush, e.Bounds);
+
+		if (selected && focused)
+			ControlPaint.DrawFocusRectangle(e.Graphics, e.Bounds);
+
 		Color foreColor = _appSelection.ForeColor;
 		Font font = _defaultAppSelectionFont;
 		Rectangle bounds = e.Bounds;
@@ -556,7 +582,15 @@ internal class GameListManager : IDisposable
 		{
 			if (_appSelectionLastHoverI != idx)
 			{
+				// Invalidate old hovered item
+				if (_appSelectionLastHoverI >= 0)
+					_appSelection.Invalidate(_appSelection.GetItemRectangle(_appSelectionLastHoverI));
+
 				_appSelectionLastHoverI = idx;
+
+				// Invalidate new hovered item
+				_appSelection.Invalidate(_appSelection.GetItemRectangle(idx));
+
 				_toolTips.Active = false;
 				_toolTips.SetToolTip(_appSelection, GetEntryToolTip(_ctx.Entries[idx]));
 				_toolTips.Active = true;
@@ -564,6 +598,8 @@ internal class GameListManager : IDisposable
 		}
 		else
 		{
+			if (_appSelectionLastHoverI >= 0)
+				_appSelection.Invalidate(_appSelection.GetItemRectangle(_appSelectionLastHoverI));
 			_toolTips.SetToolTip(_appSelection, (string?)null);
 			_appSelectionLastHoverI = -1;
 		}

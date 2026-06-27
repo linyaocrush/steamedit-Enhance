@@ -68,6 +68,7 @@ internal class MainWindow : LocalizableForm
 	{
 		_steamData = steamData;
 		InitializeComponent();
+		ApplyTheme();
 
 		// 构建 EntryType 下拉框（依赖 filterImages，由 GameListManager 构建）
 		listEntryType.Format += (s, e) =>
@@ -622,7 +623,9 @@ internal class MainWindow : LocalizableForm
 
 	private void OnHelp_Click(object? sender, EventArgs e)
 	{
-		using (var dlg = new About()) dlg.ShowDialog(this);
+		using var dlg = new About();
+		ThemeManager.StyleDialog(dlg);
+		dlg.ShowDialog(this);
 	}
 
 	private void OnBtnShortcuts_Click(object? sender, EventArgs e)
@@ -640,12 +643,14 @@ internal class MainWindow : LocalizableForm
 		dlg.MinimizeBox = false;
 		dlg.ShowInTaskbar = false;
 		dlg.ClientSize = new Size(380, 340);
+		ThemeManager.ApplyToForm(dlg);
 		var lbl = new Label();
 		lbl.Dock = DockStyle.Fill;
 		lbl.Font = new Font("Consolas", 9f);
 		lbl.AutoSize = false;
 		lbl.Padding = new Padding(16, 12, 12, 12);
 		lbl.Text = Strings.Shortcuts_Content;
+		lbl.BackColor = ThemeManager.PanelBackColor;
 		var btnClose = new Button();
 		btnClose.Text = Strings.About_BtnClose;
 		btnClose.Dock = DockStyle.Bottom;
@@ -653,6 +658,7 @@ internal class MainWindow : LocalizableForm
 		btnClose.Click += (_, _) => dlg.Close();
 		dlg.AcceptButton = btnClose;
 		dlg.CancelButton = btnClose;
+		ThemeManager.StyleButton(btnClose);
 		dlg.Controls.Add(lbl);
 		dlg.Controls.Add(btnClose);
 		dlg.ShowDialog(owner);
@@ -719,6 +725,62 @@ internal class MainWindow : LocalizableForm
 	private void splitContainer1_SplitterMoved(object? sender, SplitterEventArgs e)
 	{
 		Settings.Default.MainWindowSplitter = splitContainer1.SplitterDistance;
+	}
+
+	private void ApplyTheme()
+	{
+		ThemeManager.ApplyToForm(this);
+
+		// Split container
+		splitContainer1.BackColor = ThemeManager.BorderColor;
+		splitContainer1.Panel1.BackColor = ThemeManager.PanelBackColor;
+		splitContainer1.Panel2.BackColor = ThemeManager.BackColor;
+
+		// Logo panel
+		panel1.BackColor = ThemeManager.PanelBackColor;
+
+		// Status bar
+		foreach (Control c in splitContainer1.Panel1.Controls)
+		{
+			if (c is StatusStrip ss)
+			{
+				ThemeManager.StyleToolStrip(ss);
+				break;
+			}
+		}
+
+		// Primary buttons
+		ThemeManager.StyleButton(btnSave, isPrimary: true);
+		ThemeManager.StyleButton(btnSaveApply, isPrimary: true);
+
+		// Regular buttons
+		ThemeManager.StyleButton(btnEditLaunch);
+		ThemeManager.StyleButton(btnRevert);
+		ThemeManager.StyleButton(btnTranslate);
+		ThemeManager.StyleButton(btnSearch);
+		ThemeManager.StyleButton(btnBatchTranslate);
+		ThemeManager.StyleButton(btnBatchReplace);
+		ThemeManager.StyleButton(btnSettings);
+		ThemeManager.StyleButton(btnHelp);
+		ThemeManager.StyleButton(btnShortcuts);
+
+		// ListBox
+		appSelection.BackColor = ThemeManager.ListBackColor;
+		appSelection.BorderStyle = BorderStyle.None;
+
+		// TextBoxes
+		ThemeManager.StyleTextBox(textGameName);
+		ThemeManager.StyleTextBox(textSortAs);
+		ThemeManager.StyleTextBox(appFilterText);
+
+		// ComboBoxes
+		ThemeManager.StyleComboBox(listControllerSupport);
+		ThemeManager.StyleComboBox(listVR);
+		ThemeManager.StyleComboBox(listEntryType);
+
+		// CheckBoxes
+		ThemeManager.StyleCheckBox(checkHidden);
+		ThemeManager.StyleCheckBox(checkCompleted);
 	}
 
 	protected override void Dispose(bool disposing)
