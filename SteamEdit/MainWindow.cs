@@ -329,6 +329,13 @@ internal class MainWindow : LocalizableForm
 			appFilterText.SelectAll();
 			return;
 		}
+		if (e.Control && e.Shift && e.KeyCode == Keys.Enter)
+		{
+			e.Handled = true;
+			e.SuppressKeyPress = true;
+			OnBtnSaveApplyRestart_Click(sender, EventArgs.Empty);
+			return;
+		}
 		if (e.Control && e.KeyCode == Keys.Enter)
 		{
 			e.Handled = true;
