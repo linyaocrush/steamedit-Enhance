@@ -646,4 +646,68 @@ Page Down           下一个游戏</value>
   <data name="SteamLaunch_PathError" xml:space="preserve">
     <value>无法找到 Steam 安装路径。</value>
   </data>
+  <!-- 批量操作 -->
+  <data name="ContextMenu_Batch" xml:space="preserve">
+    <value>批量处理</value>
+  </data>
+  <data name="ContextMenu_BatchRename" xml:space="preserve">
+    <value>批量改名...</value>
+  </data>
+  <data name="ContextMenu_BatchChangeType" xml:space="preserve">
+    <value>批量改类型...</value>
+  </data>
+  <data name="ContextMenu_BatchMark" xml:space="preserve">
+    <value>批量标记隐藏/完成</value>
+  </data>
+  <data name="ContextMenu_BatchMarkHidden" xml:space="preserve">
+    <value>标记为隐藏</value>
+  </data>
+  <data name="ContextMenu_BatchMarkVisible" xml:space="preserve">
+    <value>标记为可见</value>
+  </data>
+  <data name="ContextMenu_BatchMarkCompleted" xml:space="preserve">
+    <value>标记为已完成</value>
+  </data>
+  <data name="ContextMenu_BatchMarkIncomplete" xml:space="preserve">
+    <value>标记为未完成</value>
+  </data>
+  <data name="ContextMenu_BatchReset" xml:space="preserve">
+    <value>批量重置</value>
+  </data>
+
+  <data name="BatchRename_Title" xml:space="preserve">
+    <value>批量改名</value>
+  </data>
+  <data name="BatchRename_Prefix" xml:space="preserve">
+    <value>前缀：</value>
+  </data>
+  <data name="BatchRename_Suffix" xml:space="preserve">
+    <value>后缀：</value>
+  </data>
+  <data name="BatchRename_BtnApply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="BatchRename_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+
+  <data name="BatchChangeType_Title" xml:space="preserve">
+    <value>批量改类型</value>
+  </data>
+  <data name="BatchChangeType_Label" xml:space="preserve">
+    <value>目标类型：</value>
+  </data>
+  <data name="BatchChangeType_BtnApply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="BatchChangeType_BtnCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+
+  <data name="BatchReset_ConfirmTitle" xml:space="preserve">
+    <value>批量重置</value>
+  </data>
+  <data name="BatchReset_ConfirmMessage" xml:space="preserve">
+    <value>确定要重置 {0} 个选中的条目吗？</value>
+  </data>
 </root>

@@ -648,4 +648,68 @@ Page Down           Next game</value>
   <data name="SteamLaunch_PathError" xml:space="preserve">
     <value>Unable to find Steam installation path.</value>
   </data>
+  <!-- Batch Operations -->
+  <data name="ContextMenu_Batch" xml:space="preserve">
+    <value>Batch</value>
+  </data>
+  <data name="ContextMenu_BatchRename" xml:space="preserve">
+    <value>Batch Rename...</value>
+  </data>
+  <data name="ContextMenu_BatchChangeType" xml:space="preserve">
+    <value>Batch Change Type...</value>
+  </data>
+  <data name="ContextMenu_BatchMark" xml:space="preserve">
+    <value>Batch Mark as Hidden/Completed</value>
+  </data>
+  <data name="ContextMenu_BatchMarkHidden" xml:space="preserve">
+    <value>Mark as Hidden</value>
+  </data>
+  <data name="ContextMenu_BatchMarkVisible" xml:space="preserve">
+    <value>Mark as Visible</value>
+  </data>
+  <data name="ContextMenu_BatchMarkCompleted" xml:space="preserve">
+    <value>Mark as Completed</value>
+  </data>
+  <data name="ContextMenu_BatchMarkIncomplete" xml:space="preserve">
+    <value>Mark as Incomplete</value>
+  </data>
+  <data name="ContextMenu_BatchReset" xml:space="preserve">
+    <value>Batch Reset</value>
+  </data>
+
+  <data name="BatchRename_Title" xml:space="preserve">
+    <value>Batch Rename</value>
+  </data>
+  <data name="BatchRename_Prefix" xml:space="preserve">
+    <value>Prefix:</value>
+  </data>
+  <data name="BatchRename_Suffix" xml:space="preserve">
+    <value>Suffix:</value>
+  </data>
+  <data name="BatchRename_BtnApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="BatchRename_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <data name="BatchChangeType_Title" xml:space="preserve">
+    <value>Batch Change Type</value>
+  </data>
+  <data name="BatchChangeType_Label" xml:space="preserve">
+    <value>New Type:</value>
+  </data>
+  <data name="BatchChangeType_BtnApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="BatchChangeType_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <data name="BatchReset_ConfirmTitle" xml:space="preserve">
+    <value>Batch Reset</value>
+  </data>
+  <data name="BatchReset_ConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to reset {0} selected entries?</value>
+  </data>
 </root>
