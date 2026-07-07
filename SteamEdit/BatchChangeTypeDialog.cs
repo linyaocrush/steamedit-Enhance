@@ -20,6 +20,11 @@ internal class BatchChangeTypeDialog : LocalizableForm
     public BatchChangeTypeDialog()
     {
         InitializeComponent();
+        cmbType.Format += (s, e) =>
+        {
+            if (e.ListItem is AppInfoEntryType entryType)
+                e.Value = I18n.GetEnumDisplayName(entryType);
+        };
         ThemeManager.StyleDialog(this);
     }
 
@@ -29,6 +34,8 @@ internal class BatchChangeTypeDialog : LocalizableForm
         lblType.Text = Strings.BatchChangeType_Label;
         btnApply.Text = Strings.BatchChangeType_BtnApply;
         btnCancel.Text = Strings.BatchChangeType_BtnCancel;
+        // 刷新类型下拉框以使用当前语言的枚举显示名
+        cmbType.Refresh();
     }
 
     private void InitializeComponent()
