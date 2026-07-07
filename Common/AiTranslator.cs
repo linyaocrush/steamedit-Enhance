@@ -220,7 +220,8 @@ Rules:
 		string? context = null,
 		string? customSystemPrompt = null,
 		string? customUserMessage = null,
-		CancellationToken cancellationToken = default)
+		CancellationToken cancellationToken = default,
+		string? existingTranslation = null)
 	{
 		string langDisplay = targetLanguage switch
 		{
@@ -262,6 +263,12 @@ Rules:
 		if (!string.IsNullOrWhiteSpace(context) && !userMessage.Contains(context))
 		{
 			userMessage += "\n\nContext:\n" + context;
+		}
+
+		// If an existing/modified name is provided, append as reference
+		if (!string.IsNullOrWhiteSpace(existingTranslation))
+		{
+			userMessage += "\n\nExisting translation (for reference, may need improvement):\n" + existingTranslation;
 		}
 
 		Log.WriteLine("AI: Translating \"{0}\" -> {1}", gameName, targetLanguage);
