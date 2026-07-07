@@ -135,6 +135,15 @@ internal class MainWindow : LocalizableForm
 				catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		};
 
+		// 批量操作事件订阅
+		_listManager.BatchRename += OnBatchRename;
+		_listManager.BatchChangeType += OnBatchChangeType;
+		_listManager.BatchMarkAsHidden += OnBatchMarkAsHidden;
+		_listManager.BatchMarkAsVisible += OnBatchMarkAsVisible;
+		_listManager.BatchMarkAsCompleted += OnBatchMarkAsCompleted;
+		_listManager.BatchMarkAsIncomplete += OnBatchMarkAsIncomplete;
+		_listManager.BatchReset += OnBatchReset;
+
 		// 创建编辑控制器
 		_editController = new EditController(
 			_ctx, _steamData.DataStore, _listManager, textGameName, textSortAs,
@@ -543,6 +552,99 @@ internal class MainWindow : LocalizableForm
 		{
 			btnTranslate.Text = Strings.MainWindow_BtnTranslate;
 			btnTranslate.Enabled = true;
+		}
+	}
+
+	private void OnBatchRename(object? sender, EventArgs e)
+	{
+		var entries = _listManager.GetSelectedEntries();
+		if (entries.Count == 0) return;
+		using var dlg = new BatchRenameDialog(entries.Count);
+		if (dlg.ShowDialog(this) != DialogResult.OK) return;
+		string prefix = dlg.Prefix;
+		string suffix = dlg.Suffix;
+		if (string.IsNullOrEmpty(prefix) && string.IsNullOrEmpty(suffix)) return;
+
+		foreach (var entry in entries)
+		{
+			string newName = prefix + entry.Name + suffix;
+			if (newName == entry.Name) continue;
+			entry.Name = newName;
+			_listManager.NotifyEntryEdited(entry);
+		}
+	}
+
+	private void OnBatchChangeType(object? sender, EventArgs e)
+	{
+		var entries = _listManager.GetSelectedEntries();
+		if (entries.Count == 0) return;
+		using var dlg = new BatchChangeTypeDialog();
+		if (dlg.ShowDialog(this) != DialogResult.OK) return;
+		var newType = dlg.SelectedType;
+
+		foreach (var entry in entries)
+		{
+			if (entry.Type == newType) continue;
+			entry.Type = newType;
+			_listManager.NotifyEntryEdited(entry);
+		}
+	}
+
+	private void OnBatchMarkAsHidden(object? sender, EventArgs e)
+	{
+		foreach (var entry in _listManager.GetSelectedEntries())
+		{
+			if (entry.IsHidden) continue;
+			entry.IsHidden = true;
+			_listManager.NotifyEntryEdited(entry);
+		}
+	}
+
+	private void OnBatchMarkAsVisible(object? sender, EventArgs e)
+	{
+		foreach (var entry in _listManager.GetSelectedEntries())
+		{
+			if (!entry.IsHidden) continue;
+			entry.IsHidden = false;
+			_listManager.NotifyEntryEdited(entry);
+		}
+	}
+
+	private void OnBatchMarkAsCompleted(object? sender, EventArgs e)
+	{
+		foreach (var entry in _listManager.GetSelectedEntries())
+		{
+			if (entry.IsCompleted) continue;
+			entry.IsCompleted = true;
+			_listManager.NotifyEntryEdited(entry);
+		}
+	}
+
+	private void OnBatchMarkAsIncomplete(object? sender, EventArgs e)
+	{
+		foreach (var entry in _listManager.GetSelectedEntries())
+		{
+			if (!entry.IsCompleted) continue;
+			entry.IsCompleted = false;
+			_listManager.NotifyEntryEdited(entry);
+		}
+	}
+
+	private void OnBatchReset(object? sender, EventArgs e)
+	{
+		var entries = _listManager.GetSelectedEntries();
+		if (entries.Count == 0) return;
+		var result = MessageBox.Show(this,
+			string.Format(Strings.BatchReset_ConfirmMessage, entries.Count),
+			Strings.BatchReset_ConfirmTitle,
+			MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+		if (result != DialogResult.Yes) return;
+
+		foreach (var entry in entries)
+		{
+			if (!entry.IsModified) continue;
+			entry.Revert();
+			_listManager.NotifyEntryReverted(entry);
 		}
 	}
 

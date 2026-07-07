@@ -247,5 +247,19 @@ namespace SteamEdit {
         internal static string SteamLaunch_LaunchButton => ResourceManager.GetString("SteamLaunch_LaunchButton", resourceCulture);
         internal static string SteamLaunch_CancelButton => ResourceManager.GetString("SteamLaunch_CancelButton", resourceCulture);
         internal static string SteamLaunch_PathError => ResourceManager.GetString("SteamLaunch_PathError", resourceCulture);
+
+        internal static string BatchRename_Title => ResourceManager.GetString("BatchRename_Title", resourceCulture);
+        internal static string BatchRename_Prefix => ResourceManager.GetString("BatchRename_Prefix", resourceCulture);
+        internal static string BatchRename_Suffix => ResourceManager.GetString("BatchRename_Suffix", resourceCulture);
+        internal static string BatchRename_BtnApply => ResourceManager.GetString("BatchRename_BtnApply", resourceCulture);
+        internal static string BatchRename_BtnCancel => ResourceManager.GetString("BatchRename_BtnCancel", resourceCulture);
+
+        internal static string BatchChangeType_Title => ResourceManager.GetString("BatchChangeType_Title", resourceCulture);
+        internal static string BatchChangeType_Label => ResourceManager.GetString("BatchChangeType_Label", resourceCulture);
+        internal static string BatchChangeType_BtnApply => ResourceManager.GetString("BatchChangeType_BtnApply", resourceCulture);
+        internal static string BatchChangeType_BtnCancel => ResourceManager.GetString("BatchChangeType_BtnCancel", resourceCulture);
+
+        internal static string BatchReset_ConfirmTitle => ResourceManager.GetString("BatchReset_ConfirmTitle", resourceCulture);
+        internal static string BatchReset_ConfirmMessage => ResourceManager.GetString("BatchReset_ConfirmMessage", resourceCulture);
     }
 }
