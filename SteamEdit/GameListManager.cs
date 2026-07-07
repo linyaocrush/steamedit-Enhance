@@ -210,7 +210,7 @@ internal class GameListManager : IDisposable
 
 		contextMenu.Items.Add(new ToolStripSeparator());
 
-		_miBatch = new ToolStripMenuItem("Batch");
+		_miBatch = new ToolStripMenuItem(Strings.ContextMenu_Batch);
 		_miBatchRename = new ToolStripMenuItem(Strings.ContextMenu_BatchRename);
 		_miBatchRename.Click += (_, _) => BatchRename?.Invoke(this, EventArgs.Empty);
 		_miBatch.DropDownItems.Add(_miBatchRename);
@@ -240,6 +240,20 @@ internal class GameListManager : IDisposable
 		_miBatch.DropDownItems.Add(_miBatchReset);
 
 		contextMenu.Items.Add(_miBatch);
+
+		I18n.LanguageChanged += (_, _) =>
+		{
+			_miBatch.Text = Strings.ContextMenu_Batch;
+			_miBatchRename.Text = Strings.ContextMenu_BatchRename;
+			_miBatchChangeType.Text = Strings.ContextMenu_BatchChangeType;
+			_miBatchMark.Text = Strings.ContextMenu_BatchMark;
+			_miMarkHidden.Text = Strings.ContextMenu_BatchMarkHidden;
+			_miMarkVisible.Text = Strings.ContextMenu_BatchMarkVisible;
+			_miMarkCompleted.Text = Strings.ContextMenu_BatchMarkCompleted;
+			_miMarkIncomplete.Text = Strings.ContextMenu_BatchMarkIncomplete;
+			_miBatchReset.Text = Strings.ContextMenu_BatchReset;
+		};
+
 		_appSelection.ContextMenuStrip = contextMenu;
 
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
