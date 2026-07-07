@@ -490,8 +490,12 @@ internal class MainWindow : LocalizableForm
 	{
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
-		string originalName = entry.Name;
-		if (string.IsNullOrWhiteSpace(originalName)) return;
+		string currentName = entry.Name;
+		if (string.IsNullOrWhiteSpace(currentName)) return;
+		
+		// Get the original name (pre-modification) for AI translation source
+		string originalName = entry.Modification?.GetOriginalName() ?? currentName;
+		string? existingRef = (originalName != currentName) ? currentName : null;
 
 		string targetLang = Settings.Default.AiTargetLanguage;
 		btnTranslate.Enabled = false;
@@ -499,7 +503,9 @@ internal class MainWindow : LocalizableForm
 
 		try
 		{
-			Log.WriteLine("AI Translate: Starting for \"{0}\"", originalName);
+			Log.WriteLine("AI Translate: Starting for \"{0}\" (original: \"{1}\"{2})",
+				currentName, originalName,
+				existingRef != null ? ", existing translation available: \"" + existingRef + "\"" : "");
 			string? context = AiTranslator.BuildContext(
 				entry.GetPropertyValue<string>(null!, AppInfoPaths.Developers),
 				entry.GetPropertyValue<string>(null!, AppInfoPaths.Publishers),
@@ -507,7 +513,8 @@ internal class MainWindow : LocalizableForm
 			string translated = await AiTranslator.TranslateWithContextAsync(
 				originalName, targetLang, context,
 				Settings.Default.AiCustomSystemPrompt,
-				Settings.Default.AiCustomUserMessage);
+				Settings.Default.AiCustomUserMessage,
+				existingTranslation: existingRef);
 			Log.WriteLine("AI Translate: Got result \"{0}\"", translated);
 
 			if (!string.IsNullOrWhiteSpace(translated) && IsHandleCreated && !IsDisposed)
