@@ -56,6 +56,7 @@ internal class BatchChangeTypeDialog : LocalizableForm
 
         // cmbType
         this.cmbType.DropDownStyle = ComboBoxStyle.DropDownList;
+        this.cmbType.FormattingEnabled = true;
         this.cmbType.Location = new Point(80, 14);
         this.cmbType.Size = new Size(160, 24);
         this.cmbType.TabIndex = 1;
