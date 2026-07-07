@@ -158,8 +158,12 @@ internal class BatchTranslateDialog : LocalizableForm
 
         InvokeOnUI(() => lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName));
 
-        // Check glossary fast path
-        string? existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(currentName);
+        // Get the original name (pre-modification) for AI translation source
+        string originalName = entry.Modification?.GetOriginalName() ?? currentName;
+        string? existingRef = (originalName != currentName) ? currentName : null;
+
+        // Check glossary fast path using original name (glossary is keyed by original name)
+        string? existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(originalName);
         if (!string.IsNullOrWhiteSpace(existingTranslation))
         {
             ApplyTranslation(entry, currentName, existingTranslation);
@@ -176,9 +180,12 @@ internal class BatchTranslateDialog : LocalizableForm
 
         try
         {
+            Log.WriteLine("Batch translate: \"{0}\" (orig: \"{1}\"{2})",
+                currentName, originalName,
+                existingRef != null ? ", ref: \"" + existingRef + "\"" : "");
             string translated = await AiTranslator.TranslateWithContextAsync(
-                currentName, _targetLanguage, context,
-                customSystemPrompt, customUserMessage, ct);
+                originalName, _targetLanguage, context,
+                customSystemPrompt, customUserMessage, cancellationToken: ct, existingTranslation: existingRef);
 
             if (!string.IsNullOrWhiteSpace(translated))
             {
