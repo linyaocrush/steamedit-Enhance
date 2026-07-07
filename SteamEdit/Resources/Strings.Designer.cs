@@ -220,6 +220,15 @@ namespace SteamEdit {
         internal static string ContextMenu_CopyAppId => ResourceManager.GetString("ContextMenu_CopyAppId", resourceCulture);
         internal static string ContextMenu_OpenInSteam => ResourceManager.GetString("ContextMenu_OpenInSteam", resourceCulture);
         internal static string ContextMenu_OpenInSteamDB => ResourceManager.GetString("ContextMenu_OpenInSteamDB", resourceCulture);
+        internal static string ContextMenu_Batch => ResourceManager.GetString("ContextMenu_Batch", resourceCulture);
+        internal static string ContextMenu_BatchRename => ResourceManager.GetString("ContextMenu_BatchRename", resourceCulture);
+        internal static string ContextMenu_BatchChangeType => ResourceManager.GetString("ContextMenu_BatchChangeType", resourceCulture);
+        internal static string ContextMenu_BatchMark => ResourceManager.GetString("ContextMenu_BatchMark", resourceCulture);
+        internal static string ContextMenu_BatchMarkHidden => ResourceManager.GetString("ContextMenu_BatchMarkHidden", resourceCulture);
+        internal static string ContextMenu_BatchMarkVisible => ResourceManager.GetString("ContextMenu_BatchMarkVisible", resourceCulture);
+        internal static string ContextMenu_BatchMarkCompleted => ResourceManager.GetString("ContextMenu_BatchMarkCompleted", resourceCulture);
+        internal static string ContextMenu_BatchMarkIncomplete => ResourceManager.GetString("ContextMenu_BatchMarkIncomplete", resourceCulture);
+        internal static string ContextMenu_BatchReset => ResourceManager.GetString("ContextMenu_BatchReset", resourceCulture);
         internal static string About_ViewLog => ResourceManager.GetString("About_ViewLog", resourceCulture);
         internal static string LogViewer_Title => ResourceManager.GetString("LogViewer_Title", resourceCulture);
 

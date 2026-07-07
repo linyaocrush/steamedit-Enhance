@@ -43,11 +43,28 @@ internal class GameListManager : IDisposable
 	private int _tooltipCachedId = -1;
 	private string _tooltipCachedText = "";
 
+	private readonly ToolStripMenuItem _miBatch;
+	private readonly ToolStripMenuItem _miBatchRename;
+	private readonly ToolStripMenuItem _miBatchChangeType;
+	private readonly ToolStripMenuItem _miBatchMark;
+	private readonly ToolStripMenuItem _miMarkHidden;
+	private readonly ToolStripMenuItem _miMarkVisible;
+	private readonly ToolStripMenuItem _miMarkCompleted;
+	private readonly ToolStripMenuItem _miMarkIncomplete;
+	private readonly ToolStripMenuItem _miBatchReset;
+
 	public event EventHandler<IAppInfoEntry>? SelectedEntryChanged;
 	public event EventHandler? ContextMenuCopyName;
 	public event EventHandler? ContextMenuCopyAppId;
 	public event EventHandler? ContextMenuOpenInSteam;
 	public event EventHandler? ContextMenuOpenInSteamDB;
+	public event EventHandler? BatchRename;
+	public event EventHandler? BatchChangeType;
+	public event EventHandler? BatchMarkAsHidden;
+	public event EventHandler? BatchMarkAsVisible;
+	public event EventHandler? BatchMarkAsCompleted;
+	public event EventHandler? BatchMarkAsIncomplete;
+	public event EventHandler? BatchReset;
 
 	public GameListManager(
 		GameDataContext ctx,
@@ -161,6 +178,7 @@ internal class GameListManager : IDisposable
 
 		// 事件订阅
 		_appSelection.DrawItem += OnAppSelection_DrawItem;
+		_appSelection.SelectionMode = SelectionMode.MultiExtended;
 		_appSelection.SelectedIndexChanged += OnAppSelection_SelectedIndexChanged;
 		_appSelection.SizeChanged += (_, _) => _appSelection.Invalidate();
 		_appSelection.KeyPress += OnAppSelection_KeyPress;
@@ -189,6 +207,39 @@ internal class GameListManager : IDisposable
 		contextMenu.Items.Add(new ToolStripSeparator());
 		contextMenu.Items.Add(miOpenSteam);
 		contextMenu.Items.Add(miOpenSteamDB);
+
+		contextMenu.Items.Add(new ToolStripSeparator());
+
+		_miBatch = new ToolStripMenuItem("Batch");
+		_miBatchRename = new ToolStripMenuItem(Strings.ContextMenu_BatchRename);
+		_miBatchRename.Click += (_, _) => BatchRename?.Invoke(this, EventArgs.Empty);
+		_miBatch.DropDownItems.Add(_miBatchRename);
+
+		_miBatchChangeType = new ToolStripMenuItem(Strings.ContextMenu_BatchChangeType);
+		_miBatchChangeType.Click += (_, _) => BatchChangeType?.Invoke(this, EventArgs.Empty);
+		_miBatch.DropDownItems.Add(_miBatchChangeType);
+
+		_miBatchMark = new ToolStripMenuItem(Strings.ContextMenu_BatchMark);
+		_miMarkHidden = new ToolStripMenuItem(Strings.ContextMenu_BatchMarkHidden);
+		_miMarkHidden.Click += (_, _) => BatchMarkAsHidden?.Invoke(this, EventArgs.Empty);
+		_miBatchMark.DropDownItems.Add(_miMarkHidden);
+		_miMarkVisible = new ToolStripMenuItem(Strings.ContextMenu_BatchMarkVisible);
+		_miMarkVisible.Click += (_, _) => BatchMarkAsVisible?.Invoke(this, EventArgs.Empty);
+		_miBatchMark.DropDownItems.Add(_miMarkVisible);
+		_miBatchMark.DropDownItems.Add(new ToolStripSeparator());
+		_miMarkCompleted = new ToolStripMenuItem(Strings.ContextMenu_BatchMarkCompleted);
+		_miMarkCompleted.Click += (_, _) => BatchMarkAsCompleted?.Invoke(this, EventArgs.Empty);
+		_miBatchMark.DropDownItems.Add(_miMarkCompleted);
+		_miMarkIncomplete = new ToolStripMenuItem(Strings.ContextMenu_BatchMarkIncomplete);
+		_miMarkIncomplete.Click += (_, _) => BatchMarkAsIncomplete?.Invoke(this, EventArgs.Empty);
+		_miBatchMark.DropDownItems.Add(_miMarkIncomplete);
+		_miBatch.DropDownItems.Add(_miBatchMark);
+
+		_miBatchReset = new ToolStripMenuItem(Strings.ContextMenu_BatchReset);
+		_miBatchReset.Click += (_, _) => BatchReset?.Invoke(this, EventArgs.Empty);
+		_miBatch.DropDownItems.Add(_miBatchReset);
+
+		contextMenu.Items.Add(_miBatch);
 		_appSelection.ContextMenuStrip = contextMenu;
 
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
@@ -226,6 +277,17 @@ internal class GameListManager : IDisposable
 	{
 		int idx = _appSelection.SelectedIndex;
 		return idx >= 0 && idx < _ctx.Entries.Count ? _ctx.Entries[idx] : null;
+	}
+
+	public IReadOnlyList<IAppInfoEntry> GetSelectedEntries()
+	{
+		var entries = new List<IAppInfoEntry>();
+		foreach (int idx in _appSelection.SelectedIndices)
+		{
+			if (idx >= 0 && idx < _ctx.Entries.Count)
+				entries.Add(_ctx.Entries[idx]);
+		}
+		return entries.AsReadOnly();
 	}
 
 	public string GetDisplayName(IAppInfoEntry entry)
@@ -651,7 +713,9 @@ internal class GameListManager : IDisposable
 		int idx = _appSelection.IndexFromPoint(e.Location);
 		if (idx >= 0 && idx < _appSelection.Items.Count)
 		{
-			_appSelection.SelectedIndex = idx;
+			if (_appSelection.SelectedIndices.Contains(idx))
+				return; // Right-click on selected item → keep multi-selection
+			_appSelection.SelectedIndex = idx; // Click on unselected → select only this
 		}
 	}
 
