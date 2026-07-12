@@ -75,17 +75,23 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return current;
 	}
 
+	private PropertyTable? TraverseToParent(string[] path, out string lastName, bool createMissing = false)
+	{
+		lastName = path[^1];
+		return TraverseToParent(path, createMissing);
+	}
+
 	public bool HasProperty(params string[] PropertyPath)
 	{
 		if (PropertyPath.Length == 0) return false;
-		PropertyTable? parent = TraverseToParent(PropertyPath);
-		return parent != null && parent[PropertyPath[PropertyPath.Length - 1]] != null;
+		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName);
+		return parent != null && parent[lastName] != null;
 	}
 
 	public Property? GetRawProperty(params string[] PropertyPath)
 	{
-		PropertyTable? parent = TraverseToParent(PropertyPath);
-		return parent?[PropertyPath[PropertyPath.Length - 1]];
+		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName);
+		return parent?[lastName];
 	}
 
 	public void SetRawProperty(Property prop, params string[] PropertyPath)
@@ -95,8 +101,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			RemoveProperty(PropertyPath);
 			return;
 		}
-		PropertyTable? parent = TraverseToParent(PropertyPath, createMissing: true);
-		parent?.SetPropertyValue(PropertyPath[PropertyPath.Length - 1], prop.PropertyType, prop.Value);
+		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName, createMissing: true);
+		parent?.SetPropertyValue(lastName, prop.PropertyType, prop.Value);
 	}
 
 	public T GetPropertyValue<T>(string name, T defValue = default!)
@@ -134,8 +140,8 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
 	{
 		if (PropertyPath.Length == 0) return DefaultValue;
-		PropertyTable? parent = TraverseToParent(PropertyPath);
-		return parent == null ? DefaultValue : parent.GetPropertyValue(PropertyPath[PropertyPath.Length - 1], DefaultValue);
+		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName);
+		return parent == null ? DefaultValue : parent.GetPropertyValue(lastName, DefaultValue);
 	}
 
 	public PropertyType GetPropertyType(string name)
@@ -176,9 +182,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public bool SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
-		PropertyTable? parent = TraverseToParent(propertyPath, createMissing: true);
+		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName, createMissing: true);
 		if (parent == null) return false;
-		return parent.SetPropertyValue(propertyPath[propertyPath.Length - 1], type, value);
+		return parent.SetPropertyValue(lastName, type, value);
 	}
 
 	public void RemoveProperty(string name)
