@@ -95,7 +95,7 @@ public class MainViewModelTests
     {
         var service = new MockSteamDataService();
         var vm = new MainViewModel(service, new GameListViewModel(new MockDataStore()), new PropertyEditorViewModel());
-        Assert.AreEqual("SteamEdit", vm.WindowTitle);
+        Assert.AreEqual("steamedit-Enhance", vm.WindowTitle);
     }
 
     [TestMethod]
@@ -284,7 +284,7 @@ public class MainViewModelTests
         service.NeedsSave = true;
         service.RaiseNeedsSave();
 
-        Assert.AreEqual("SteamEdit", vm.WindowTitle);
+        Assert.AreEqual("steamedit-Enhance", vm.WindowTitle);
     }
 
     [TestMethod]
