@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Windows-10%2F11-blue?style=flat-square&logo=windows" alt="Platform" />
   <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 10" />
-  <img src="https://img.shields.io/badge/Tests-173%20passing-2ea043?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-268%20passing-2ea043?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/UI-EN%20%7C%20ZH--CN%20%7C%20ZH--TW-orange?style=flat-square" alt="Languages" />
   <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
 </p>
@@ -52,6 +52,7 @@
 | Web 搜索 | 一键搜索游戏名+翻译名，多引擎支持 |
 | 撤销 | 多级撤销（上限 500 步），支持复合操作（如 VR 同时改两属性） |
 | 批量操作 | 批量重命名、改类型、标记隐藏/完成、重置 |
+| 日志系统 | 可配置 Debug/Info/Warning/Error 级别，过滤调试信息 |
 
 ### ⚡ 性能
 
@@ -72,6 +73,7 @@
 | DPI 感知 | PerMonitorV2，4K 清晰不模糊 |
 | 崩溃日志 | 自动生成 `crash-{timestamp}.log`，附诊断信息 |
 | 自动修复 | 支持 `-autofix` 命令行静默模式，适用于计划任务 |
+| 日志系统 | 可配置 Debug/Info/Warning/Error 级别，即时生效，适合调试与生产 |
 
 ---
 
@@ -109,7 +111,12 @@
 
 > 兼容 OpenAI Chat Completions API（OpenAI、Claude 代理、本地 Ollama 等）。
 
-### 命令行
+### 日志级别配置
+
+1. **设置 → 常规**：调整日志级别下拉框
+2. 可选择 Debug/Info/Warning/Error 级别
+3. **变更立即生效**：无需重启应用
+4. 调试时设为 Debug，生产环境建议设为 Info 或 Warning
 
 ```bash
 # 静默应用待处理更改
@@ -127,8 +134,8 @@ steamedit-Enhance.exe -autofix -forcestart
 # 构建
 dotnet build steamedit-Enhance.csproj
 
-# 测试（173 个）
-dotnet test steamedit-EnhanceTests/steamedit-EnhanceTests.csproj
+# 测试（268 个）
+        dotnet test steamedit-EnhanceTests/steamedit-EnhanceTests.csproj
 
 # 运行
 dotnet run --project steamedit-Enhance.csproj
@@ -187,10 +194,11 @@ steamedit-Enhance/
 ├── Common/                          # 🛠️ 共享工具
 │   ├── Settings.cs                  # JSON 序列化 + 脏标记
 │   ├── AiTranslator.cs              # OpenAI 兼容 API 客户端
-│   ├── TranslationGlossary.cs       # 术语缓存
-│   └── StringTitleComparer.cs       # 自然排序
-└── steamedit-EnhanceTests/          # ✅ MSTest 单元测试（173 个）
-```
+        │   ├── TranslationGlossary.cs       # 术语缓存
+        │   ├── StringTitleComparer.cs       # 自然排序
+        │   └── Log.cs                       # 日志系统（多级别过滤）
+└── steamedit-EnhanceTests/          # ✅ MSTest 单元测试（268 个）
+        ```
 
 ---
 
@@ -203,7 +211,7 @@ steamedit-Enhance/
 | UI | Windows Forms + PerMonitorV2 DPI |
 | 目标 | `win-x64` |
 | 发布 | 单文件 EXE（独立或依赖框架） |
-| 测试 | MSTest（173 通过，0 失败） |
+| 测试 | MSTest（268 通过，0 失败） |
 
 ---
 
