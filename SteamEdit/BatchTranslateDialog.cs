@@ -2,12 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
+using SteamEdit.ViewModels;
 
 namespace SteamEdit;
 
@@ -21,19 +19,38 @@ internal class BatchTranslateDialog : LocalizableForm
     private Button btnPause = null!;
     private Button btnCancel = null!;
 
-    private readonly List<IAppInfoEntry> _entries;
-    private readonly string _targetLanguage;
-    private CancellationTokenSource _cts = null!;
-    private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
-    private bool _isPaused;
-    private int _successCount;
-    private int _skipCount;
-    private int _failCount;
-    private int _currentIndex;
+    private readonly BatchTranslateViewModel _viewModel = new();
 
-    public int SuccessCount => _successCount;
-    public int SkipCount => _skipCount;
-    public int FailCount => _failCount;
+    public BatchTranslateDialog(List<IAppInfoEntry> entries, string targetLanguage)
+    {
+        InitializeComponent();
+        ThemeManager.StyleDialog(this);
+
+        _viewModel.StateChanged += OnViewModelStateChanged;
+
+        // Start translation after load
+        Load += async (_, _) =>
+        {
+            try
+            {
+                await _viewModel.RunAsync(entries, targetLanguage);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine("BatchTranslate error: {0}", ex);
+                if (!IsDisposed)
+                    InvokeOnUI(() => { if (!IsDisposed) MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error); });
+            }
+            finally
+            {
+                OnViewModelStateChanged();
+            }
+        };
+    }
+
+    public int SuccessCount => _viewModel.SuccessCount;
+    public int SkipCount => _viewModel.SkipCount;
+    public int FailCount => _viewModel.FailCount;
 
     private void InvokeOnUI(Action action)
     {
@@ -46,195 +63,55 @@ internal class BatchTranslateDialog : LocalizableForm
         catch (ObjectDisposedException) { }
     }
 
-    public BatchTranslateDialog(List<IAppInfoEntry> entries, string targetLanguage)
-    {
-        _entries = entries;
-        _targetLanguage = targetLanguage;
-        InitializeComponent();
-        ThemeManager.StyleDialog(this);
-    }
-
     protected override void ApplyLanguage()
     {
         Text = Strings.BatchTranslate_Title;
-        btnPause.Text = _isPaused ? Strings.BatchTranslate_Resume : Strings.BatchTranslate_Pause;
-        btnCancel.Text = Strings.BatchTranslate_Cancel;
-        UpdateStatsDisplay();
+        btnPause.Text = _viewModel.IsPaused ? Strings.BatchTranslate_Resume : Strings.BatchTranslate_Pause;
+        btnCancel.Text = _viewModel.IsRunning ? Strings.BatchTranslate_Cancel : Strings.BatchTranslate_Close;
+        UpdateDisplay();
     }
 
-    private void UpdateStatsDisplay()
+    private void OnViewModelStateChanged()
     {
-        // 快照计数器，避免并行模式下读取不一致
-        int current = Volatile.Read(ref _currentIndex);
-        int success = Volatile.Read(ref _successCount);
-        int skip = Volatile.Read(ref _skipCount);
-        int fail = Volatile.Read(ref _failCount);
-        int total = _entries.Count;
-        lblProgress.Text = string.Format(Strings.BatchTranslate_Progress, current, total);
-        progressBar.Maximum = total;
-        progressBar.Value = Math.Min(current, total);
-        lblStats.Text = string.Format(Strings.BatchTranslate_Stats, success, skip, fail);
+        if (IsDisposed) return;
+        InvokeOnUI(UpdateDisplay);
     }
 
-    protected override async void OnLoad(EventArgs e)
+    private void UpdateDisplay()
     {
-        base.OnLoad(e);
-        try
-        {
-            await RunBatchAsync();
-        }
-        catch (OperationCanceledException)
-        {
-            // 用户取消，正常退出
-        }
-        catch (Exception ex)
-        {
-            Log.WriteLine("BatchTranslate error: {0}", ex);
-            if (!IsDisposed)
-                InvokeOnUI(() => { if (!IsDisposed) MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error); });
-        }
+        lblProgress.Text = string.Format(Strings.BatchTranslate_Progress, _viewModel.Progress, _viewModel.Total);
+        progressBar.Maximum = Math.Max(_viewModel.Total, 1);
+        progressBar.Value = Math.Min(_viewModel.Progress, _viewModel.Total);
+        lblCurrent.Text = _viewModel.IsRunning
+            ? string.Format(Strings.BatchTranslate_Current, _viewModel.CurrentName)
+            : "";
+        lblStats.Text = string.Format(Strings.BatchTranslate_Stats, _viewModel.SuccessCount, _viewModel.SkipCount, _viewModel.FailCount);
+        btnPause.Enabled = _viewModel.IsRunning;
+        btnPause.Text = _viewModel.IsPaused ? Strings.BatchTranslate_Resume : Strings.BatchTranslate_Pause;
+        btnCancel.Text = _viewModel.IsRunning ? Strings.BatchTranslate_Cancel : Strings.BatchTranslate_Close;
     }
 
-	private async Task RunBatchAsync()
-	{
-		_cts = new CancellationTokenSource();
-		string customSystemPrompt = Settings.Default.AiCustomSystemPrompt;
-		string customUserMessage = Settings.Default.AiCustomUserMessage;
-		int concurrency = Math.Max(Settings.Default.AiBatchTranslateConcurrency, 1);
-
-		var parallelOptions = new ParallelOptions
-		{
-			MaxDegreeOfParallelism = concurrency,
-			CancellationToken = _cts.Token
-		};
-
-		int index = 0;
-		await Parallel.ForEachAsync(_entries, parallelOptions, async (entry, ct) =>
-		{
-			_pauseEvent.Wait(ct);
-			_currentIndex = Interlocked.Increment(ref index);
-			await TranslateOneAsync(entry, customSystemPrompt, customUserMessage, ct);
-		});
-
-		TranslationGlossary.Flush();
-
-		InvokeOnUI(() => { UpdateStatsDisplay(); btnPause.Enabled = false; btnCancel.Text = Strings.BatchTranslate_Close; });
-	}
-
-    private async Task TranslateOneAsync(IAppInfoEntry entry, string customSystemPrompt, string customUserMessage, CancellationToken ct)
-    {
-        string currentName = entry.Name;
-
-        InvokeOnUI(() => lblCurrent.Text = string.Format(Strings.BatchTranslate_Current, currentName));
-
-        // Get the original name (pre-modification) for AI translation source
-        string originalName = entry.Modification?.GetOriginalName() ?? currentName;
-        string? existingRef = (originalName != currentName) ? currentName : null;
-
-        // Check glossary fast path using original name (glossary is keyed by original name)
-        string? existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(originalName);
-        if (!string.IsNullOrWhiteSpace(existingTranslation))
-        {
-            ApplyTranslation(entry, currentName, existingTranslation);
-            Interlocked.Increment(ref _successCount);
-            InvokeOnUI(UpdateStatsDisplay);
-            return;
-        }
-
-        // Build context from VDF metadata
-        string? context = AiTranslator.BuildContext(
-            entry.GetPropertyValue<string>(null!, AppInfoPaths.Developers),
-            entry.GetPropertyValue<string>(null!, AppInfoPaths.Publishers),
-            entry.GetPropertyValue<string>(null!, AppInfoPaths.Type));
-
-        try
-        {
-            Log.WriteLine("Batch translate: \"{0}\" (orig: \"{1}\"{2})",
-                currentName, originalName,
-                existingRef != null ? ", ref: \"" + existingRef + "\"" : "");
-            string translated = await AiTranslator.TranslateWithContextAsync(
-                originalName, _targetLanguage, context,
-                customSystemPrompt, customUserMessage, cancellationToken: ct, existingTranslation: existingRef);
-
-            if (!string.IsNullOrWhiteSpace(translated))
-            {
-                ApplyTranslation(entry, currentName, translated);
-                Interlocked.Increment(ref _successCount);
-            }
-            else
-            {
-                Interlocked.Increment(ref _skipCount);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Log.WriteLine("Batch translate failed for \"{0}\": {1}", currentName, ex.Message);
-            Interlocked.Increment(ref _failCount);
-        }
-
-        InvokeOnUI(UpdateStatsDisplay);
-    }
-
-    private void ApplyTranslation(IAppInfoEntry entry, string previousName, string translated)
-    {
-        void DoApply()
-        {
-            entry.Name = translated;
-            try
-            {
-                string originalName = entry.Modification?.GetOriginalName() ?? previousName;
-                TranslationGlossary.UpdateEntry(entry.ID, originalName, translated);
-            }
-            catch (Exception ex)
-            {
-                Log.WriteLine("Batch glossary update failed for {0:X8}: {1}", entry.ID, ex.Message);
-            }
-        }
-        InvokeOnUI(DoApply);
-    }
-
-    private void btnPause_Click(object? sender, EventArgs e)
-    {
-        if (_isPaused)
-        {
-            _isPaused = false;
-            _pauseEvent.Set();
-            btnPause.Text = Strings.BatchTranslate_Pause;
-        }
-        else
-        {
-            _isPaused = true;
-            _pauseEvent.Reset();
-            btnPause.Text = Strings.BatchTranslate_Resume;
-        }
-    }
+    private void btnPause_Click(object? sender, EventArgs e) => _viewModel.Pause();
 
     private void btnCancel_Click(object? sender, EventArgs e)
     {
-        if (_isPaused) _pauseEvent.Set();
-        _cts?.Cancel();
-        DialogResult = DialogResult.Cancel;
+        _viewModel.Cancel();
+        if (!_viewModel.IsRunning)
+            DialogResult = DialogResult.Cancel;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (_isPaused) _pauseEvent.Set();
-        _cts?.Cancel();
+        _viewModel.Cancel();
         base.OnFormClosing(e);
     }
 
     protected override void Dispose(bool disposing)
     {
-        try { _cts?.Dispose(); } catch (ObjectDisposedException) { }
-        _pauseEvent?.Dispose();
+        _viewModel.StateChanged -= OnViewModelStateChanged;
+        _viewModel.Dispose();
         if (disposing && components != null)
-        {
             components.Dispose();
-        }
         base.Dispose(disposing);
     }
 
@@ -248,55 +125,70 @@ internal class BatchTranslateDialog : LocalizableForm
         this.btnPause = new System.Windows.Forms.Button();
         this.btnCancel = new System.Windows.Forms.Button();
         base.SuspendLayout();
+        // 
         // lblProgress
+        // 
         this.lblProgress.AutoSize = true;
         this.lblProgress.Location = new System.Drawing.Point(12, 15);
         this.lblProgress.Name = "lblProgress";
-        this.lblProgress.Size = new System.Drawing.Size(100, 13);
+        this.lblProgress.Size = new System.Drawing.Size(62, 17);
         this.lblProgress.TabIndex = 0;
-        this.lblProgress.Text = "Progress: 0/0";
+        this.lblProgress.Text = "Progress";
+        // 
         // progressBar
-        this.progressBar.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        // 
+        this.progressBar.Anchor |= System.Windows.Forms.AnchorStyles.Right;
         this.progressBar.Location = new System.Drawing.Point(12, 35);
         this.progressBar.Name = "progressBar";
-        this.progressBar.Size = new System.Drawing.Size(360, 23);
+        this.progressBar.Size = new System.Drawing.Size(460, 23);
         this.progressBar.TabIndex = 1;
+        // 
         // lblCurrent
-        this.lblCurrent.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        // 
+        this.lblCurrent.AutoEllipsis = true;
         this.lblCurrent.Location = new System.Drawing.Point(12, 65);
         this.lblCurrent.Name = "lblCurrent";
-        this.lblCurrent.Size = new System.Drawing.Size(360, 20);
+        this.lblCurrent.Size = new System.Drawing.Size(460, 17);
         this.lblCurrent.TabIndex = 2;
         this.lblCurrent.Text = "";
+        // 
         // lblStats
+        // 
         this.lblStats.AutoSize = true;
-        this.lblStats.Location = new System.Drawing.Point(12, 95);
+        this.lblStats.Location = new System.Drawing.Point(12, 90);
         this.lblStats.Name = "lblStats";
-        this.lblStats.Size = new System.Drawing.Size(200, 13);
+        this.lblStats.Size = new System.Drawing.Size(36, 17);
         this.lblStats.TabIndex = 3;
-        this.lblStats.Text = "";
+        this.lblStats.Text = "Stats";
+        // 
         // btnPause
-        this.btnPause.Location = new System.Drawing.Point(12, 125);
+        // 
+        this.btnPause.Anchor = (System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
+        this.btnPause.Location = new System.Drawing.Point(12, 120);
         this.btnPause.Name = "btnPause";
-        this.btnPause.Size = new System.Drawing.Size(80, 28);
+        this.btnPause.Size = new System.Drawing.Size(90, 30);
         this.btnPause.TabIndex = 4;
         this.btnPause.Text = "Pause";
         this.btnPause.UseVisualStyleBackColor = true;
-        this.btnPause.Click += new System.EventHandler(btnPause_Click);
+        this.btnPause.Click += new System.EventHandler(this.btnPause_Click);
+        // 
         // btnCancel
-        this.btnCancel.Location = new System.Drawing.Point(100, 125);
+        // 
+        this.btnCancel.Anchor = (System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right);
+        this.btnCancel.Location = new System.Drawing.Point(382, 120);
         this.btnCancel.Name = "btnCancel";
-        this.btnCancel.Size = new System.Drawing.Size(80, 28);
+        this.btnCancel.Size = new System.Drawing.Size(90, 30);
         this.btnCancel.TabIndex = 5;
         this.btnCancel.Text = "Cancel";
         this.btnCancel.UseVisualStyleBackColor = true;
-        this.btnCancel.Click += new System.EventHandler(btnCancel_Click);
-        // Form
-        base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-        base.ClientSize = new System.Drawing.Size(384, 165);
-        base.ControlBox = false;
-        base.Controls.Add(this.btnCancel);
+        this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+        // 
+        // BatchTranslateDialog
+        // 
+        base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+        base.ClientSize = new System.Drawing.Size(484, 161);
         base.Controls.Add(this.btnPause);
+        base.Controls.Add(this.btnCancel);
         base.Controls.Add(this.lblStats);
         base.Controls.Add(this.lblCurrent);
         base.Controls.Add(this.progressBar);
@@ -305,8 +197,6 @@ internal class BatchTranslateDialog : LocalizableForm
         base.MaximizeBox = false;
         base.MinimizeBox = false;
         base.Name = "BatchTranslateDialog";
-        base.ShowIcon = false;
-        base.ShowInTaskbar = false;
         base.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
         this.Text = "Batch Translate";
         base.ResumeLayout(false);
