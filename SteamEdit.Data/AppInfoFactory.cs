@@ -1,5 +1,6 @@
 #nullable enable
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using SteamEdit.Data.Impl;
 
 namespace SteamEdit.Data;
@@ -12,7 +13,9 @@ internal static class AppInfoFactory
 		{
 			throw new FileNotFoundException("Cannot find Steam's appinfo.vdf file", path);
 		}
-		using BinaryReader binaryReader = new BinaryReader(File.OpenRead(path));
+		using var mmf = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0, MemoryMappedFileAccess.Read);
+		using var stream = mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
+		using BinaryReader binaryReader = new BinaryReader(stream);
 		uint num = binaryReader.ReadUInt32();
 		return num switch
 		{
