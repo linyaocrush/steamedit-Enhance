@@ -1,9 +1,7 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.IO;
 using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
@@ -257,29 +255,13 @@ internal class EditController : IDisposable
 		}
 	}
 
-	private void SetEntryVR(IAppInfoEntry entry, bool remove)
-	{
-		if (remove)
-		{
-			int val = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
-			if (val != int.MaxValue)
-			{
-				entry.SetPropertyValue(PropertyType.Int32, val, AppInfoPaths.BaseOpenVrSupport);
-				entry.SetPropertyValue(PropertyType.Int32, 0, AppInfoPaths.OpenVrSupport);
-			}
-		}
-		else
-		{
-			int val = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
-			if (val != int.MaxValue)
-			{
-				entry.SetPropertyValue(PropertyType.Int32, val, AppInfoPaths.OpenVrSupport);
-				entry.SetPropertyValue(PropertyType.Int32, int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
-			}
-		}
-	}
-
 	// --- 事件处理 ---
+
+	private IAppInfoEntry? TryGetSelectedEntry()
+	{
+		if (_isSettingUpEntry) return null;
+		return _listManager.GetSelectedEntry();
+	}
 
 	private void OnGeneric_KeyDown(object? sender, KeyEventArgs e)
 	{
@@ -291,109 +273,65 @@ internal class EditController : IDisposable
 		}
 	}
 
-
-
 	private void OnTextGameName_TextChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
-		if (entry == null) return;
-		if (_textGameName.Text != entry.Name)
+		var entry = TryGetSelectedEntry();
+		if (entry == null || _textGameName.Text == entry.Name) return;
+		string prev = entry.Name;
+		new NameChangeCommand(_undoManager, _listManager, _textGameName.Text).Execute(entry);
+		UpdateGlossaryForEntry(entry, prev);
+		if (!entry.HasSortAs)
 		{
-			string prev = entry.Name;
-			_undoManager.Push(entry, AppInfoPaths.Name, PropertyType.String, prev);
-			entry.Name = _textGameName.Text;
-			_listManager.NotifyEntryEdited(entry);
-			UpdateGlossaryForEntry(entry, prev);
-			if (!entry.HasSortAs)
-			{
-				bool wasSettingUp = _isSettingUpEntry;
-				_isSettingUpEntry = true;
-				_textSortAs.Text = entry.SortAs;
-				_isSettingUpEntry = wasSettingUp;
-			}
+			bool wasSettingUp = _isSettingUpEntry;
+			_isSettingUpEntry = true;
+			_textSortAs.Text = entry.SortAs;
+			_isSettingUpEntry = wasSettingUp;
 		}
 	}
 
 	private void OnTextSortAs_TextChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
-		if (entry == null) return;
-		if (_textSortAs.Text != entry.SortAs)
-		{
-			_undoManager.Push(entry, AppInfoPaths.SortAs, PropertyType.String, entry.SortAs);
-			entry.SortAs = _textSortAs.Text;
-			_listManager.NotifyEntryEdited(entry);
-			int idx = _ctx._entries.IndexOf(entry);
-			if (idx >= 0) _listManager.SelectIndex(idx);
-			_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
-		}
+		var entry = TryGetSelectedEntry();
+		if (entry == null || _textSortAs.Text == entry.SortAs) return;
+		new SortAsChangeCommand(_undoManager, _listManager, _textSortAs.Text).Execute(entry);
+		int idx = _ctx._entries.IndexOf(entry);
+		if (idx >= 0) _listManager.SelectIndex(idx);
+		_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
 	}
 
 	private void OnCheckHidden_CheckedChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
+		var entry = TryGetSelectedEntry();
 		if (entry == null) return;
-		int p2 = entry.GetPropertyValue(0, AppInfoPaths.IsHidden);
-		_undoManager.Push(entry, AppInfoPaths.IsHidden, PropertyType.Int32, p2);
-		entry.IsHidden = _checkHidden.Checked;
-		_listManager.NotifyStatusChanged();
+		new HiddenToggleCommand(_undoManager, _listManager, _checkHidden.Checked).Execute(entry);
 	}
 
 	private void OnCheckCompleted_CheckedChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
+		var entry = TryGetSelectedEntry();
 		if (entry == null) return;
-		int cp = entry.GetPropertyValue(0, AppInfoPaths.IsCompleted);
-		_undoManager.Push(entry, AppInfoPaths.IsCompleted, PropertyType.Int32, cp);
-		entry.IsCompleted = _checkCompleted.Checked;
-		_listManager.NotifyStatusChanged();
+		new CompletedToggleCommand(_undoManager, _listManager, _checkCompleted.Checked).Execute(entry);
 	}
 
 	private void OnListControllerSupport_SelectedIndexChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
+		var entry = TryGetSelectedEntry();
 		if (entry == null) return;
-		int idx = _listControllerSupport.SelectedIndex;
-		string raw = idx >= 0 && idx < ControllerRawValues.Length ? ControllerRawValues[idx] : "none";
-		string prevCtrl = entry.GetPropertyValue<string>(null!, AppInfoPaths.ControllerSupport);
-		_undoManager.Push(entry, AppInfoPaths.ControllerSupport, PropertyType.String, prevCtrl);
-		entry.SetPropertyValue(PropertyType.String, raw, AppInfoPaths.ControllerSupport);
+		new ControllerChangeCommand(_undoManager, _listControllerSupport.SelectedIndex).Execute(entry);
 	}
 
 	private void OnListVR_SelectedIndexChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
+		var entry = TryGetSelectedEntry();
 		if (entry == null) return;
-		int prevVr = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
-		int prevVrBase = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
-		var vrRecord = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, prevVr);
-		if (prevVrBase != int.MaxValue)
-		{
-		var baseRecord = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, prevVrBase);
-		_undoManager.PushCompound(UndoRecord.CreateCompound(vrRecord, baseRecord));
-		}
-		else
-		{
-		_undoManager.PushCompound(vrRecord);
-		}
-		SetEntryVR(entry, _listVR.SelectedIndex != 0);
+		new VrChangeCommand(_undoManager, _listVR.SelectedIndex != 0).Execute(entry);
 	}
 
 	private void OnListEntryType_SelectedIndexChanged(object? sender, EventArgs e)
 	{
-		if (_isSettingUpEntry) return;
-		var entry = _listManager.GetSelectedEntry();
+		var entry = TryGetSelectedEntry();
 		if (entry == null) return;
-		string prevType = entry.GetPropertyValue<string>(null!, AppInfoPaths.Type);
-		_undoManager.Push(entry, AppInfoPaths.Type, PropertyType.String, prevType);
-		entry.Type = (AppInfoEntryType)_listEntryType.SelectedItem!;
-		_listManager.RefreshGameList();
+		new EntryTypeChangeCommand(_undoManager, _listManager, (AppInfoEntryType)_listEntryType.SelectedItem!).Execute(entry);
 	}
 
 	private void OnTextGameName_ClearXClicked(object? sender, HandledEventArgs e)
