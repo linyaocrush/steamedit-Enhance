@@ -105,8 +105,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		}
 		set
 		{
+			if (string.Equals(value, Name, StringComparison.Ordinal)) return;
 			SetPropertyValue(PropertyType.String, value, AppInfoPaths.Name);
-			ClearCachedProps();
 		}
 	}
 
@@ -141,7 +141,6 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		set
 		{
 			SetPropertyValue(PropertyType.String, value, AppInfoPaths.SortAs);
-			ClearCachedProps();
 		}
 	}
 
@@ -459,10 +458,16 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected void WriteEntryCore(BinaryWriter writer, int hashBlockCount, Action<BinaryWriter, PropertyTable> writePropertyTable)
 	{
 		PropertyTable table = PrepareWriteTable(out _);
-		string s = table.ToString();
-		byte[] bytes = Encoding.UTF8.GetBytes(s);
 		using var sha = SHA1.Create();
-		byte[] hash = sha.ComputeHash(bytes);
+		byte[] hash;
+		using (var cs = new CryptoStream(Stream.Null, sha, CryptoStreamMode.Write))
+		using (var sw = new StreamWriter(cs, Encoding.UTF8))
+		{
+			table.WriteTo(sw);
+			sw.Flush();
+			cs.FlushFinalBlock();
+			hash = sha.Hash!;
+		}
 		writer.Write(ID);
 		using BinaryWriter subWriter = new BinaryWriter(new MemoryStream());
 		subWriter.Write(_stuffBeforeHash);
@@ -477,6 +482,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			subMs.Position = afterChangeNumber;
 			byte[] tableData = new byte[subMs.Length - afterChangeNumber];
 			subMs.Read(tableData, 0, tableData.Length);
+			sha.Initialize();
 			byte[] tableHash = sha.ComputeHash(tableData);
 			// 重写：stuffBeforeHash + hash + changeNumber + tableHash + tableData
 			subMs.SetLength(0);
