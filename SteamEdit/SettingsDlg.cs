@@ -309,12 +309,7 @@ internal class SettingsDlg : LocalizableForm
 
     private void comboLanguage_SelectedIndexChanged(object? sender, EventArgs e)
     {
-        string cultureCode = comboLanguage.SelectedIndex switch
-        {
-            1 => "zh-CN",
-            2 => "zh-TW",
-            _ => "en"
-        };
+		string cultureCode = EnumMappings.GetLanguageCodeByIndex(comboLanguage.SelectedIndex);
         I18n.SetLanguage(cultureCode);
     }
 

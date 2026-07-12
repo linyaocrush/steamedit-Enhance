@@ -233,13 +233,7 @@ Rules:
 		CancellationToken cancellationToken = default,
 		string? existingTranslation = null)
 	{
-		string langDisplay = targetLanguage switch
-		{
-			"zh-CN" => "Simplified Chinese",
-			"zh-TW" => "Traditional Chinese",
-			"en" => "English",
-			_ => targetLanguage
-		};
+		string langDisplay = EnumMappings.GetAiDisplayName(targetLanguage);
 
 		// Build system prompt
 		string systemPrompt = string.IsNullOrWhiteSpace(customSystemPrompt)

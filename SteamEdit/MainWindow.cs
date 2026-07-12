@@ -474,21 +474,8 @@ internal class MainWindow : LocalizableForm
 		if (entry == null) return;
 		string gameName = entry.Name;
 		if (string.IsNullOrWhiteSpace(gameName)) return;
-		string lang = Settings.Default.AiTargetLanguage switch
-		{
-			"zh-CN" => "中文名",
-			"zh-TW" => "繁體中文名",
-			"en" => "English name",
-			_ => "translated name"
-		};
-		string query = Uri.EscapeDataString($"{gameName} {lang}");
-		string baseUrl = Settings.Default.SearchEngine switch
-		{
-			"Bing" => "https://www.bing.com/search?q=",
-			"Baidu" => "https://www.baidu.com/s?wd=",
-			"DuckDuckGo" => "https://duckduckgo.com/?q=",
-			_ => "https://www.google.com/search?q="
-		};
+		string query = Uri.EscapeDataString($"{gameName} {EnumMappings.GetSearchDisplayName(Settings.Default.AiTargetLanguage)}");
+		string baseUrl = EnumMappings.GetSearchEngineUrl(Settings.Default.SearchEngine);
 		string url = baseUrl + query;
 		Log.WriteLine("Search: Opening {0}", url);
 		try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose(); }
