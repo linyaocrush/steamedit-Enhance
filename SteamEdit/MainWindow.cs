@@ -98,9 +98,37 @@ internal class MainWindow : LocalizableForm
 		textSortAs.DataBindings.Add(nameof(TextBox.Text), pe, nameof(pe.SortAs), false, DataSourceUpdateMode.OnPropertyChanged);
 		checkHidden.DataBindings.Add(nameof(CheckBox.Checked), pe, nameof(pe.IsHidden), false, DataSourceUpdateMode.OnPropertyChanged);
 		checkCompleted.DataBindings.Add(nameof(CheckBox.Checked), pe, nameof(pe.IsCompleted), false, DataSourceUpdateMode.OnPropertyChanged);
+
+		// 初始化 ComboBox 项（必须在绑定之前，否则空 ComboBox 的 SelectedIndex 绑定会崩溃）
+		listControllerSupport.Items.Add("none");
+		listControllerSupport.Items.Add("partial");
+		listControllerSupport.Items.Add("full");
+		listControllerSupport.Format += (s, e) =>
+		{
+			if (e.ListItem is string raw)
+				e.Value = raw switch
+				{
+					"none" => Strings.MainWindow_Controller_None,
+					"partial" => Strings.MainWindow_Controller_Partial,
+					"full" => Strings.MainWindow_Controller_Full,
+					_ => raw,
+				};
+		};
+		listVR.Items.Add("default");
+		listVR.Items.Add("removed");
+		listVR.Format += (s, e) =>
+		{
+			if (e.ListItem is string raw)
+				e.Value = raw switch
+				{
+					"default" => Strings.MainWindow_VR_Default,
+					"removed" => Strings.MainWindow_VR_Removed,
+					_ => raw,
+				};
+		};
+
 		listControllerSupport.DataBindings.Add(nameof(ComboBox.SelectedIndex), pe, nameof(pe.ControllerSupportIndex), false, DataSourceUpdateMode.OnPropertyChanged);
 		listVR.DataBindings.Add(nameof(ComboBox.SelectedIndex), pe, nameof(pe.VRIndex), false, DataSourceUpdateMode.OnPropertyChanged);
-		listEntryType.DataBindings.Add(nameof(ComboBox.SelectedItem), pe, nameof(pe.EntryType), false, DataSourceUpdateMode.OnPropertyChanged);
 		textGameName.DataBindings.Add(nameof(ClearableTextBox.ClearXVisible), pe, nameof(pe.GameNameClearXVisible), false, DataSourceUpdateMode.OnPropertyChanged);
 		textSortAs.DataBindings.Add(nameof(ClearableTextBox.ClearXVisible), pe, nameof(pe.SortAsClearXVisible), false, DataSourceUpdateMode.OnPropertyChanged);
 
@@ -130,34 +158,6 @@ internal class MainWindow : LocalizableForm
 			entry.RevertModifiedProperty(AppInfoPaths.SortAs);
 			_listManager.NotifyEntryEdited(entry);
 			_editController.LoadEntry(entry);
-		};
-
-		// 初始化 ComboBox 项（始终存原始值，Format 事件处理显示文本）
-		listControllerSupport.Items.Add("none");
-		listControllerSupport.Items.Add("partial");
-		listControllerSupport.Items.Add("full");
-		listControllerSupport.Format += (s, e) =>
-		{
-			if (e.ListItem is string raw)
-				e.Value = raw switch
-				{
-					"none" => Strings.MainWindow_Controller_None,
-					"partial" => Strings.MainWindow_Controller_Partial,
-					"full" => Strings.MainWindow_Controller_Full,
-					_ => raw,
-				};
-		};
-		listVR.Items.Add("default");
-		listVR.Items.Add("removed");
-		listVR.Format += (s, e) =>
-		{
-			if (e.ListItem is string raw)
-				e.Value = raw switch
-				{
-					"default" => Strings.MainWindow_VR_Default,
-					"removed" => Strings.MainWindow_VR_Removed,
-					_ => raw,
-				};
 		};
 
 		// ComboBox 键盘拦截（阻止翻页按键改变选中项）
@@ -209,6 +209,7 @@ internal class MainWindow : LocalizableForm
 				listEntryType.Items.Add(kv.Key);
 		}
 		listEntryType.EndUpdate();
+		listEntryType.DataBindings.Add(nameof(ComboBox.SelectedItem), pe, nameof(pe.EntryType), false, DataSourceUpdateMode.OnPropertyChanged);
 
 		_listManager.SelectedEntryChanged += (_, entry) =>
 		{
