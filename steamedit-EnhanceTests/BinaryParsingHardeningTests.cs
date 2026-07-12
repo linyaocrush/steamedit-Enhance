@@ -380,7 +380,7 @@ public class BinaryParsingHardeningTests
         public System.Collections.Generic.IEnumerable<IAppInfoEntry> Entries => _entries;
         public event EventHandler Modified;
         public IAppInfoEntry FindEntry(uint AppID) => null;
-        public void Save(string path) { }
+        public void Save(string path, IFileSystem? fileSystem = null) { }
         public bool RevertEntry(IAppInfoEntry entry) => false;
         public void RemoveEntry(IAppInfoEntry entry) { }
     }

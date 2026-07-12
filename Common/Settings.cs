@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 
 namespace Common;
 
-internal class Settings
+internal class Settings : ISettings
 {
 	private static readonly PropertyInfo[] _cachedProperties = typeof(Settings).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 	public static readonly Settings Default = new Settings();

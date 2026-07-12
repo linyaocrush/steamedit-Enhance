@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Common;
+using steamedit_Enhance.Data;
 
 namespace steamedit_Enhance.Data.Impl;
 
@@ -27,23 +28,36 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 		return _entryLookup.TryGetValue(AppID, out var entry) ? entry : null;
 	}
 
-	public void Save(string path)
+	public void Save(string path, IFileSystem? fileSystem = null)
 	{
 		string tempPath = path + ".tmp";
 		try
 		{
-			using (FileStream tempStream = File.Create(tempPath))
+			using (Stream tempStream = fileSystem?.CreateFile(tempPath) ?? File.Create(tempPath))
 			using (BinaryWriter binaryWriter = new BinaryWriter(tempStream))
 			{
 				binaryWriter.Write(MagicNumber);
 				binaryWriter.Write(_unknownValueAtStart);
 				SaveEntries(binaryWriter);
 			}
-			File.Replace(tempPath, path, null);
+			if (fileSystem != null)
+				fileSystem.FileMove(tempPath, path, overwrite: true);
+			else
+				File.Replace(tempPath, path, null);
 		}
 		catch
 		{
-			try { if (File.Exists(tempPath)) File.Delete(tempPath); }
+			try
+			{
+				bool tempExists = fileSystem?.FileExists(tempPath) ?? File.Exists(tempPath);
+				if (tempExists)
+				{
+					if (fileSystem != null)
+						fileSystem.FileDelete(tempPath);
+					else
+						File.Delete(tempPath);
+				}
+			}
 			catch (Exception cleanupEx) { Log.WriteLine("AppInfoBase.Save cleanup failed: {0}", cleanupEx.Message); }
 			throw;
 		}

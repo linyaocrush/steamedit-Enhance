@@ -103,7 +103,7 @@ public class SteamDataTests
 		public string? LastSavePath { get; private set; }
 		public int SaveCallCount { get; private set; }
 
-		public void Save(string path)
+		public void Save(string path, IFileSystem? fileSystem = null)
 		{
 			LastSavePath = path;
 			SaveCallCount++;

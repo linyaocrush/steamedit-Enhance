@@ -72,7 +72,7 @@ public class MainViewModelTests
         public IEnumerable<IAppInfoEntry> Entries => Array.Empty<IAppInfoEntry>();
         public event EventHandler? Modified;
         public IAppInfoEntry? FindEntry(uint AppID) => null;
-        public void Save(string path) { }
+        public void Save(string path, IFileSystem? fileSystem = null) { }
         public bool RevertEntry(IAppInfoEntry entry) => false;
         public void RemoveEntry(IAppInfoEntry entry) { }
     }

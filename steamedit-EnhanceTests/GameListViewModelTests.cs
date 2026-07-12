@@ -58,7 +58,7 @@ public PropertyType? GetOriginalPropertyType(params string[] path) => null;
         public IEnumerable<IAppInfoEntry> Entries => _entries;
         public event EventHandler? Modified;
         public IAppInfoEntry? FindEntry(uint AppID) => _entries.FirstOrDefault(e => e.ID == AppID);
-        public void Save(string path) { }
+        public void Save(string path, IFileSystem? fileSystem = null) { }
         public bool RevertEntry(IAppInfoEntry entry) => entry.Revert();
         public void RemoveEntry(IAppInfoEntry entry) => _entries.Remove(entry);
     }

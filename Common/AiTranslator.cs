@@ -10,23 +10,31 @@ using System.Threading.Tasks;
 
 namespace Common;
 
-internal static class AiTranslator
+internal sealed class AiTranslator
 {
-	private static int _consecutiveFailures;
-	private static readonly object _failureLock = new();
+	private int _consecutiveFailures;
+	private readonly object _failureLock = new();
+	private readonly HttpClient _httpClient;
 
 	private static readonly SocketsHttpHandler _sharedHandler = new()
 	{
 		PooledConnectionLifetime = TimeSpan.FromMinutes(5)
 	};
 
-	private static HttpClient CreateClient()
+	internal AiTranslator(HttpClient? httpClient = null)
+	{
+		_httpClient = httpClient ?? CreateDefaultClient();
+	}
+
+	private static HttpClient CreateDefaultClient()
 	{
 		int timeout = Settings.Default.AiTimeoutSeconds;
 		return new HttpClient(_sharedHandler) { Timeout = TimeSpan.FromSeconds(timeout) };
 	}
 
-	public static async Task<List<string>> FetchModelsAsync(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
+	internal static readonly AiTranslator Default = new();
+
+	internal async Task<List<string>> FetchModelsAsyncImpl(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
 	{
 		apiUrl = apiUrl.TrimEnd('/');
 
@@ -45,8 +53,7 @@ internal static class AiTranslator
 		HttpResponseMessage response;
 		try
 		{
-			using var client = CreateClient();
-			response = await client.SendAsync(request, cancellationToken);
+			response = await _httpClient.SendAsync(request, cancellationToken);
 		}
 		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 		{
@@ -107,7 +114,7 @@ Rules:
 
 	public const string DefaultUserMessage = "{game_name}";
 
-	private static async Task<string> CallChatCompletionAsync(
+	internal async Task<string> CallChatCompletionAsync(
 		string systemPrompt,
 		string userMessage,
 		string apiUrl,
@@ -144,7 +151,6 @@ Rules:
 		const int maxRetries = 3;
 		const int maxBackoffMs = 30_000;
 		string responseBody = null!;
-		using var client = CreateClient();
 
 		int circuitDelayMs = 0;
 		lock (_failureLock)
@@ -168,7 +174,7 @@ Rules:
 			HttpResponseMessage response;
 			try
 			{
-				response = await client.SendAsync(request, cancellationToken);
+				response = await _httpClient.SendAsync(request, cancellationToken);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{
@@ -244,7 +250,7 @@ Rules:
 		return result?.Trim() ?? "";
 	}
 
-	public static async Task<string> TranslateWithContextAsync(
+	internal async Task<string> TranslateWithContextAsyncImpl(
 		string gameName,
 		string targetLanguage,
 		string? context = null,
@@ -307,17 +313,7 @@ Rules:
 		return result;
 	}
 
-	public static string? BuildContext(string developer, string publisher, string type)
-	{
-		var parts = new List<string>();
-		if (!string.IsNullOrWhiteSpace(developer)) parts.Add("Developer: " + developer);
-		if (!string.IsNullOrWhiteSpace(publisher)) parts.Add("Publisher: " + publisher);
-		if (!string.IsNullOrWhiteSpace(type)) parts.Add("Type: " + type);
-
-		return parts.Count > 0 ? string.Join("\n", parts) : null;
-	}
-
-	public static async Task<string> AnalyzeTranslationRulesAsync(
+	internal async Task<string> AnalyzeTranslationRulesAsyncImpl(
 		string glossaryJsonContent, string? customSystemPrompt = null, CancellationToken cancellationToken = default)
 	{
 		string systemPromptSection = "";
@@ -362,4 +358,31 @@ Translation pairs:
 		Log.WriteLine("AI: Translation rules analysis complete, length={0}", result.Length);
 		return result;
 	}
+
+	public static string? BuildContext(string developer, string publisher, string type)
+	{
+		var parts = new List<string>();
+		if (!string.IsNullOrWhiteSpace(developer)) parts.Add("Developer: " + developer);
+		if (!string.IsNullOrWhiteSpace(publisher)) parts.Add("Publisher: " + publisher);
+		if (!string.IsNullOrWhiteSpace(type)) parts.Add("Type: " + type);
+
+		return parts.Count > 0 ? string.Join("\n", parts) : null;
+	}
+
+	public static async Task<List<string>> FetchModelsAsync(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
+		=> await Default.FetchModelsAsyncImpl(apiUrl, apiKey, cancellationToken);
+
+	public static async Task<string> TranslateWithContextAsync(
+		string gameName,
+		string targetLanguage,
+		string? context = null,
+		string? customSystemPrompt = null,
+		string? customUserMessage = null,
+		CancellationToken cancellationToken = default,
+		string? existingTranslation = null)
+		=> await Default.TranslateWithContextAsyncImpl(gameName, targetLanguage, context, customSystemPrompt, customUserMessage, cancellationToken, existingTranslation);
+
+	public static async Task<string> AnalyzeTranslationRulesAsync(
+		string glossaryJsonContent, string? customSystemPrompt = null, CancellationToken cancellationToken = default)
+		=> await Default.AnalyzeTranslationRulesAsyncImpl(glossaryJsonContent, customSystemPrompt, cancellationToken);
 }

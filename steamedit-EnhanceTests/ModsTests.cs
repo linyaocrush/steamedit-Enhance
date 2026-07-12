@@ -206,7 +206,7 @@ public class ModsTests
             }
 
             var appInfo = new TestAppInfo();
-            var mods = Mods.Load(tempFile, appInfo);
+            var mods = Mods.Load(tempFile, appInfo, RealFileSystem.Instance);
             Assert.AreEqual(0, appInfo.Entries.Count());
         }
         finally
@@ -221,7 +221,7 @@ public class ModsTests
         public IEnumerable<IAppInfoEntry> Entries => _entries;
         public event System.EventHandler Modified;
         public IAppInfoEntry FindEntry(uint AppID) => null;
-        public void Save(string path) { }
+        public void Save(string path, IFileSystem? fileSystem = null) { }
         public bool RevertEntry(IAppInfoEntry entry) => false;
         public void RemoveEntry(IAppInfoEntry entry) { }
         public void AddEntry(IAppInfoEntry entry) => _entries.Add(entry);
@@ -326,7 +326,7 @@ public class ModsTests
         try
         {
             File.WriteAllBytes(tempFile, originalData);
-            var mods = Mods.Load(tempFile, appInfo);
+            var mods = Mods.Load(tempFile, appInfo, RealFileSystem.Instance);
             var mockFs = new MockFileSystem();
             mockFs.Files[tempFile] = originalData;
 
@@ -362,7 +362,7 @@ public class ModsTests
         File.Delete(tempFile);
         try
         {
-            var mods = Mods.Load(tempFile, appInfo);
+            var mods = Mods.Load(tempFile, appInfo, RealFileSystem.Instance);
             var mockFs = new MockFileSystem();
 
             mods.Save(tempFile, mockFs);

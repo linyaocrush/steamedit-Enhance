@@ -22,12 +22,13 @@ internal class Mods
 		_appInfo = appInfo;
 	}
 
-	public static Mods Load(string path, IAppInfo appInfo)
+	public static Mods Load(string path, IAppInfo appInfo, IFileSystem? fileSystem = null)
 	{
 		Mods mods = new Mods(appInfo);
-		if (File.Exists(path))
+		fileSystem ??= RealFileSystem.Instance;
+		if (fileSystem.FileExists(path))
 		{
-			using BinaryReader binaryReader = new BinaryReader(File.OpenRead(path));
+			using BinaryReader binaryReader = new BinaryReader(fileSystem.OpenRead(path));
 			uint version = binaryReader.ReadUInt32();
 			if (version >= 4u && version <= 6u)
 			{

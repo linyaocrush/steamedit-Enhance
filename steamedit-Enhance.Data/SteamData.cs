@@ -145,7 +145,7 @@ internal class SteamData : ISteamDataService, IGameMetadataService, IPersistence
 		AppInfoData.Modified += OnEntryModified;
 		ModInfoPath = Path.GetFullPath(Path.Combine(_initProps.DataDirectory, "mods.dat"));
 		Log.WriteLine("  Loading Mods: {0}", ModInfoPath);
-		_modData = Mods.Load(ModInfoPath, AppInfoData);
+		_modData = Mods.Load(ModInfoPath, AppInfoData, FileSystem);
 		Log.WriteLine("  SteamData initialized!");
 		NeedsSave = false;
 		foreach (var entry in AppInfoData.Entries)
@@ -186,7 +186,7 @@ internal class SteamData : ISteamDataService, IGameMetadataService, IPersistence
 			{
 				FileSystem.FileCopy(AppInfoPath, backupPath, overwrite: true);
 			}
-			AppInfoData.Save(AppInfoPath);
+			AppInfoData.Save(AppInfoPath, FileSystem);
 			Log.WriteLine("  AppInfo saved");
 			NeedsApply = false;
 		}

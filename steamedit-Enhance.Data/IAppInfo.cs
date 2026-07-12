@@ -12,7 +12,7 @@ internal interface IAppInfo
 
 	IAppInfoEntry? FindEntry(uint AppID);
 
-	void Save(string path);
+	void Save(string path, IFileSystem? fileSystem = null);
 
 	bool RevertEntry(IAppInfoEntry entry);
 
