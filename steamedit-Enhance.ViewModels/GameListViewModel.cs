@@ -178,17 +178,9 @@ internal sealed class GameListViewModel : ViewModelBase
         bool isNumeric = int.TryParse(trimmed, out _);
         string[]? patternParts = string.IsNullOrEmpty(trimmed) ? null : trimmed.Split(' ', '\t', '　');
 
-        var filtered = AllGames.Where(g =>
-        {
-            if ((g.Type & _filterFlags) == 0) return false;
-            if (_showMode == ShowEntriesMode.OnlyModified && !g.IsModified) return false;
-            if (_showMode == ShowEntriesMode.OnlyUnmodified && g.IsModified) return false;
-            if (string.IsNullOrEmpty(trimmed)) return true;
-            if (isNumeric) return g.ID.ToString().StartsWith(trimmed);
-            
-            // 使用缓存的模糊匹配结果
-            return IsFuzzyMatchCached(g, trimmed, patternParts!);
-        }).ToList();
+        var filtered = ApplySearchFilter(AllGames, trimmed, isNumeric, patternParts);
+        filtered = ApplyTypeFilter(filtered);
+        filtered = ApplyShowModeFilter(filtered);
 
         ApplySortTo(filtered);
 
@@ -196,6 +188,27 @@ internal sealed class GameListViewModel : ViewModelBase
         foreach (var g in filtered)
             VisibleGames.Add(g);
         VisibleCount = VisibleGames.Count;
+    }
+
+    private List<GameItemViewModel> ApplySearchFilter(IEnumerable<GameItemViewModel> games, string trimmed, bool isNumeric, string[]? patternParts)
+    {
+        return games.Where(g =>
+        {
+            if (string.IsNullOrEmpty(trimmed)) return true;
+            if (isNumeric) return g.ID.ToString().StartsWith(trimmed);
+            return IsFuzzyMatchCached(g, trimmed, patternParts!);
+        }).ToList();
+    }
+
+    private List<GameItemViewModel> ApplyTypeFilter(IEnumerable<GameItemViewModel> games)
+    {
+        return games.Where(g => (g.Type & _filterFlags) != 0).ToList();
+    }
+
+    private List<GameItemViewModel> ApplyShowModeFilter(IEnumerable<GameItemViewModel> games)
+    {
+        if (_showMode == ShowEntriesMode.All) return games.ToList();
+        return games.Where(g => _showMode == ShowEntriesMode.OnlyModified ? g.IsModified : !g.IsModified).ToList();
     }
 
     public void ApplySort()
