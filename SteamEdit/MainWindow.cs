@@ -685,7 +685,7 @@ internal class MainWindow : LocalizableForm
 
 	private void OnBtnBatchReplace_Click(object? sender, EventArgs e)
 	{
-		if (_ctx.Entries == null || _ctx.Entries.Count == 0) return;
+		if (_ctx.Entries.Count == 0) return;
 		using var dialog = new BatchReplaceDialog(_ctx.Entries);
 		if (dialog.ShowDialog(this) == DialogResult.OK)
 		{

@@ -341,7 +341,7 @@ internal class GameListManager : IDisposable
 
 		int totalCount = 0;
 		_modifiedCount = 0;
-		_ctx.BaseEntries = new List<IAppInfoEntry>();
+		_ctx._baseEntries = new List<IAppInfoEntry>();
 		foreach (var ent in _dataStore.AppInfo.Entries)
 		{
 			if (ent.Name == null) continue;
@@ -350,7 +350,7 @@ internal class GameListManager : IDisposable
 			if ((ent.Type & _currentFilters) == 0) continue;
 			if (showMode == ShowEntriesMode.OnlyModified && !ent.IsModified) continue;
 			if (showMode == ShowEntriesMode.OnlyUnmodified && ent.IsModified) continue;
-			_ctx.BaseEntries.Add(ent);
+			_ctx._baseEntries.Add(ent);
 		}
 		_modifiedCountDirty = false;
 		_ctx.TotalEntryCount = totalCount;
@@ -359,7 +359,7 @@ internal class GameListManager : IDisposable
 
 		if (selected != null)
 		{
-			int newIdx = _ctx.Entries.IndexOf(selected);
+			int newIdx = _ctx._entries.IndexOf(selected);
 			if (newIdx >= 0) _appSelection.SelectedIndex = newIdx;
 		}
 		if (_appSelection.SelectedIndex < 0 && _appSelection.Items.Count > 0)
@@ -371,19 +371,19 @@ internal class GameListManager : IDisposable
 	public void ResortEntry(IAppInfoEntry entry)
 	{
 		var selected = GetSelectedEntry();
-		int i = _ctx.Entries.IndexOf(entry);
+		int i = _ctx._entries.IndexOf(entry);
 		if (i < 0) return;
 		int index = i;
 		while (i > 0 && StringTitleComparer.CompareStrings(entry.SortAs, _ctx.Entries[i - 1].SortAs) < 0)
 		{
-			_ctx.Entries[i] = _ctx.Entries[i - 1];
-			_ctx.Entries[i - 1] = entry;
+			_ctx._entries[i] = _ctx._entries[i - 1];
+			_ctx._entries[i - 1] = entry;
 			i--;
 		}
-		for (; i < _ctx.Entries.Count - 1 && StringTitleComparer.CompareStrings(entry.SortAs, _ctx.Entries[i + 1].SortAs) > 0; i++)
+		for (; i < _ctx._entries.Count - 1 && StringTitleComparer.CompareStrings(entry.SortAs, _ctx._entries[i + 1].SortAs) > 0; i++)
 		{
-			_ctx.Entries[i] = _ctx.Entries[i + 1];
-			_ctx.Entries[i + 1] = entry;
+			_ctx._entries[i] = _ctx._entries[i + 1];
+			_ctx._entries[i + 1] = entry;
 		}
 		_appSelection.BeginUpdate();
 		int lo = Math.Min(index, i);
@@ -393,7 +393,7 @@ internal class GameListManager : IDisposable
 		_appSelection.EndUpdate();
 		if (selected != null)
 		{
-			int newIdx = _ctx.Entries.IndexOf(selected);
+			int newIdx = _ctx._entries.IndexOf(selected);
 			if (newIdx >= 0) _appSelection.SelectedIndex = newIdx;
 		}
 	}
@@ -406,7 +406,7 @@ internal class GameListManager : IDisposable
 
 		if (sortField == "AppId")
 		{
-			_ctx.Entries.Sort((a, b) =>
+			_ctx._entries.Sort((a, b) =>
 			{
 				int n = a.ID.CompareTo(b.ID);
 				if (descending) n = -n;
@@ -416,7 +416,7 @@ internal class GameListManager : IDisposable
 		}
 		else
 		{
-			_ctx.Entries.Sort((a, b) =>
+			_ctx._entries.Sort((a, b) =>
 			{
 				int n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
 				if (descending) n = -n;
@@ -427,7 +427,7 @@ internal class GameListManager : IDisposable
 		RebuildListBoxItems();
 		if (selected != null)
 		{
-			int newIdx = _ctx.Entries.IndexOf(selected);
+			int newIdx = _ctx._entries.IndexOf(selected);
 			if (newIdx >= 0) _appSelection.SelectedIndex = newIdx;
 		}
 		if (_appSelection.SelectedIndex < 0 && _appSelection.Items.Count > 0)
@@ -482,7 +482,7 @@ internal class GameListManager : IDisposable
 
 	public void InvalidateItem(IAppInfoEntry entry)
 	{
-		int idx = _ctx.Entries.IndexOf(entry);
+		int idx = _ctx._entries.IndexOf(entry);
 		if (idx >= 0)
 			_appSelection.Invalidate(_appSelection.GetItemRectangle(idx));
 	}
@@ -504,7 +504,7 @@ internal class GameListManager : IDisposable
 	{
 		ClearDisplayNameCache();
 		ResortEntry(entry);
-		int idx = _ctx.Entries.IndexOf(entry);
+		int idx = _ctx._entries.IndexOf(entry);
 		if (idx >= 0) SelectIndex(idx);
 	}
 
@@ -526,33 +526,33 @@ internal class GameListManager : IDisposable
 
 		if (string.IsNullOrEmpty(trimmed))
 		{
-			_ctx.Entries = new List<IAppInfoEntry>(_ctx.BaseEntries);
+			_ctx._entries = new List<IAppInfoEntry>(_ctx.BaseEntries);
 			_ctx.CurrentSearchTerm = "";
 			SortEntries();
 			return;
 		}
 
 		string[] patternParts = trimmed.Split(' ', '\t', '　');
-		List<IAppInfoEntry> source;
+		IReadOnlyList<IAppInfoEntry> source;
 		if (!string.IsNullOrEmpty(_ctx.CurrentSearchTerm) && trimmed.StartsWith(_ctx.CurrentSearchTerm, StringComparison.OrdinalIgnoreCase))
 			source = _ctx.Entries;
 		else if (!string.IsNullOrEmpty(_ctx.CurrentSearchTerm) && _ctx.CurrentSearchTerm.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
-			source = _ctx.BaseEntries;
+			source = _ctx._baseEntries;
 		else
-			source = _ctx.BaseEntries;
+			source = _ctx._baseEntries;
 
-		_ctx.Entries = new List<IAppInfoEntry>();
+		_ctx._entries = new List<IAppInfoEntry>();
 		if (int.TryParse(trimmed, out _))
 		{
 			foreach (var ent in source)
 				if (ent.ID.ToString().StartsWith(trimmed))
-					_ctx.Entries.Add(ent);
+					_ctx._entries.Add(ent);
 		}
 		else
 		{
 			foreach (var ent in source)
 				if (IsFuzzyMatch(GetDisplayName(ent), patternParts))
-					_ctx.Entries.Add(ent);
+					_ctx._entries.Add(ent);
 		}
 		_ctx.CurrentSearchTerm = trimmed;
 		SortEntries();

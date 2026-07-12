@@ -6,8 +6,11 @@ namespace SteamEdit;
 
 internal class GameDataContext
 {
-	public List<IAppInfoEntry> Entries { get; internal set; } = new();
-	public List<IAppInfoEntry> BaseEntries { get; internal set; } = new();
+	internal List<IAppInfoEntry> _entries = new();
+	internal List<IAppInfoEntry> _baseEntries = new();
+
+	public IReadOnlyList<IAppInfoEntry> Entries => _entries;
+	public IReadOnlyList<IAppInfoEntry> BaseEntries => _baseEntries;
 	public int TotalEntryCount { get; internal set; }
 	public string CurrentSearchTerm { get; internal set; } = "";
 	public Dictionary<int, string> DisplayNames { get; } = new();

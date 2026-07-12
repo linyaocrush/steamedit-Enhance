@@ -157,7 +157,7 @@ internal class EditController : IDisposable
 	{
 		if (_listManager.GetSelectedEntry() != record.Entry)
 		{
-			int idx = _ctx.Entries.IndexOf(record.Entry);
+			int idx = _ctx._entries.IndexOf(record.Entry);
 			if (idx >= 0) _listManager.SelectIndex(idx);
 		}
 
@@ -325,7 +325,7 @@ internal class EditController : IDisposable
 			_undoManager.Push(entry, AppInfoPaths.SortAs, PropertyType.String, entry.SortAs);
 			entry.SortAs = _textSortAs.Text;
 			_listManager.NotifyEntryEdited(entry);
-			int idx = _ctx.Entries.IndexOf(entry);
+			int idx = _ctx._entries.IndexOf(entry);
 			if (idx >= 0) _listManager.SelectIndex(idx);
 			_textSortAs.ForeColor = entry.HasSortAs ? _defaultSortAsColor : Color.Gray;
 		}
