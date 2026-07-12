@@ -12,9 +12,16 @@ namespace Common;
 
 internal static class AiTranslator
 {
-	private static readonly HttpClient _httpClient = new HttpClient(
-			new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) })
-		{ Timeout = TimeSpan.FromSeconds(120) };
+	private static readonly SocketsHttpHandler _sharedHandler = new()
+	{
+		PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+	};
+
+	private static HttpClient CreateClient()
+	{
+		int timeout = Settings.Default.AiTimeoutSeconds;
+		return new HttpClient(_sharedHandler) { Timeout = TimeSpan.FromSeconds(timeout) };
+	}
 
 	public static async Task<List<string>> FetchModelsAsync(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
 	{
@@ -35,7 +42,8 @@ internal static class AiTranslator
 		HttpResponseMessage response;
 		try
 		{
-			response = await _httpClient.SendAsync(request, cancellationToken);
+			using var client = CreateClient();
+			response = await client.SendAsync(request, cancellationToken);
 		}
 		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 		{
@@ -132,6 +140,7 @@ Rules:
 
 		const int maxRetries = 3;
 		string responseBody = null!;
+		using var client = CreateClient();
 		for (int attempt = 0; ; attempt++)
 		{
 			using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
@@ -142,7 +151,7 @@ Rules:
 			HttpResponseMessage response;
 			try
 			{
-				response = await _httpClient.SendAsync(request, cancellationToken);
+				response = await client.SendAsync(request, cancellationToken);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{

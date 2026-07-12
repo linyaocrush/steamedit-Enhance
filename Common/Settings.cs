@@ -115,6 +115,9 @@ internal class Settings
 	[DefaultValue("")]
 	public string AiTranslationRules { get => Get<string>(); set => Set(value); }
 
+	[DefaultValue(120)]
+	public int AiTimeoutSeconds { get => Get<int>(); set => Set(Math.Max(value, 10)); }
+
 	[DefaultValue(3)]
 	public int AiBatchTranslateConcurrency { get => Get<int>(); set => Set(Math.Max(value, 1)); }
 
