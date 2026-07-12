@@ -20,7 +20,7 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
     private bool _isPaused;
 
     private CancellationTokenSource? _cts;
-    private readonly ManualResetEventSlim _pauseEvent = new(true);
+    private volatile bool _isPausedFlag;
 
     public int Progress { get => _progress; private set => SetProperty(ref _progress, value); }
     public int Total { get => _total; private set => SetProperty(ref _total, value); }
@@ -57,7 +57,9 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
             int index = 0;
             await Parallel.ForEachAsync(entries, parallelOptions, async (entry, ct) =>
             {
-                _pauseEvent.Wait(ct);
+                while (_isPausedFlag && !ct.IsCancellationRequested)
+                    await Task.Delay(100, ct);
+                ct.ThrowIfCancellationRequested();
                 int current = Interlocked.Increment(ref index);
                 Progress = current;
                 await TranslateOneAsync(entry, targetLanguage, customSystemPrompt, customUserMessage, ct);
@@ -92,23 +94,17 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
 
     public void Cancel()
     {
-        if (_isPaused)
-            _pauseEvent.Set();
         _cts?.Cancel();
     }
 
     public void Dispose()
     {
         try { _cts?.Dispose(); } catch (ObjectDisposedException) { }
-        _pauseEvent?.Dispose();
     }
 
     private void OnPausedChanged()
     {
-        if (_isPaused)
-            _pauseEvent.Reset();
-        else
-            _pauseEvent.Set();
+        _isPausedFlag = _isPaused;
     }
 
     private async Task TranslateOneAsync(
