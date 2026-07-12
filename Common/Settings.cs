@@ -126,6 +126,13 @@ internal class Settings
 	[DefaultValue(3)]
 	public int AiBatchTranslateConcurrency { get => Get<int>(); set => Set(Math.Max(value, 1)); }
 
+	// -- 日志设置 --
+	[DefaultValue(Log.LogLevel.Info)]
+	public Log.LogLevel LogLevel { get => Get<Log.LogLevel>(); set => Set(value); }
+	
+	[DefaultValue(false)]
+	public bool EnableDebugLogging { get => Get<bool>(); set => Set(value); }
+
 	// -- 排序设置 --
 	[DefaultValue("Name")]
 	public string SortField { get => Get<string>(); set => Set(value); }

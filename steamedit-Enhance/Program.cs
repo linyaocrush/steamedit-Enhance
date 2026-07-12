@@ -141,6 +141,16 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        // 配置日志级别
+#if DEBUG
+        if (Settings.Default.EnableDebugLogging)
+            Log.SetMinimumLevel(Log.LogLevel.Debug);
+        else
+            Log.SetMinimumLevel(Settings.Default.LogLevel);
+#else
+        Log.SetMinimumLevel(Settings.Default.LogLevel);
+#endif
+        
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += Application_ThreadException;
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;

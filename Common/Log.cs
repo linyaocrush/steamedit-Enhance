@@ -10,41 +10,128 @@ internal static class Log
 	private static readonly object _syncObj;
 	private static readonly string _path;
 	private static StreamWriter? _writer;
+	
+	// 默认启用Debug级别仅用于调试构建，生产环境默认关闭
+#if DEBUG
+	private static bool _enableDebug = true;
+	private static bool _enableInfo = true;
+	private static bool _enableWarning = true;
+	private static bool _enableError = true;
+#else
+	private static bool _enableDebug = false;
+	private static bool _enableInfo = true;
+	private static bool _enableWarning = true;
+	private static bool _enableError = true;
+#endif
 
 	public static string FilePath => _path;
+
+	public enum LogLevel
+	{
+		Debug = 0,
+		Info = 1,
+		Warning = 2,
+		Error = 3
+	}
 
 	static Log()
 	{
 		_syncObj = new object();
 		_path = Path.Combine(AppHelper.GetAppDirectory(), "log.txt");
 		_writer = new StreamWriter(_path, append: true) { AutoFlush = true };
-		WriteLines("---", DateTime.Now.ToLongDateString() + " - " + DateTime.Now.ToLongTimeString(), "STARTING UP: " + Environment.CommandLine);
+		WriteLines(LogLevel.Info, "---", DateTime.Now.ToLongDateString() + " - " + DateTime.Now.ToLongTimeString(), "STARTING UP: " + Environment.CommandLine);
 		AppDomain.CurrentDomain.ProcessExit += (_, _) => Close();
+	}
+
+	/// <summary>
+	/// 配置日志级别启用状态
+	/// </summary>
+	public static void ConfigureLevels(bool debug, bool info, bool warning, bool error)
+	{
+		_enableDebug = debug;
+		_enableInfo = info;
+		_enableWarning = warning;
+		_enableError = error;
+	}
+
+	/// <summary>
+	/// 设置最低日志级别（包含）
+	/// </summary>
+	public static void SetMinimumLevel(LogLevel level)
+	{
+		_enableDebug = level <= LogLevel.Debug;
+		_enableInfo = level <= LogLevel.Info;
+		_enableWarning = level <= LogLevel.Warning;
+		_enableError = level <= LogLevel.Error;
 	}
 
 	public static void WriteLine(string line)
 	{
-		WriteLines(line);
+		WriteLines(LogLevel.Info, line);
 	}
 
 	public static void WriteLine(string fmt, params object[] args)
 	{
-		WriteLines(string.Format(fmt, args));
+		WriteLines(LogLevel.Info, string.Format(fmt, args));
+	}
+
+	public static void WriteLine(LogLevel level, string line)
+	{
+		WriteLines(level, line);
+	}
+
+	public static void WriteLine(LogLevel level, string fmt, params object[] args)
+	{
+		WriteLines(level, string.Format(fmt, args));
 	}
 
 	private static void WriteLines(params string[] lines)
 	{
+		WriteLines(LogLevel.Info, lines);
+	}
+
+	private static void WriteLines(LogLevel level, params string[] lines)
+	{
+		if (!IsLevelEnabled(level)) return;
+		
+		string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+		string levelStr = GetLevelString(level);
+		
 		lock (_syncObj)
 		{
 			if (_writer == null) return;
 			foreach (string line in lines)
 			{
-				_writer.WriteLine(line);
+				_writer.WriteLine($"{timestamp} [{levelStr}] {line}");
 			}
 #if DEBUG
-			Console.WriteLine(string.Join(Environment.NewLine, lines));
+			Console.WriteLine($"[{levelStr}] {string.Join(Environment.NewLine + $"[{levelStr}] ", lines)}");
 #endif
 		}
+	}
+	
+	private static bool IsLevelEnabled(LogLevel level)
+	{
+		return level switch
+		{
+			LogLevel.Debug => _enableDebug,
+			LogLevel.Info => _enableInfo,
+			LogLevel.Warning => _enableWarning,
+			LogLevel.Error => _enableError,
+			_ => true
+		};
+	}
+	
+	private static string GetLevelString(LogLevel level)
+	{
+		return level switch
+		{
+			LogLevel.Debug => "DBG",
+			LogLevel.Info => "INF",
+			LogLevel.Warning => "WRN",
+			LogLevel.Error => "ERR",
+			_ => "???"
+		};
 	}
 
 	public static string[] GetRecentLines(int count = 100)
