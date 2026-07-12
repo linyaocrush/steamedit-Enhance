@@ -95,6 +95,9 @@ internal static class Program
                 Log.WriteLine("Load cancelled by user or timed out");
                 cts.Cancel();
                 try { task.Wait(TimeSpan.FromSeconds(5), cts.Token); } catch (OperationCanceledException) { }
+                // 部分初始化的 SteamData 需要在后台回收
+                result?.Shutdown();
+                cts.Dispose();
                 return null;
             }
         }
