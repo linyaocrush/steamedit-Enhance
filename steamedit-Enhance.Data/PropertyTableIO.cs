@@ -55,18 +55,26 @@ internal static class PropertyTableIO
 
 	private static string ReadWideString_0x00000000(BinaryReader reader)
 	{
-		StringBuilder stringBuilder = new StringBuilder();
 		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
-		long maxChars = remaining / 2;
-		while (stringBuilder.Length < maxChars)
+		if (remaining <= 0)
+			throw new InvalidDataException("ReadWideString: no data remaining");
+
+		int byteCount = (int)Math.Min(remaining, MaxZStringBuffer);
+		byte[] buffer = reader.ReadBytes(byteCount);
+		int nullPos = -1;
+		for (int i = 0; i < buffer.Length - 1; i += 2)
 		{
-			char c = (char)reader.ReadUInt16();
-			if (c == 0) break;
-			stringBuilder.Append(c);
+			if (buffer[i] == 0 && buffer[i + 1] == 0)
+			{
+				nullPos = i;
+				break;
+			}
 		}
-		if (stringBuilder.Length >= maxChars)
-			throw new InvalidDataException("ReadWideString: null terminator not found before end of stream");
-		return stringBuilder.ToString();
+		if (nullPos < 0)
+			throw new InvalidDataException("ReadWideString: null terminator not found");
+		// 将流位置回退到 null 终止符之后
+		reader.BaseStream.Position -= byteCount - (nullPos + 2);
+		return Encoding.Unicode.GetString(buffer, 0, nullPos);
 	}
 
 	internal static void WriteString_0x00000000(BinaryWriter writer, string str) => WriteZString(writer, str);
