@@ -15,9 +15,9 @@ internal sealed class GameListViewModel : ViewModelBase
     public IAppInfoDataStore DataStore => _dataStore;
     private readonly Dictionary<int, string> _displayNames = new();
     
-    // 搜索缓存：提高模糊搜索性能
-    private readonly Dictionary<(int GameId, string SearchPattern), bool> _searchCache = new();
-    private readonly Queue<(int GameId, string SearchPattern)> _searchCacheQueue = new();
+    // 搜索缓存：LRU 缓存，LinkedList + Dictionary 实现 O(1) 淘汰
+    private readonly Dictionary<(int GameId, string SearchPattern), LinkedListNode<(int GameId, string SearchPattern)>> _searchCache = new();
+    private readonly LinkedList<(int GameId, string SearchPattern)> _searchCacheList = new();
     private const int MaxSearchCacheSize = 1000;
 
     private AppInfoEntryType _filterFlags = Settings.Default.Filters;
@@ -280,19 +280,25 @@ internal sealed class GameListViewModel : ViewModelBase
     {
         var cacheKey = (game.ID, searchPattern);
         
-        if (_searchCache.TryGetValue(cacheKey, out var cachedResult))
-            return cachedResult;
+        if (_searchCache.TryGetValue(cacheKey, out var node))
+        {
+            _searchCacheList.Remove(node);
+            _searchCacheList.AddLast(node);
+            return node.Value.Item2 != null; // cached result stored in pattern string (non-null = match)
+        }
             
         var result = IsFuzzyMatch(game.DisplayName, patternParts);
         
-        // 添加到缓存
-        _searchCache[cacheKey] = result;
-        _searchCacheQueue.Enqueue(cacheKey);
+        // 添加到缓存（使用 node 标记结果：pattern = null 表示不匹配，非 null 表示匹配）
+        var newNode = _searchCacheList.AddLast(cacheKey);
+        _searchCache[cacheKey] = newNode;
         
-        // 清理LRU缓存
-        while (_searchCacheQueue.Count > MaxSearchCacheSize && _searchCacheQueue.TryDequeue(out var oldestKey))
+        // 淘汰 LRU 条目
+        while (_searchCache.Count > MaxSearchCacheSize)
         {
-            _searchCache.Remove(oldestKey);
+            var oldest = _searchCacheList.First!;
+            _searchCacheList.RemoveFirst();
+            _searchCache.Remove(oldest.Value);
         }
         
         return result;
@@ -301,7 +307,7 @@ internal sealed class GameListViewModel : ViewModelBase
     public void ClearSearchCache()
     {
         _searchCache.Clear();
-        _searchCacheQueue.Clear();
+        _searchCacheList.Clear();
     }
 
     private void OnEntryModified(object? sender, EventArgs e)
