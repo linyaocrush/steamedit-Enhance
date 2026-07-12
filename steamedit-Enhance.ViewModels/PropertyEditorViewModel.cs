@@ -41,61 +41,37 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
     public string GameName
     {
         get => _gameName;
-        set
-        {
-            if (SetProperty(ref _gameName, value) && !_isSettingUp)
-                OnGameNameChanged(value);
-        }
+        set => TrySetProperty(ref _gameName, value, OnGameNameChanged);
     }
 
     public string SortAs
     {
         get => _sortAs;
-        set
-        {
-            if (SetProperty(ref _sortAs, value) && !_isSettingUp)
-                OnSortAsChanged(value);
-        }
+        set => TrySetProperty(ref _sortAs, value, OnSortAsChanged);
     }
 
     public bool IsHidden
     {
         get => _isHidden;
-        set
-        {
-            if (SetProperty(ref _isHidden, value) && !_isSettingUp)
-                OnIsHiddenChanged(value);
-        }
+        set => TrySetProperty(ref _isHidden, value, OnIsHiddenChanged);
     }
 
     public bool IsCompleted
     {
         get => _isCompleted;
-        set
-        {
-            if (SetProperty(ref _isCompleted, value) && !_isSettingUp)
-                OnIsCompletedChanged(value);
-        }
+        set => TrySetProperty(ref _isCompleted, value, OnIsCompletedChanged);
     }
 
     public int ControllerSupportIndex
     {
         get => _controllerSupportIndex;
-        set
-        {
-            if (SetProperty(ref _controllerSupportIndex, value) && !_isSettingUp)
-                OnControllerSupportChanged(value);
-        }
+        set => TrySetProperty(ref _controllerSupportIndex, value, OnControllerSupportChanged);
     }
 
     public int VRIndex
     {
         get => _vrIndex;
-        set
-        {
-            if (SetProperty(ref _vrIndex, value) && !_isSettingUp)
-                OnVRChanged(value);
-        }
+        set => TrySetProperty(ref _vrIndex, value, OnVRChanged);
     }
 
     public bool VREnabled
@@ -107,11 +83,7 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
     public AppInfoEntryType EntryType
     {
         get => _entryType;
-        set
-        {
-            if (SetProperty(ref _entryType, value) && !_isSettingUp)
-                OnEntryTypeChanged(value);
-        }
+        set => TrySetProperty(ref _entryType, value, OnEntryTypeChanged);
     }
 
     public bool GameNameClearXVisible
@@ -133,6 +105,13 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
     }
 
     public event EventHandler<IAppInfoEntry>? EditCommandExecuted;
+
+    private bool TrySetProperty<T>(ref T field, T value, Action<T> onChange, [System.Runtime.CompilerServices.CallerMemberName] string name = "")
+    {
+        if (!SetProperty(ref field, value, name)) return false;
+        if (!_isSettingUp) onChange(value);
+        return true;
+    }
 
     public void LoadEntry(IAppInfoEntry? entry)
     {
