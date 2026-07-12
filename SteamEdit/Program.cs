@@ -210,7 +210,7 @@ internal static class Program
         }
     }
 
-    private static void SyncGlossaryFromEntries(ISteamDataService svc)
+    private static void SyncGlossaryFromEntries(ISteamDataReadService svc)
     {
         try
         {

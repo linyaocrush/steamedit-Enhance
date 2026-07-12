@@ -293,4 +293,40 @@ public class SteamDataTests
 		string backupPath = appInfoPath + ".bak";
 		Assert.IsFalse(fs.Files.ContainsKey(backupPath));
 	}
+
+	// ── 接口隔离测试 ──
+
+	[TestMethod]
+	public void SteamData_ImplementsBothReadAndFullInterfaces()
+	{
+		var svc = new SteamData();
+		Assert.IsTrue(svc is ISteamDataReadService);
+		Assert.IsTrue(svc is ISteamDataService);
+	}
+
+	[TestMethod]
+	public void ReadService_DoesNotExposeWriteOperations()
+	{
+		// 验证 ISteamDataReadService 接口不包含 Save/Apply 等写入方法
+		var readInterface = typeof(ISteamDataReadService);
+		var writeMethods = new[] { "Save", "Apply", "Initialize", "Shutdown" };
+		foreach (var method in writeMethods)
+			Assert.IsFalse(readInterface.GetMethod(method) != null,
+				$"ISteamDataReadService should not expose '{method}'");
+	}
+
+	[TestMethod]
+	public void ReadService_UseCompletedAndUseHidden_AreReadOnly()
+	{
+		// 验证 ISteamDataReadService 的 UseCompleted/UseHidden 只有 getter
+		var completedProp = typeof(ISteamDataReadService).GetProperty("UseCompleted");
+		Assert.IsNotNull(completedProp);
+		Assert.IsNotNull(completedProp!.GetMethod);
+		Assert.IsNull(completedProp.SetMethod);
+
+		var hiddenProp = typeof(ISteamDataReadService).GetProperty("UseHidden");
+		Assert.IsNotNull(hiddenProp);
+		Assert.IsNotNull(hiddenProp!.GetMethod);
+		Assert.IsNull(hiddenProp.SetMethod);
+	}
 }
