@@ -61,6 +61,9 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
                 int current = Interlocked.Increment(ref index);
                 Progress = current;
                 await TranslateOneAsync(entry, targetLanguage, customSystemPrompt, customUserMessage, ct);
+                // 每 10 条刷新一次，减少批量翻译中数据丢失风险
+                if (current % 10 == 0)
+                    TranslationGlossary.Flush();
             });
 
             TranslationGlossary.Flush();
