@@ -90,9 +90,19 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 	/// </summary>
 	protected void ReadEntriesLoop(BinaryReader reader, Func<BinaryReader, TEntry?> readEntry)
 	{
-		TEntry? entry;
-		while ((entry = readEntry(reader)) != null)
+		while (true)
 		{
+			TEntry? entry;
+			try
+			{
+				entry = readEntry(reader);
+			}
+			catch (AppInfoLoadException e)
+			{
+				Log.WriteLine("警告: 跳过条目，{0}", e.InnerException?.Message ?? e.Message);
+				continue;
+			}
+			if (entry == null) break;
 			_entries.Add(entry);
 			entry.Modified += OnEntryModified;
 		}
