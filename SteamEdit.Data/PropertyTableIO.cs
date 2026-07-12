@@ -20,14 +20,18 @@ internal static class PropertyTableIO
 		byte value;
 		while (len < remaining && (value = reader.ReadByte()) != 0)
 		{
-			int capacity = heapBuf?.Length ?? stackBuf.Length;
-			if (len == capacity)
+			if (len == (heapBuf?.Length ?? stackBuf.Length))
 			{
-				int newSize = capacity * 2;
+				int oldCapacity = heapBuf?.Length ?? stackBuf.Length;
+				int newSize = oldCapacity * 2;
 				if (newSize > MaxZStringBuffer)
 					throw new InvalidDataException("ReadZString: string exceeds maximum buffer size. File may be corrupted.");
-				heapBuf = new byte[newSize];
-				stackBuf[..capacity].CopyTo(heapBuf);
+				byte[] newBuf = new byte[newSize];
+				if (heapBuf != null)
+					heapBuf.CopyTo(newBuf.AsSpan());
+				else
+					stackBuf[..oldCapacity].CopyTo(newBuf);
+				heapBuf = newBuf;
 			}
 			if (heapBuf != null)
 				heapBuf[len] = value;
