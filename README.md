@@ -135,19 +135,24 @@ steamedit-Enhance.exe -autofix -forcestart
 dotnet build steamedit-Enhance.csproj
 
 # 测试（268 个）
-        dotnet test steamedit-EnhanceTests/steamedit-EnhanceTests.csproj
+dotnet test steamedit-EnhanceTests/steamedit-EnhanceTests.csproj
 
 # 运行
 dotnet run --project steamedit-Enhance.csproj
 
-# 发布独立 EXE（~110 MB）
+# 发布独立 EXE（~110 MB，Release 构建自动混淆）
 dotnet publish steamedit-Enhance.csproj -c Release
 
-# 发布依赖框架（~650 KB）
+# 发布依赖框架（~650 KB，Release 构建自动混淆）
 dotnet publish steamedit-Enhance.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
 ```
 
 发布输出：`bin/Release/net10.0-windows/win-x64/publish/steamedit-Enhance.exe`
+
+> **代码混淆**：Release 构建自动运行 [Obfuscar](https://github.com/obfuscar/obfuscar)：
+> - 原始 DLL → `bin/Release/net10.0-windows/win-x64/obfuscated/steamedit-Enhance.dll`
+> - `PublishSingleFile=true` 时，publish 流程使用混淆后的 DLL 打包单文件 EXE
+> - 跳过类型：`Program`（入口点）、`Strings`（资源文件）
 
 ---
 
