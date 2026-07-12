@@ -38,8 +38,8 @@ public class AppInfoFactoryTests
         string tempFile = Path.GetTempFileName();
         try
         {
-            // Empty file — no magic number at all
-            Assert.ThrowsException<EndOfStreamException>(
+            // Empty file — can't create memory mapping or read magic number
+            Assert.ThrowsException<ArgumentException>(
                 () => AppInfoFactory.Load(tempFile));
         }
         finally { File.Delete(tempFile); }
