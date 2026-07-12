@@ -20,6 +20,7 @@ internal class MainWindow : LocalizableForm
 
 	private GameDataContext _ctx = null!;
 	private GameListViewModel _gameListViewModel = null!;
+	private PropertyEditorViewModel _propertyEditorViewModel = null!;
 	private GameListManager _listManager = null!;
 	private EditController _editController = null!;
 
@@ -87,8 +88,9 @@ internal class MainWindow : LocalizableForm
 		// 创建共享数据上下文
 		_ctx = new GameDataContext();
 
-		// 创建游戏列表 ViewModel
+		// 创建 ViewModel
 		_gameListViewModel = new GameListViewModel(_steamData.DataStore);
+		_propertyEditorViewModel = new PropertyEditorViewModel();
 
 		// 创建游戏列表管理器（注入 ViewModel）
 		_listManager = new GameListManager(
@@ -153,9 +155,9 @@ internal class MainWindow : LocalizableForm
 
 		// 创建编辑控制器
 		_editController = new EditController(
-			_ctx, _steamData.DataStore, _listManager, textGameName, textSortAs,
-			checkHidden, checkCompleted, listControllerSupport,
-			listVR, listEntryType);
+			_ctx, _steamData.DataStore, _listManager, _propertyEditorViewModel,
+			textGameName, textSortAs, checkHidden, checkCompleted,
+			listControllerSupport, listVR, listEntryType);
 
 		RegisterShortcuts();
 
