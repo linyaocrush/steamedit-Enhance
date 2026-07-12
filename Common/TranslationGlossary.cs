@@ -69,8 +69,26 @@ internal static class TranslationGlossary
 				}
 				catch (Exception ex)
 				{
-					Log.WriteLine("Glossary: Failed to load, creating new: {0}", ex.Message);
-					_data = new GlossaryData();
+					Log.WriteLine("Glossary: Failed to load, trying backup: {0}", ex.Message);
+					string bakPath = _filePath + ".bak";
+					if (File.Exists(bakPath))
+					{
+						try
+						{
+							string bakJson = File.ReadAllText(bakPath, Encoding.UTF8);
+							_data = JsonSerializer.Deserialize<GlossaryData>(bakJson) ?? new GlossaryData();
+							Log.WriteLine("Glossary: Loaded {0} entries from backup", _data.Entries.Count);
+						}
+						catch
+						{
+							Log.WriteLine("Glossary: Backup also corrupted, creating new");
+							_data = new GlossaryData();
+						}
+					}
+					else
+					{
+						_data = new GlossaryData();
+					}
 				}
 			}
 			else
@@ -198,6 +216,8 @@ internal static class TranslationGlossary
 			if (_filePath == null) return;
 			string tempPath = _filePath + ".tmp";
 			File.WriteAllText(tempPath, json, Encoding.UTF8);
+			if (File.Exists(_filePath))
+				File.Copy(_filePath, _filePath + ".bak", overwrite: true);
 			File.Move(tempPath, _filePath, overwrite: true);
 			Log.WriteLine("Glossary: Saved {0} entries", _data.Entries.Count);
 		}
