@@ -6,7 +6,7 @@ using Common;
 
 namespace steamedit_Enhance.Data;
 
-internal class SteamData : ISteamDataService
+internal class SteamData : ISteamDataService, IGameMetadataService, IPersistenceService, IModificationService
 {
 	public const string CompletedChar = "✓";
 	public static string CompletedSuffix => " ✓";
