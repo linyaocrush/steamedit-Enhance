@@ -171,7 +171,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			property = new Property(name);
 			_properties.Add(property);
 			_propertyMap[name] = property;
-			_hashCodeDirty = true; _propertyNamesCache = null;
+			_propertyNamesCache = null;
 		}
 		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
@@ -245,10 +245,14 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public PropertyTable(PropertyTable other)
 	{
-		_properties.AddRange(other._properties.Select((Property prop) => new Property(prop)));
-		foreach (var prop in _properties)
+		int count = other._properties.Count;
+		_properties.Capacity = count;
+		_propertyMap = new Dictionary<string, Property>(count, StringComparer.Ordinal);
+		foreach (var prop in other._properties)
 		{
-			_propertyMap[prop.Name] = prop;
+			var clone = new Property(prop);
+			_properties.Add(clone);
+			_propertyMap[clone.Name] = clone;
 		}
 	}
 
@@ -278,41 +282,58 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return _hashCode;
 	}
 
-	private string ToStringInternal(int indent)
+	public void WriteTo(TextWriter writer)
+	{
+		WriteToInternal(writer, 0);
+	}
+
+	private void WriteToInternal(TextWriter writer, int indent)
 	{
 		if (indent > MaxNestingDepth)
 			throw new InvalidDataException($"Property table nesting depth {indent} exceeds maximum {MaxNestingDepth}.");
-		StringBuilder stringBuilder = new StringBuilder();
 		string arg = new string('\t', indent);
 		foreach (Property property in _properties)
 		{
 			string arg2 = property.Name.Replace("\\", "\\\\").Replace("\"", "\\\"");
-			stringBuilder.AppendFormat("{0}\"{1}\"", arg, arg2);
+			writer.Write(arg);
+			writer.Write('"');
+			writer.Write(arg2);
+			writer.Write('"');
 			switch (property.PropertyType)
 			{
 			case PropertyType.Table:
-				stringBuilder.AppendFormat("\n{0}{{\n{1}{0}}}", arg, property.GetValue<PropertyTable>().ToStringInternal(indent + 1));
+				writer.Write('\n');
+				writer.Write(arg);
+				writer.Write("{\n");
+				property.GetValue<PropertyTable>().WriteToInternal(writer, indent + 1);
+				writer.Write(arg);
+				writer.Write('}');
 				break;
 			case PropertyType.String:
 			case PropertyType.WString:
-				stringBuilder.AppendFormat("\t\t\"{0}\"", property.GetValue<string>().Replace("\\", "\\\\").Replace("\"", "\\\""));
+				writer.Write("\t\t\"");
+				writer.Write(property.GetValue<string>().Replace("\\", "\\\\").Replace("\"", "\\\""));
+				writer.Write('"');
 				break;
 			case PropertyType.Int32:
 			case PropertyType.Float:
 			case PropertyType.Color:
 			case PropertyType.Uint64:
-				stringBuilder.AppendFormat("\t\t\"{0}\"", property.Value);
+				writer.Write("\t\t\"");
+				writer.Write(property.Value);
+				writer.Write('"');
 				break;
 			default:
 				throw new InvalidDataException("The property type " + property.PropertyType.ToString() + " is invalid.");
 			}
-			stringBuilder.Append("\n");
+			writer.Write('\n');
 		}
-		return stringBuilder.ToString();
 	}
 
 	public override string ToString()
 	{
-		return ToStringInternal(0);
+		using var sw = new StringWriter();
+		WriteTo(sw);
+		return sw.ToString();
 	}
 }
