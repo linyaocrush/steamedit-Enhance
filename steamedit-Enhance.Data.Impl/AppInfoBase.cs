@@ -74,7 +74,12 @@ internal abstract class AppInfoBase<TEntry> : IAppInfo where TEntry : AppInfoEnt
 		this.Modified?.Invoke(this, new EventArgs());
 	}
 
-	protected abstract void SaveEntries(BinaryWriter writer);
+	protected virtual void SaveEntries(BinaryWriter writer)
+	{
+		foreach (var entry in Entries)
+			((AppInfoEntryBase)entry).Write(writer);
+		writer.Write(0);
+	}
 
 	/// <summary>
 	/// 通用的条目加载辅助。读取 unknownValueAtStart 后，循环调用 readEntry 直到返回 null。

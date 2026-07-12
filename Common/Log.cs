@@ -43,6 +43,9 @@ internal static class Log
 		AppDomain.CurrentDomain.ProcessExit += (_, _) => Close();
 	}
 
+	private static string _cachedTimestamp = "";
+	private static long _lastTimestampSecond;
+
 	/// <summary>
 	/// 配置日志级别启用状态
 	/// </summary>
@@ -94,7 +97,13 @@ internal static class Log
 	{
 		if (!IsLevelEnabled(level)) return;
 		
-		string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+		long nowSec = DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond;
+		if (nowSec != _lastTimestampSecond)
+		{
+			_cachedTimestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+			_lastTimestampSecond = nowSec;
+		}
+		string timestamp = _cachedTimestamp;
 		string levelStr = GetLevelString(level);
 		
 		lock (_syncObj)

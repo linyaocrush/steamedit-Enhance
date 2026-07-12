@@ -39,6 +39,7 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
     public async Task RunAsync(List<IAppInfoEntry> entries, string targetLanguage)
     {
         _cts = new CancellationTokenSource();
+        var uiContext = SynchronizationContext.Current ?? new SynchronizationContext();
         IsRunning = true;
         Total = entries.Count;
 
@@ -61,10 +62,11 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
                     await Task.Delay(100, ct);
                 ct.ThrowIfCancellationRequested();
                 int current = Interlocked.Increment(ref index);
-                Progress = current;
+                if (current % 5 == 0)
+                    uiContext.Post(_ => Progress = current, null);
                 await TranslateOneAsync(entry, targetLanguage, customSystemPrompt, customUserMessage, ct);
-                // 每 10 条刷新一次，减少批量翻译中数据丢失风险
-                if (current % 10 == 0)
+                // 每 50 条刷新一次，减少批量翻译中数据丢失风险
+                if (current % 50 == 0)
                     TranslationGlossary.Flush();
             });
 

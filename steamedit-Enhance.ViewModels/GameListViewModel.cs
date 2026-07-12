@@ -14,6 +14,7 @@ internal sealed class GameListViewModel : ViewModelBase
     private readonly IAppInfoDataStore _dataStore;
     public IAppInfoDataStore DataStore => _dataStore;
     private readonly Dictionary<int, string> _displayNames = new();
+    private readonly Dictionary<int, string> _escapedDisplayNameCache = new();
     
     // 搜索缓存：LRU 缓存，LinkedList + Dictionary 实现 O(1) 淘汰
     private readonly Dictionary<(int GameId, string SearchPattern), LinkedListNode<(int GameId, string SearchPattern)>> _searchCache = new();
@@ -131,16 +132,29 @@ internal sealed class GameListViewModel : ViewModelBase
 
     public string GetDisplayName(IAppInfoEntry entry)
     {
-        if (_displayNames.TryGetValue(entry.ID, out var name))
-            return name;
-        name = entry.ToString() ?? "";
-        _displayNames[entry.ID] = name;
-        return name;
+        if (_escapedDisplayNameCache.TryGetValue(entry.ID, out var escaped))
+            return escaped;
+        if (!_displayNames.TryGetValue(entry.ID, out var name))
+        {
+            name = entry.ToString() ?? "";
+            _displayNames[entry.ID] = name;
+        }
+        escaped = name.Replace("&", "&&");
+        _escapedDisplayNameCache[entry.ID] = escaped;
+        return escaped;
     }
 
-    public void InvalidateDisplayName(IAppInfoEntry entry) => _displayNames.Remove(entry.ID);
+    public void InvalidateDisplayName(IAppInfoEntry entry)
+    {
+        _displayNames.Remove(entry.ID);
+        _escapedDisplayNameCache.Remove(entry.ID);
+    }
 
-    public void ClearDisplayNameCache() => _displayNames.Clear();
+    public void ClearDisplayNameCache()
+    {
+        _displayNames.Clear();
+        _escapedDisplayNameCache.Clear();
+    }
 
     public GameItemViewModel? FindByEntry(IAppInfoEntry entry) =>
         AllGames.FirstOrDefault(g => g.ID == entry.ID);
@@ -172,44 +186,37 @@ internal sealed class GameListViewModel : ViewModelBase
         Filter();
     }
 
-    public void Filter()
-    {
-        string trimmed = _searchText.Trim();
-        bool isNumeric = int.TryParse(trimmed, out _);
-        string[]? patternParts = string.IsNullOrEmpty(trimmed) ? null : trimmed.Split(' ', '\t', '　');
+	public void Filter()
+	{
+		string trimmed = _searchText.Trim();
+		bool isNumeric = int.TryParse(trimmed, out _);
+		string[]? patternParts = string.IsNullOrEmpty(trimmed) ? null : trimmed.Split(' ', '\t', '　');
 
-        var filtered = ApplySearchFilter(AllGames, trimmed, isNumeric, patternParts);
-        filtered = ApplyTypeFilter(filtered);
-        filtered = ApplyShowModeFilter(filtered);
+		IEnumerable<GameItemViewModel> filtered = AllGames;
 
-        ApplySortTo(filtered);
+		if (!string.IsNullOrEmpty(trimmed))
+		{
+			if (isNumeric)
+				filtered = filtered.Where(g => g.ID.ToString().StartsWith(trimmed));
+			else
+				filtered = filtered.Where(g => IsFuzzyMatchCached(g, trimmed, patternParts!));
+		}
 
-        VisibleGames.Clear();
-        foreach (var g in filtered)
-            VisibleGames.Add(g);
-        VisibleCount = VisibleGames.Count;
-    }
+		filtered = filtered.Where(g => (g.Type & _filterFlags) != 0);
 
-    private List<GameItemViewModel> ApplySearchFilter(IEnumerable<GameItemViewModel> games, string trimmed, bool isNumeric, string[]? patternParts)
-    {
-        return games.Where(g =>
-        {
-            if (string.IsNullOrEmpty(trimmed)) return true;
-            if (isNumeric) return g.ID.ToString().StartsWith(trimmed);
-            return IsFuzzyMatchCached(g, trimmed, patternParts!);
-        }).ToList();
-    }
+		if (_showMode != ShowEntriesMode.All)
+			filtered = filtered.Where(g => _showMode == ShowEntriesMode.OnlyModified ? g.IsModified : !g.IsModified);
 
-    private List<GameItemViewModel> ApplyTypeFilter(IEnumerable<GameItemViewModel> games)
-    {
-        return games.Where(g => (g.Type & _filterFlags) != 0).ToList();
-    }
+		var result = filtered.ToList();
+		ApplySortTo(result);
 
-    private List<GameItemViewModel> ApplyShowModeFilter(IEnumerable<GameItemViewModel> games)
-    {
-        if (_showMode == ShowEntriesMode.All) return games.ToList();
-        return games.Where(g => _showMode == ShowEntriesMode.OnlyModified ? g.IsModified : !g.IsModified).ToList();
-    }
+		VisibleGames.Clear();
+		foreach (var g in result)
+			VisibleGames.Add(g);
+		VisibleCount = VisibleGames.Count;
+	}
+
+
 
     public void ApplySort()
     {

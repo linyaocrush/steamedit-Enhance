@@ -107,7 +107,7 @@ internal sealed class GameListDrawer : IDisposable
 		if (e.Index < 0 || e.Index >= entries.Count) return;
 
 		var entry = entries[e.Index];
-		string text = _viewModel.GetDisplayName(entry).Replace("&", "&&");
+		string text = _viewModel.GetDisplayName(entry);
 
 		bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
 		bool focused = _appSelection.Focused;

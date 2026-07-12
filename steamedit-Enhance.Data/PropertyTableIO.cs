@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -17,31 +18,41 @@ internal static class PropertyTableIO
 		byte[]? heapBuf = null;
 		int len = 0;
 		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
-		byte value;
-		while (len < remaining && (value = reader.ReadByte()) != 0)
+		try
 		{
-			if (len == (heapBuf?.Length ?? stackBuf.Length))
+			byte value;
+			while (len < remaining && (value = reader.ReadByte()) != 0)
 			{
-				int oldCapacity = heapBuf?.Length ?? stackBuf.Length;
-				int newSize = oldCapacity * 2;
-				if (newSize > MaxZStringBuffer)
-					throw new InvalidDataException("ReadZString: string exceeds maximum buffer size. File may be corrupted.");
-				byte[] newBuf = new byte[newSize];
+				if (len == (heapBuf?.Length ?? stackBuf.Length))
+				{
+					int oldCapacity = heapBuf?.Length ?? stackBuf.Length;
+					int newSize = oldCapacity * 2;
+					if (newSize > MaxZStringBuffer)
+						throw new InvalidDataException("ReadZString: string exceeds maximum buffer size. File may be corrupted.");
+					byte[] newBuf = ArrayPool<byte>.Shared.Rent(newSize);
+					if (heapBuf != null)
+						heapBuf.CopyTo(newBuf.AsSpan());
+					else
+						stackBuf[..oldCapacity].CopyTo(newBuf);
+					if (heapBuf != null)
+						ArrayPool<byte>.Shared.Return(heapBuf);
+					heapBuf = newBuf;
+				}
 				if (heapBuf != null)
-					heapBuf.CopyTo(newBuf.AsSpan());
+					heapBuf[len] = value;
 				else
-					stackBuf[..oldCapacity].CopyTo(newBuf);
-				heapBuf = newBuf;
+					stackBuf[len] = value;
+				len++;
 			}
-			if (heapBuf != null)
-				heapBuf[len] = value;
-			else
-				stackBuf[len] = value;
-			len++;
+			if (len >= remaining)
+				throw new InvalidDataException("ReadZString: null terminator not found before end of stream");
+			return Encoding.UTF8.GetString(heapBuf ?? stackBuf[..len]);
 		}
-		if (len >= remaining)
-			throw new InvalidDataException("ReadZString: null terminator not found before end of stream");
-		return Encoding.UTF8.GetString(heapBuf ?? stackBuf[..len]);
+		finally
+		{
+			if (heapBuf != null)
+				ArrayPool<byte>.Shared.Return(heapBuf);
+		}
 	}
 
 	internal static void WriteZString(BinaryWriter writer, string str)
@@ -60,21 +71,29 @@ internal static class PropertyTableIO
 			throw new InvalidDataException("ReadWideString: no data remaining");
 
 		int byteCount = (int)Math.Min(remaining, MaxZStringBuffer);
-		byte[] buffer = reader.ReadBytes(byteCount);
-		int nullPos = -1;
-		for (int i = 0; i < buffer.Length - 1; i += 2)
+		byte[] buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+		try
 		{
-			if (buffer[i] == 0 && buffer[i + 1] == 0)
+			reader.Read(buffer, 0, byteCount);
+			int nullPos = -1;
+			for (int i = 0; i < byteCount - 1; i += 2)
 			{
-				nullPos = i;
-				break;
+				if (buffer[i] == 0 && buffer[i + 1] == 0)
+				{
+					nullPos = i;
+					break;
+				}
 			}
+			if (nullPos < 0)
+				throw new InvalidDataException("ReadWideString: null terminator not found");
+			// 将流位置回退到 null 终止符之后
+			reader.BaseStream.Position -= byteCount - (nullPos + 2);
+			return Encoding.Unicode.GetString(buffer, 0, nullPos);
 		}
-		if (nullPos < 0)
-			throw new InvalidDataException("ReadWideString: null terminator not found");
-		// 将流位置回退到 null 终止符之后
-		reader.BaseStream.Position -= byteCount - (nullPos + 2);
-		return Encoding.Unicode.GetString(buffer, 0, nullPos);
+		finally
+		{
+			ArrayPool<byte>.Shared.Return(buffer);
+		}
 	}
 
 	internal static void WriteString_0x00000000(BinaryWriter writer, string str) => WriteZString(writer, str);

@@ -165,17 +165,17 @@ internal static class Program
             EnableHidden = Settings.Default.EnableHidden
         };
         string[] cmdArgs = Environment.GetCommandLineArgs();
-        bool flag = AppHelper.HasArgument("autofix", cmdArgs);
-        if (flag)
+        bool isAutoFix = AppHelper.HasArgument("autofix", cmdArgs);
+        if (isAutoFix)
         {
             var svc = InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: true);
             if (svc != null)
             {
-                bool flag2 = AppHelper.HasArgument("forcestart", cmdArgs);
+                bool isForceStart = AppHelper.HasArgument("forcestart", cmdArgs);
                 if (svc.NeedsApply)
                 {
                     Log.WriteLine("Changes detected, applying!");
-                    bool shouldRestart = flag2 || SteamProcessManager.IsSteamRunning(svc.SteamDir);
+                    bool shouldRestart = isForceStart || SteamProcessManager.IsSteamRunning(svc.SteamDir);
                     if (shouldRestart)
                         SteamProcessManager.KillSteam(svc.SteamDir, steamedit_Enhance.Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
                         {
@@ -188,7 +188,7 @@ internal static class Program
                         SteamProcessManager.EnsureSteamRunning(svc.SteamDir, focusIfRunning: true);
                     Log.WriteLine("Appcache updated");
                 }
-                else if (flag2)
+                else if (isForceStart)
                 {
                     SteamProcessManager.EnsureSteamRunning(svc.SteamDir, focusIfRunning: true);
                 }

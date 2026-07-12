@@ -481,8 +481,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected void WriteEntryCore(BinaryWriter writer, int hashBlockCount, Action<BinaryWriter, PropertyTable> writePropertyTable)
 	{
 		PropertyTable table = PrepareWriteTable(out _);
-		using var sha = SHA1.Create();
 		byte[] hash;
+		using (var sha = SHA1.Create())
 		using (var cs = new CryptoStream(Stream.Null, sha, CryptoStreamMode.Write))
 		using (var sw = new StreamWriter(cs, Encoding.UTF8))
 		{
@@ -505,8 +505,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			subMs.Position = afterChangeNumber;
 			byte[] tableData = new byte[subMs.Length - afterChangeNumber];
 			subMs.Read(tableData, 0, tableData.Length);
-			sha.Initialize();
-			byte[] tableHash = sha.ComputeHash(tableData);
+			byte[] tableHash = SHA1.HashData(tableData);
 			// 重写：stuffBeforeHash + hash + changeNumber + tableHash + tableData
 			subMs.SetLength(0);
 			subWriter.Write(_stuffBeforeHash);

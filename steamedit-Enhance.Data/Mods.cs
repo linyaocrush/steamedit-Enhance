@@ -109,37 +109,37 @@ internal class Mods
 
 	public void Save(string path, IFileSystem fileSystem)
 	{
-		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
-		binaryWriter.Write(6u);
-		var modifiedEntries = _appInfo.Entries.Where(e => e.IsModified).ToList();
-		binaryWriter.Write(modifiedEntries.Count);
-		foreach (IAppInfoEntry item in modifiedEntries)
-		{
-			var mod = item.Modification!;
-			binaryWriter.Write(mod.ID);
-			PropertyTableIO.WritePropertyTable_0x00000000(binaryWriter, mod.Changes);
-			binaryWriter.Write(mod.OriginalDataVersion);
-			binaryWriter.Write(mod.OriginalDataChangeNumber);
-			binaryWriter.Write((mod.OriginalData != null) ? mod.OriginalData.Length : 0);
-			if (mod.OriginalData != null)
-			{
-				binaryWriter.Write(mod.OriginalData);
-			}
-		}
 		string tempPath = path + ".tmp";
 		string backupPath = path + ".bak";
 		bool hasBackup = false;
 		try
 		{
+			// 写入临时文件（嵌套作用域确保流在后续操作前关闭）
+			using (var tempStream = fileSystem.CreateFile(tempPath))
+			using (BinaryWriter binaryWriter = new BinaryWriter(tempStream, System.Text.Encoding.UTF8, leaveOpen: true))
+			{
+				binaryWriter.Write(6u);
+				var modifiedEntries = _appInfo.Entries.Where(e => e.IsModified).ToList();
+				binaryWriter.Write(modifiedEntries.Count);
+				foreach (IAppInfoEntry item in modifiedEntries)
+				{
+					var mod = item.Modification!;
+					binaryWriter.Write(mod.ID);
+					PropertyTableIO.WritePropertyTable_0x00000000(binaryWriter, mod.Changes);
+					binaryWriter.Write(mod.OriginalDataVersion);
+					binaryWriter.Write(mod.OriginalDataChangeNumber);
+					binaryWriter.Write((mod.OriginalData != null) ? mod.OriginalData.Length : 0);
+					if (mod.OriginalData != null)
+					{
+						binaryWriter.Write(mod.OriginalData);
+					}
+				}
+				binaryWriter.Flush();
+			}
 			if (fileSystem.FileExists(path))
 			{
 				fileSystem.FileCopy(path, backupPath, overwrite: true);
 				hasBackup = true;
-			}
-			using (var destination = fileSystem.CreateFile(tempPath))
-			{
-				binaryWriter.BaseStream.Position = 0L;
-				binaryWriter.BaseStream.CopyTo(destination);
 			}
 			fileSystem.FileMove(tempPath, path, overwrite: true);
 		}

@@ -16,10 +16,5 @@ internal class AppInfo_0x07564428 : AppInfoBase<AppInfoEntry_0x07564428>
 		return appInfo;
 	}
 
-	protected override void SaveEntries(BinaryWriter writer)
-	{
-		foreach (var entry in Entries)
-			((AppInfoEntryBase)entry).Write(writer);
-		writer.Write(0);
-	}
+
 }

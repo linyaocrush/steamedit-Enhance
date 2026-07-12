@@ -196,7 +196,7 @@ internal class GameListManager : IDisposable
 
 	public void SelectIndex(int idx)
 	{
-		if (idx >= 0 && idx < _appSelection.Items.Count)
+		if (idx >= 0 && idx < _ctx.Entries.Count)
 			_appSelection.SelectedIndex = idx;
 	}
 
@@ -260,7 +260,7 @@ internal class GameListManager : IDisposable
 			int newIdx = _ctx._entries.IndexOf(selected);
 			if (newIdx >= 0) _appSelection.SelectedIndex = newIdx;
 		}
-		if (_appSelection.SelectedIndex < 0 && _appSelection.Items.Count > 0)
+		if (_appSelection.SelectedIndex < 0 && _ctx.Entries.Count > 0)
 			_appSelection.SelectedIndex = 0;
 	}
 

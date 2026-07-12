@@ -12,6 +12,9 @@ namespace Common;
 
 internal static class AiTranslator
 {
+	private static int _consecutiveFailures;
+	private static readonly object _failureLock = new();
+
 	private static readonly SocketsHttpHandler _sharedHandler = new()
 	{
 		PooledConnectionLifetime = TimeSpan.FromMinutes(5)
@@ -142,6 +145,19 @@ Rules:
 		const int maxBackoffMs = 30_000;
 		string responseBody = null!;
 		using var client = CreateClient();
+
+		int circuitDelayMs = 0;
+		lock (_failureLock)
+		{
+			if (_consecutiveFailures >= 5)
+			{
+				circuitDelayMs = Math.Min(60000, _consecutiveFailures * 10000);
+				Log.WriteLine("Circuit breaker: {0} consecutive failures, pausing {1}ms", _consecutiveFailures, circuitDelayMs);
+			}
+		}
+		if (circuitDelayMs > 0)
+			await Task.Delay(circuitDelayMs, cancellationToken);
+
 		for (int attempt = 0; ; attempt++)
 		{
 			using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
@@ -167,6 +183,7 @@ Rules:
 					continue;
 				}
 				Log.WriteLine("AI: Network error: {0}", ex.Message);
+				lock (_failureLock) _consecutiveFailures++;
 				throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
 			}
 			responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -183,6 +200,7 @@ Rules:
 					continue;
 				}
 				Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
+				lock (_failureLock) _consecutiveFailures++;
 				throw new AiTranslationException(AiErrorKind.ApiError, $"API error {statusCode}: {responseBody}", statusCode);
 			}
 
@@ -195,6 +213,8 @@ Rules:
 
 			break;
 		}
+
+		lock (_failureLock) _consecutiveFailures = 0;
 
 		using var doc = JsonDocument.Parse(responseBody);
 		string? result = null;

@@ -21,7 +21,7 @@ internal class LaunchTable
 	{
 		return (from prop in _propertyTable.Properties.Where((Property prop) => prop.PropertyType == PropertyType.Table).OrderBy((Property prop) => prop.Name, StringComparer.OrdinalIgnoreCase)
 			select prop.GetValue<PropertyTable>() into table
-			where !table.TryGetPropertyValue<PropertyTable>("config", out var result) || !result.TryGetPropertyValue<string>("oslist", out var result2) || result2 == "windows"
+			where !table.TryGetPropertyValue<PropertyTable>("config", out var result) || !result.TryGetPropertyValue<string>("oslist", out var result2) || string.Equals(result2, "windows", StringComparison.OrdinalIgnoreCase)
 			select new LaunchItem
 			{
 				Label = table.GetPropertyValue("description", ""),

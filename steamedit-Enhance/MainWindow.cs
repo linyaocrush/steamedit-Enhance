@@ -460,7 +460,7 @@ internal class MainWindow : LocalizableForm
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
-			appSelection.SelectedIndex = Math.Min(appSelection.SelectedIndex + 1, appSelection.Items.Count - 1);
+			appSelection.SelectedIndex = Math.Min(appSelection.SelectedIndex + 1, _ctx.Entries.Count - 1);
 			break;
 		case Keys.Prior:
 			appSelection.SelectedIndex = Math.Max(appSelection.SelectedIndex - 1, 0);
