@@ -37,6 +37,7 @@ internal class Settings
 		MarkDirty();
 	}
 
+	// -- 显示设置 --
 	[DefaultValue(true)]
 	public bool EnableCompleted { get => Get<bool>(); set => Set(value); }
 
@@ -64,6 +65,8 @@ internal class Settings
 	[DefaultValue("")]
 	public string ShownVersion { get => Get<string>(); set => Set(value); }
 
+	// -- 窗口设置 --
+	public WindowSettings Window { get; }
 	[DefaultValue(int.MaxValue)]
 	public int WindowLocationX { get => Get<int>(); set => Set(value); }
 
@@ -91,6 +94,8 @@ internal class Settings
 	[DefaultValue("")]
 	public string Language { get => Get<string>(); set => Set(value); }
 
+	// -- AI 翻译设置 --
+	public AiSettings Ai { get; }
 	[DefaultValue("")]
 	public string AiApiUrl { get => Get<string>(); set => Set(value); }
 
@@ -121,15 +126,46 @@ internal class Settings
 	[DefaultValue(3)]
 	public int AiBatchTranslateConcurrency { get => Get<int>(); set => Set(Math.Max(value, 1)); }
 
+	// -- 排序设置 --
 	[DefaultValue("Name")]
 	public string SortField { get => Get<string>(); set => Set(value); }
 
 	[DefaultValue(false)]
 	public bool SortDescending { get => Get<bool>(); set => Set(value); }
 
+	internal sealed class WindowSettings
+	{
+		private readonly Settings _outer;
+		public WindowSettings(Settings outer) => _outer = outer;
+
+		public int LocationX { get => _outer.WindowLocationX; set => _outer.WindowLocationX = value; }
+		public int LocationY { get => _outer.WindowLocationY; set => _outer.WindowLocationY = value; }
+		public int SizeX { get => _outer.WindowSizeX; set => _outer.WindowSizeX = value; }
+		public int SizeY { get => _outer.WindowSizeY; set => _outer.WindowSizeY = value; }
+		public int Splitter { get => _outer.MainWindowSplitter; set => _outer.MainWindowSplitter = value; }
+	}
+
+	internal sealed class AiSettings
+	{
+		private readonly Settings _outer;
+		public AiSettings(Settings outer) => _outer = outer;
+
+		public string ApiUrl { get => _outer.AiApiUrl; set => _outer.AiApiUrl = value; }
+		public string ApiKey { get => _outer.AiApiKey; set => _outer.AiApiKey = value; }
+		public string Model { get => _outer.AiModel; set => _outer.AiModel = value; }
+		public string TargetLanguage { get => _outer.AiTargetLanguage; set => _outer.AiTargetLanguage = value; }
+		public string CustomSystemPrompt { get => _outer.AiCustomSystemPrompt; set => _outer.AiCustomSystemPrompt = value; }
+		public string CustomUserMessage { get => _outer.AiCustomUserMessage; set => _outer.AiCustomUserMessage = value; }
+		public string TranslationRules { get => _outer.AiTranslationRules; set => _outer.AiTranslationRules = value; }
+		public int TimeoutSeconds { get => _outer.AiTimeoutSeconds; set => _outer.AiTimeoutSeconds = value; }
+		public int BatchTranslateConcurrency { get => _outer.AiBatchTranslateConcurrency; set => _outer.AiBatchTranslateConcurrency = value; }
+	}
+
 	private Settings()
 	{
 		_values = new System.Collections.Concurrent.ConcurrentDictionary<string, object>();
+		Window = new WindowSettings(this);
+		Ai = new AiSettings(this);
 		_suppressDirtyTracking = true;
 
 		// 第一步：应用 [DefaultValue] 默认值
