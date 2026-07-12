@@ -16,9 +16,9 @@ namespace SteamEdit;
 internal class MainWindow : LocalizableForm
 {
 	private readonly ISteamDataService _steamData;
-	private string _originalTitle = null!;
 
 	private GameDataContext _ctx = null!;
+	private MainViewModel _mainViewModel = null!;
 	private GameListViewModel _gameListViewModel = null!;
 	private PropertyEditorViewModel _propertyEditorViewModel = null!;
 	private GameListManager _listManager = null!;
@@ -83,7 +83,6 @@ internal class MainWindow : LocalizableForm
 		};
 
 		base.Icon = Resources.logo;
-		_originalTitle = Text;
 
 		// 创建共享数据上下文
 		_ctx = new GameDataContext();
@@ -91,6 +90,21 @@ internal class MainWindow : LocalizableForm
 		// 创建 ViewModel
 		_gameListViewModel = new GameListViewModel(_steamData.DataStore);
 		_propertyEditorViewModel = new PropertyEditorViewModel();
+		_mainViewModel = new MainViewModel(_steamData, _gameListViewModel, _propertyEditorViewModel);
+
+		// 绑定 MainViewModel 到窗口
+		_mainViewModel.PropertyChanged += (_, e) =>
+		{
+			switch (e.PropertyName)
+			{
+				case nameof(MainViewModel.WindowTitle):
+					Text = _mainViewModel.WindowTitle;
+					break;
+				case nameof(MainViewModel.AppIdText):
+					lblAppId.Text = _mainViewModel.AppIdText;
+					break;
+			}
+		};
 
 		// 创建游戏列表管理器（注入 ViewModel）
 		_listManager = new GameListManager(
@@ -113,7 +127,7 @@ internal class MainWindow : LocalizableForm
 			btnRevert.Enabled = entry != null;
 			btnTranslate.Enabled = entry != null && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 			btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
-			lblAppId.Text = entry != null ? $"App ID: {entry.ID}" : "App ID: —";
+			_mainViewModel.UpdateAppId(entry?.ID ?? 0);
 		};
 
 		// 双击列表聚焦 Name 输入框
@@ -153,6 +167,12 @@ internal class MainWindow : LocalizableForm
 		_listManager.BatchMarkAsIncomplete += OnBatchMarkAsIncomplete;
 		_listManager.BatchReset += OnBatchReset;
 
+		// 订阅 MainViewModel 事件
+		_mainViewModel.SaveRequested += (_, _) => OnBtnSave_Click(null, EventArgs.Empty);
+		_mainViewModel.SaveApplyRequested += (_, _) => OnBtnSaveApply_Click(null, EventArgs.Empty);
+		_mainViewModel.SaveApplyRestartRequested += (_, _) => OnBtnSaveApplyRestart_Click(null, EventArgs.Empty);
+		_mainViewModel.UndoRequested += (_, _) => _editController.PerformUndo();
+
 		// 创建编辑控制器
 		_editController = new EditController(
 			_ctx, _steamData.DataStore, _listManager, _propertyEditorViewModel,
@@ -172,11 +192,7 @@ internal class MainWindow : LocalizableForm
 
 	private void SteamData_OnNeedsSaveOrApply(object? sender, EventArgs e)
 	{
-		Text = _originalTitle;
-		if (_steamData.NeedsSave)
-			Text += Strings.MainWindow_UnsavedSuffix;
-		if (_steamData.NeedsApply)
-			Text += Strings.MainWindow_UnappliedSuffix;
+		_mainViewModel.RefreshTitle();
 	}
 
 	private bool IsOnScreen()
@@ -312,7 +328,6 @@ internal class MainWindow : LocalizableForm
 
 	protected override void ApplyLanguage()
 	{
-		_originalTitle = Strings.MainWindow_Title;
 		SteamData_OnNeedsSaveOrApply(null, EventArgs.Empty);
 
 		checkHidden.Text = Strings.MainWindow_CheckHidden;
@@ -358,6 +373,7 @@ internal class MainWindow : LocalizableForm
 
 	private void OnMainWindow_FormClosing(object? sender, FormClosingEventArgs e)
 	{
+		_mainViewModel.DetachEvents();
 		_steamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
 		_steamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
 		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); MessageBox.Show(this, string.Format(Strings.Msg_SettingsSaveFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
