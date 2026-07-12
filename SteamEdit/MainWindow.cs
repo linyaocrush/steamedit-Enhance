@@ -106,6 +106,12 @@ internal class MainWindow : LocalizableForm
 			}
 		};
 
+		_mainViewModel.StatusChanged += (_, _) =>
+		{
+			lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _mainViewModel.GameList.VisibleCount, _mainViewModel.GameList.TotalEntryCount);
+			lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, _mainViewModel.GameList.ModifiedCount);
+		};
+
 		// 创建游戏列表管理器（注入 ViewModel）
 		_listManager = new GameListManager(
 			_ctx, _gameListViewModel, appSelection, filterSelectorMenu, sortSelectorMenu,
@@ -167,11 +173,20 @@ internal class MainWindow : LocalizableForm
 		_listManager.BatchMarkAsIncomplete += OnBatchMarkAsIncomplete;
 		_listManager.BatchReset += OnBatchReset;
 
-		// 订阅 MainViewModel 事件
+		// 订阅 MainViewModel 命令事件
 		_mainViewModel.SaveRequested += (_, _) => OnBtnSave_Click(null, EventArgs.Empty);
 		_mainViewModel.SaveApplyRequested += (_, _) => OnBtnSaveApply_Click(null, EventArgs.Empty);
 		_mainViewModel.SaveApplyRestartRequested += (_, _) => OnBtnSaveApplyRestart_Click(null, EventArgs.Empty);
 		_mainViewModel.UndoRequested += (_, _) => _editController.PerformUndo();
+		_mainViewModel.SettingsRequested += (_, _) => OnBtnSettings_Click(null, EventArgs.Empty);
+		_mainViewModel.EditLaunchRequested += (_, _) => OnBtnEditLaunch_Click(null, EventArgs.Empty);
+		_mainViewModel.RevertRequested += (_, _) => OnBtnRevert_Click(null, EventArgs.Empty);
+		_mainViewModel.SearchRequested += (_, _) => OnBtnSearch_Click(null, EventArgs.Empty);
+		_mainViewModel.TranslateRequested += (_, _) => OnBtnTranslate_Click(null, EventArgs.Empty);
+		_mainViewModel.BatchTranslateRequested += (_, _) => OnBtnBatchTranslate_Click(null, EventArgs.Empty);
+		_mainViewModel.BatchReplaceRequested += (_, _) => OnBtnBatchReplace_Click(null, EventArgs.Empty);
+		_mainViewModel.AboutRequested += (_, _) => OnHelp_Click(null, EventArgs.Empty);
+		_mainViewModel.ShortcutsRequested += (_, _) => OnBtnShortcuts_Click(null, EventArgs.Empty);
 
 		// 创建编辑控制器
 		_editController = new EditController(
@@ -393,12 +408,8 @@ internal class MainWindow : LocalizableForm
 
 	private void RegisterShortcuts()
 	{
-		_shortcutMap[(Keys.S, true, false)] = () =>
-		{
-			try { _steamData.Save(); }
-			catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
-		};
-		_shortcutMap[(Keys.Z, true, false)] = () => _editController.PerformUndo();
+		_shortcutMap[(Keys.S, true, false)] = () => _mainViewModel.SaveCommand.Execute(null);
+		_shortcutMap[(Keys.Z, true, false)] = () => _mainViewModel.UndoCommand.Execute(null);
 		_shortcutMap[(Keys.C, true, false)] = () =>
 		{
 			if (appFilterText.Focused) return;
@@ -411,11 +422,11 @@ internal class MainWindow : LocalizableForm
 			appFilterText.Focus();
 			appFilterText.SelectAll();
 		};
-		_shortcutMap[(Keys.Enter, true, true)] = () => OnBtnSaveApplyRestart_Click(this, EventArgs.Empty);
-		_shortcutMap[(Keys.Enter, true, false)] = () => OnBtnSaveApply_Click(this, EventArgs.Empty);
-		_shortcutMap[(Keys.T, true, false)] = () => OnBtnTranslate_Click(this, EventArgs.Empty);
-		_shortcutMap[(Keys.B, true, false)] = () => OnBtnBatchTranslate_Click(this, EventArgs.Empty);
-		_shortcutMap[(Keys.R, true, false)] = () => OnBtnRevert_Click(this, EventArgs.Empty);
+		_shortcutMap[(Keys.Enter, true, true)] = () => _mainViewModel.SaveApplyRestartCommand.Execute(null);
+		_shortcutMap[(Keys.Enter, true, false)] = () => _mainViewModel.SaveApplyCommand.Execute(null);
+		_shortcutMap[(Keys.T, true, false)] = () => _mainViewModel.TranslateCommand.Execute(null);
+		_shortcutMap[(Keys.B, true, false)] = () => _mainViewModel.BatchTranslateCommand.Execute(null);
+		_shortcutMap[(Keys.R, true, false)] = () => _mainViewModel.RevertCommand.Execute(null);
 	}
 
 	private void OnMainWindow_KeyDown(object? sender, KeyEventArgs e)
