@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Common;
 
@@ -9,6 +10,8 @@ internal static class Log
 	private static readonly object _syncObj;
 	private static readonly string _path;
 	private static StreamWriter? _writer;
+
+	public static string FilePath => _path;
 
 	static Log()
 	{
@@ -41,6 +44,23 @@ internal static class Log
 #if DEBUG
 			Console.WriteLine(string.Join(Environment.NewLine, lines));
 #endif
+		}
+	}
+
+	public static string[] GetRecentLines(int count = 100)
+	{
+		lock (_syncObj)
+		{
+			_writer?.Flush();
+		}
+		try
+		{
+			if (!File.Exists(_path)) return [];
+			return File.ReadLines(_path).TakeLast(count).ToArray();
+		}
+		catch
+		{
+			return [];
 		}
 	}
 

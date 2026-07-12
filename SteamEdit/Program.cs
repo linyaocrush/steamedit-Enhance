@@ -274,6 +274,18 @@ internal static class Program
             sb.AppendLine();
             sb.AppendLine("=== 异常信息 ===");
             sb.AppendLine(ex.ToString());
+            sb.AppendLine();
+            sb.AppendLine("=== 最近日志 ===");
+            var recentLog = Log.GetRecentLines(100);
+            if (recentLog.Length > 0)
+            {
+                foreach (var line in recentLog)
+                    sb.AppendLine(line);
+            }
+            else
+            {
+                sb.AppendLine("(无日志)");
+            }
 
             File.WriteAllText(path, sb.ToString());
             return path;
