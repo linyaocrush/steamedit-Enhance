@@ -69,12 +69,7 @@ internal static class PropertyTableIO
 		return stringBuilder.ToString();
 	}
 
-	internal static void WriteString_0x00000000(BinaryWriter writer, string str)
-	{
-		byte[] bytes = Encoding.UTF8.GetBytes(str);
-		writer.Write(bytes);
-		writer.Write((byte)0);
-	}
+	internal static void WriteString_0x00000000(BinaryWriter writer, string str) => WriteZString(writer, str);
 
 	internal static void WriteWideString_0x00000000(BinaryWriter writer, string str)
 	{
