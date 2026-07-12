@@ -165,9 +165,9 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
             Interlocked.Increment(ref _failCount);
         }
 
-        SuccessCount = _successCount;
-        SkipCount = _skipCount;
-        FailCount = _failCount;
+        SuccessCount = Volatile.Read(ref _successCount);
+        SkipCount = Volatile.Read(ref _skipCount);
+        FailCount = Volatile.Read(ref _failCount);
         StateChanged?.Invoke();
     }
 
