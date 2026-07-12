@@ -43,6 +43,8 @@ internal class GameListManager : IDisposable
 	private int _tooltipCachedId = -1;
 	private string _tooltipCachedText = "";
 
+	private readonly EventHandler? _onLanguageChanged;
+
 	private readonly ToolStripMenuItem _miBatch;
 	private readonly ToolStripMenuItem _miBatchRename;
 	private readonly ToolStripMenuItem _miBatchChangeType;
@@ -241,7 +243,7 @@ internal class GameListManager : IDisposable
 
 		contextMenu.Items.Add(_miBatch);
 
-		I18n.LanguageChanged += (_, _) =>
+		_onLanguageChanged = (_, _) =>
 		{
 			_miBatch.Text = Strings.ContextMenu_Batch;
 			_miBatchRename.Text = Strings.ContextMenu_BatchRename;
@@ -253,6 +255,7 @@ internal class GameListManager : IDisposable
 			_miMarkIncomplete.Text = Strings.ContextMenu_BatchMarkIncomplete;
 			_miBatchReset.Text = Strings.ContextMenu_BatchReset;
 		};
+		I18n.LanguageChanged += _onLanguageChanged;
 
 		_appSelection.ContextMenuStrip = contextMenu;
 
@@ -805,5 +808,7 @@ internal class GameListManager : IDisposable
 		foreach (var img in _filterImages.Values)
 			img.Dispose();
 		_dataStore.AppInfo.Modified -= OnEntryModified;
+		if (_onLanguageChanged != null)
+			I18n.LanguageChanged -= _onLanguageChanged;
 	}
 }
