@@ -76,11 +76,7 @@ internal class MainWindow : LocalizableForm
 		ApplyTheme();
 
 		// 构建 EntryType 下拉框（依赖 filterImages，由 GameListManager 构建）
-		listEntryType.Format += (s, e) =>
-		{
-			if (e.ListItem is AppInfoEntryType entryType)
-				e.Value = I18n.GetEnumDisplayName(entryType);
-		};
+		listEntryType.Format += ComboBoxFormatter.FormatEntryType;
 
 		base.Icon = Resources.logo;
 
@@ -93,51 +89,20 @@ internal class MainWindow : LocalizableForm
 		_mainViewModel = new MainViewModel(_steamData, _gameListViewModel, _propertyEditorViewModel);
 
 		// 绑定 PropertyEditorViewModel 到控件
-		var pe = _propertyEditorViewModel;
-		textGameName.DataBindings.Add(nameof(TextBox.Text), pe, nameof(pe.GameName), false, DataSourceUpdateMode.OnPropertyChanged);
-		textSortAs.DataBindings.Add(nameof(TextBox.Text), pe, nameof(pe.SortAs), false, DataSourceUpdateMode.OnPropertyChanged);
-		checkHidden.DataBindings.Add(nameof(CheckBox.Checked), pe, nameof(pe.IsHidden), false, DataSourceUpdateMode.OnPropertyChanged);
-		checkCompleted.DataBindings.Add(nameof(CheckBox.Checked), pe, nameof(pe.IsCompleted), false, DataSourceUpdateMode.OnPropertyChanged);
+		BindingConfigurator.Configure(
+			_propertyEditorViewModel,
+			textGameName, textSortAs,
+			checkHidden, checkCompleted,
+			listControllerSupport, listVR, listEntryType);
 
 		// 初始化 ComboBox 项（必须在绑定之前，否则空 ComboBox 的 SelectedIndex 绑定会崩溃）
 		listControllerSupport.Items.Add("none");
 		listControllerSupport.Items.Add("partial");
 		listControllerSupport.Items.Add("full");
-		listControllerSupport.Format += (s, e) =>
-		{
-			if (e.ListItem is string raw)
-				e.Value = raw switch
-				{
-					"none" => Strings.MainWindow_Controller_None,
-					"partial" => Strings.MainWindow_Controller_Partial,
-					"full" => Strings.MainWindow_Controller_Full,
-					_ => raw,
-				};
-		};
+		listControllerSupport.Format += ComboBoxFormatter.FormatControllerSupport;
 		listVR.Items.Add("default");
 		listVR.Items.Add("removed");
-		listVR.Format += (s, e) =>
-		{
-			if (e.ListItem is string raw)
-				e.Value = raw switch
-				{
-					"default" => Strings.MainWindow_VR_Default,
-					"removed" => Strings.MainWindow_VR_Removed,
-					_ => raw,
-				};
-		};
-
-		listControllerSupport.DataBindings.Add(nameof(ComboBox.SelectedIndex), pe, nameof(pe.ControllerSupportIndex), false, DataSourceUpdateMode.OnPropertyChanged);
-		listVR.DataBindings.Add(nameof(ComboBox.SelectedIndex), pe, nameof(pe.VRIndex), false, DataSourceUpdateMode.OnPropertyChanged);
-		textGameName.DataBindings.Add(nameof(ClearableTextBox.ClearXVisible), pe, nameof(pe.GameNameClearXVisible), false, DataSourceUpdateMode.OnPropertyChanged);
-		textSortAs.DataBindings.Add(nameof(ClearableTextBox.ClearXVisible), pe, nameof(pe.SortAsClearXVisible), false, DataSourceUpdateMode.OnPropertyChanged);
-
-		// SortAs 颜色通过 PropertyChanged 事件同步
-		pe.PropertyChanged += (_, e) =>
-		{
-			if (e.PropertyName == nameof(PropertyEditorViewModel.HasSortAs))
-				textSortAs.ForeColor = pe.HasSortAs ? System.Drawing.Color.FromKnownColor(System.Drawing.KnownColor.WindowText) : System.Drawing.Color.Gray;
-		};
+		listVR.Format += ComboBoxFormatter.FormatVR;
 
 		// ClearX 按钮点击
 		textGameName.ClearXClicked += (_, e) =>
@@ -150,22 +115,6 @@ internal class MainWindow : LocalizableForm
 			e.Handled = true;
 			_editController.ClearProperty(AppInfoPaths.SortAs);
 		};
-
-		// ComboBox 键盘拦截（阻止翻页按键改变选中项）
-		Action<ComboBox> attachKeyDown = cb =>
-		{
-			cb.KeyDown += (s, e) =>
-			{
-				if ((uint)(e.KeyCode - 33) <= 1u)
-				{
-					e.Handled = true;
-					e.SuppressKeyPress = true;
-					cb.DroppedDown = false;
-				}
-			};
-		};
-		attachKeyDown(listControllerSupport);
-		attachKeyDown(listVR);
 
 		// 绑定 MainViewModel 到窗口
 		_mainViewModel.PropertyChanged += (_, e) =>
@@ -200,7 +149,6 @@ internal class MainWindow : LocalizableForm
 				listEntryType.Items.Add(kv.Key);
 		}
 		listEntryType.EndUpdate();
-		listEntryType.DataBindings.Add(nameof(ComboBox.SelectedItem), pe, nameof(pe.EntryType), false, DataSourceUpdateMode.OnPropertyChanged);
 
 		_listManager.SelectedEntryChanged += (_, entry) =>
 		{
