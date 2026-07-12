@@ -30,7 +30,7 @@ public class SettingsTests
 
             string json = File.ReadAllText(jsonPath);
             Assert.IsTrue(json.Contains("\"Language\": \"en\""), "JSON should contain Language=en");
-            Assert.IsTrue(json.Contains("\"AiModel\": \"test-model\""), "JSON should contain AiModel=test-model");
+            Assert.IsTrue(json.Contains("\"Model\": \"test-model\""), "JSON should contain Ai.Model=test-model");
         }
         finally
         {

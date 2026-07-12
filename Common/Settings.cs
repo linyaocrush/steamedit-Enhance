@@ -66,7 +66,6 @@ internal class Settings
 	public string ShownVersion { get => Get<string>(); set => Set(value); }
 
 	// -- 窗口设置 --
-	public WindowSettings Window { get; }
 	[DefaultValue(int.MaxValue)]
 	public int WindowLocationX { get => Get<int>(); set => Set(value); }
 
@@ -95,7 +94,6 @@ internal class Settings
 	public string Language { get => Get<string>(); set => Set(value); }
 
 	// -- AI 翻译设置 --
-	public AiSettings Ai { get; }
 	[DefaultValue("")]
 	public string AiApiUrl { get => Get<string>(); set => Set(value); }
 
@@ -140,39 +138,9 @@ internal class Settings
 	[DefaultValue(false)]
 	public bool SortDescending { get => Get<bool>(); set => Set(value); }
 
-	internal sealed class WindowSettings
-	{
-		private readonly Settings _outer;
-		public WindowSettings(Settings outer) => _outer = outer;
-
-		public int LocationX { get => _outer.WindowLocationX; set => _outer.WindowLocationX = value; }
-		public int LocationY { get => _outer.WindowLocationY; set => _outer.WindowLocationY = value; }
-		public int SizeX { get => _outer.WindowSizeX; set => _outer.WindowSizeX = value; }
-		public int SizeY { get => _outer.WindowSizeY; set => _outer.WindowSizeY = value; }
-		public int Splitter { get => _outer.MainWindowSplitter; set => _outer.MainWindowSplitter = value; }
-	}
-
-	internal sealed class AiSettings
-	{
-		private readonly Settings _outer;
-		public AiSettings(Settings outer) => _outer = outer;
-
-		public string ApiUrl { get => _outer.AiApiUrl; set => _outer.AiApiUrl = value; }
-		public string ApiKey { get => _outer.AiApiKey; set => _outer.AiApiKey = value; }
-		public string Model { get => _outer.AiModel; set => _outer.AiModel = value; }
-		public string TargetLanguage { get => _outer.AiTargetLanguage; set => _outer.AiTargetLanguage = value; }
-		public string CustomSystemPrompt { get => _outer.AiCustomSystemPrompt; set => _outer.AiCustomSystemPrompt = value; }
-		public string CustomUserMessage { get => _outer.AiCustomUserMessage; set => _outer.AiCustomUserMessage = value; }
-		public string TranslationRules { get => _outer.AiTranslationRules; set => _outer.AiTranslationRules = value; }
-		public int TimeoutSeconds { get => _outer.AiTimeoutSeconds; set => _outer.AiTimeoutSeconds = value; }
-		public int BatchTranslateConcurrency { get => _outer.AiBatchTranslateConcurrency; set => _outer.AiBatchTranslateConcurrency = value; }
-	}
-
 	private Settings()
 	{
 		_values = new System.Collections.Concurrent.ConcurrentDictionary<string, object>();
-		Window = new WindowSettings(this);
-		Ai = new AiSettings(this);
 		_suppressDirtyTracking = true;
 
 		// 第一步：应用 [DefaultValue] 默认值
@@ -201,27 +169,16 @@ internal class Settings
 		try
 		{
 			string json = File.ReadAllText(jsonPath);
-			using var doc = JsonDocument.Parse(json);
-			var root = doc.RootElement;
-
-			foreach (PropertyInfo prop in _cachedProperties)
-			{
-				if (!root.TryGetProperty(prop.Name, out JsonElement element))
-					continue;
-
-				try
-				{
-					object? value = DeserializeJsonElement(element, prop.PropertyType);
-					if (value != null)
-					{
-						prop.SetValue(this, value, null);
-					}
-				}
-				catch (Exception ex)
-				{
-					Log.WriteLine("Settings: Failed to load property '{0}': {1}", prop.Name, ex.Message);
-				}
-			}
+			// 优先尝试新嵌套格式
+			var data = JsonSerializer.Deserialize<SettingsData>(json, _jsonOptions);
+			if (data != null)
+				ApplySettingsData(data);
+			else
+				LoadFlatJson(json);
+		}
+		catch (JsonException)
+		{
+			try { LoadFlatJson(File.ReadAllText(jsonPath)); } catch { }
 		}
 		catch (Exception ex)
 		{
@@ -229,12 +186,43 @@ internal class Settings
 		}
 	}
 
+	private void LoadFlatJson(string json)
+	{
+		try
+		{
+			using var doc = JsonDocument.Parse(json);
+			DeserializeOldFormat(doc, this);
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("Settings: Flat JSON parse error: {0}", ex.Message);
+		}
+	}
+
+	private static void DeserializeOldFormat(JsonDocument doc, Settings target)
+	{
+		var root = doc.RootElement;
+		foreach (PropertyInfo prop in _cachedProperties)
+		{
+			if (!root.TryGetProperty(prop.Name, out JsonElement element))
+				continue;
+			try
+			{
+				object? value = DeserializeJsonElement(element, prop.PropertyType);
+				if (value != null)
+					prop.SetValue(target, value, null);
+			}
+			catch (Exception ex)
+			{
+				Log.WriteLine("Settings: Failed to load property '{0}': {1}", prop.Name, ex.Message);
+			}
+		}
+	}
+
 	private static object? DeserializeJsonElement(JsonElement element, Type targetType)
 	{
 		if (element.ValueKind == JsonValueKind.Null || element.ValueKind == JsonValueKind.Undefined)
 			return null;
-
-		// 兼容旧版 JSON（值存为字符串）和新版（原生类型）
 		if (element.ValueKind == JsonValueKind.String)
 		{
 			string? str = element.GetString();
@@ -251,8 +239,6 @@ internal class Settings
 			}
 			return null;
 		}
-
-		// 原生 JSON 类型（直接加载的 JSON 或未来可能的原生序列化）
 		if (targetType == typeof(bool) && (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False))
 			return element.GetBoolean();
 		if (targetType == typeof(int) && element.ValueKind == JsonValueKind.Number)
@@ -262,16 +248,100 @@ internal class Settings
 		return null;
 	}
 
+	private void ApplySettingsData(SettingsData data)
+	{
+		var d = data.Display;
+		EnableCompleted = d.EnableCompleted;
+		EnableHidden = d.EnableHidden;
+		ReplaceLocalizedNames = d.ReplaceLocalizedNames;
+		PassThroughArguments = d.PassThroughArguments;
+		if (Enum.TryParse<AppInfoEntryType>(d.Filters, out var filters)) Filters = filters;
+		if (Enum.TryParse<ShowEntriesMode>(d.FiltersShowEntries, out var show)) FiltersShowEntries = show;
+		AppInfoPath = d.AppInfoPath;
+		ModsLocation = d.ModsLocation;
+		ShownVersion = d.ShownVersion;
+		AutoStart = d.AutoStart;
+		AutoStartAutoFix = d.AutoStartAutoFix;
+		AutoStartForceStart = d.AutoStartForceStart;
+		Language = d.Language;
+		if (Enum.TryParse<Log.LogLevel>(d.LogLevel, out var logLevel)) LogLevel = logLevel;
+		EnableDebugLogging = d.EnableDebugLogging;
+		SortField = d.SortField;
+		SortDescending = d.SortDescending;
+		SearchEngine = d.SearchEngine;
+
+		var w = data.Window;
+		WindowLocationX = w.LocationX;
+		WindowLocationY = w.LocationY;
+		WindowSizeX = w.SizeX;
+		WindowSizeY = w.SizeY;
+		MainWindowSplitter = w.Splitter;
+
+		var a = data.Ai;
+		AiApiUrl = a.ApiUrl;
+		AiApiKey = a.ApiKey;
+		AiModel = a.Model;
+		AiTargetLanguage = a.TargetLanguage;
+		AiCustomSystemPrompt = a.CustomSystemPrompt;
+		AiCustomUserMessage = a.CustomUserMessage;
+		AiTranslationRules = a.TranslationRules;
+		AiTimeoutSeconds = a.TimeoutSeconds;
+		AiBatchTranslateConcurrency = a.BatchTranslateConcurrency;
+	}
+
+	private SettingsData ToSettingsData()
+	{
+		return new SettingsData
+		{
+			Display = new DisplaySettingsData
+			{
+				EnableCompleted = EnableCompleted,
+				EnableHidden = EnableHidden,
+				ReplaceLocalizedNames = ReplaceLocalizedNames,
+				PassThroughArguments = PassThroughArguments,
+				Filters = Filters.ToString(),
+				FiltersShowEntries = FiltersShowEntries.ToString(),
+				AppInfoPath = AppInfoPath,
+				ModsLocation = ModsLocation,
+				ShownVersion = ShownVersion,
+				AutoStart = AutoStart,
+				AutoStartAutoFix = AutoStartAutoFix,
+				AutoStartForceStart = AutoStartForceStart,
+				Language = Language,
+				LogLevel = LogLevel.ToString(),
+				EnableDebugLogging = EnableDebugLogging,
+				SortField = SortField,
+				SortDescending = SortDescending,
+				SearchEngine = SearchEngine,
+			},
+			Window = new WindowSettingsData
+			{
+				LocationX = WindowLocationX,
+				LocationY = WindowLocationY,
+				SizeX = WindowSizeX,
+				SizeY = WindowSizeY,
+				Splitter = MainWindowSplitter,
+			},
+			Ai = new AiSettingsData
+			{
+				ApiUrl = AiApiUrl,
+				ApiKey = AiApiKey,
+				Model = AiModel,
+				TargetLanguage = AiTargetLanguage,
+				CustomSystemPrompt = AiCustomSystemPrompt,
+				CustomUserMessage = AiCustomUserMessage,
+				TranslationRules = AiTranslationRules,
+				TimeoutSeconds = AiTimeoutSeconds,
+				BatchTranslateConcurrency = AiBatchTranslateConcurrency,
+			},
+		};
+	}
+
 	private void SaveJson(string path)
 	{
 		string? dir = Path.GetDirectoryName(path);
 		if (dir != null) Directory.CreateDirectory(dir);
-		var dict = new Dictionary<string, object?>();
-		foreach (PropertyInfo prop in _cachedProperties)
-		{
-			dict[prop.Name] = prop.GetValue(this, null);
-		}
-		string json = JsonSerializer.Serialize(dict, _jsonOptions);
+		string json = JsonSerializer.Serialize(ToSettingsData(), _jsonOptions);
 		string tempPath = path + ".tmp";
 		File.WriteAllText(tempPath, json);
 		File.Move(tempPath, path, overwrite: true);
