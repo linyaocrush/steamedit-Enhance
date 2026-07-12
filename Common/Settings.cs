@@ -295,6 +295,27 @@ internal class Settings
 		}
 	}
 
+	/// <summary>
+	/// 重新从 JSON 文件加载设置（仅用于测试，避免测试间状态泄漏）
+	/// </summary>
+	[System.Diagnostics.Conditional("DEBUG")]
+	public void Reload()
+	{
+		_suppressDirtyTracking = true;
+		_values.Clear();
+		foreach (PropertyInfo propertyInfo in _cachedProperties)
+		{
+			DefaultValueAttribute? defaultValueAttribute = Attribute.GetCustomAttribute(propertyInfo, typeof(DefaultValueAttribute)) as DefaultValueAttribute;
+			if (defaultValueAttribute != null)
+				propertyInfo.SetValue(this, defaultValueAttribute.Value, null);
+		}
+		string jsonPath = GetJsonFilePath();
+		if (File.Exists(jsonPath))
+			LoadFromJson(jsonPath);
+		_suppressDirtyTracking = false;
+		_isDirty = false;
+	}
+
 	private string GetJsonFilePath()
 	{
 		return Path.Combine(AppHelper.GetAppDirectory(), "Settings.json");

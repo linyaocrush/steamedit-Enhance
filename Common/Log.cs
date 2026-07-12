@@ -168,4 +168,18 @@ internal static class Log
 			_writer = null;
 		}
 	}
+
+	/// <summary>
+	/// 重置日志系统状态（仅用于测试，避免测试间状态泄漏）
+	/// </summary>
+	[System.Diagnostics.Conditional("DEBUG")]
+	public static void Reset()
+	{
+		Close();
+		_writer = new StreamWriter(_path, append: false) { AutoFlush = true };
+		_enableDebug = true;
+		_enableInfo = true;
+		_enableWarning = true;
+		_enableError = true;
+	}
 }
