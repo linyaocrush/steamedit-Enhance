@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
@@ -39,6 +40,7 @@ internal class GameListManager : IDisposable
 	private readonly SolidBrush _brushListSelectedUnfocusedBackColor;
 	private readonly SolidBrush _brushAccentLightAlt;
 	private readonly Pen _penBorder;
+	private readonly GraphicsPath _cachedSelectionPath = new();
 
 	private readonly Timer _appSearchTermTimer = new();
 	private readonly Timer _filterDebounceTimer = new();
@@ -519,7 +521,7 @@ internal class GameListManager : IDisposable
 		_appSelection.EndUpdate();
 	}
 
-	private void ApplyIncrementalSearch()
+	private async void ApplyIncrementalSearch()
 	{
 		string newText = _appFilterText.Text ?? "";
 		string trimmed = newText.Trim();
@@ -533,29 +535,89 @@ internal class GameListManager : IDisposable
 		}
 
 		string[] patternParts = trimmed.Split(' ', '\t', '　');
-		IReadOnlyList<IAppInfoEntry> source;
-		if (!string.IsNullOrEmpty(_ctx.CurrentSearchTerm) && trimmed.StartsWith(_ctx.CurrentSearchTerm, StringComparison.OrdinalIgnoreCase))
-			source = _ctx.Entries;
-		else if (!string.IsNullOrEmpty(_ctx.CurrentSearchTerm) && _ctx.CurrentSearchTerm.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
-			source = _ctx._baseEntries;
-		else
-			source = _ctx._baseEntries;
+		bool isNumeric = int.TryParse(trimmed, out _);
+		string currentSearchTerm = _ctx.CurrentSearchTerm;
+		IReadOnlyList<IAppInfoEntry> baseEntries = _ctx._baseEntries;
+		IReadOnlyList<IAppInfoEntry> currentEntries = _ctx.Entries;
+		string sortField = Settings.Default.SortField;
+		bool descending = Settings.Default.SortDescending;
 
-		_ctx._entries = new List<IAppInfoEntry>();
-		if (int.TryParse(trimmed, out _))
+		// Snapshot display names for background thread safety
+		var displayNameSnapshot = new Dictionary<int, string>(_ctx.DisplayNames);
+		// Pre-warm NormalizedSortAs for all entries in source (thread-safe per-entry cache)
+		IReadOnlyList<IAppInfoEntry> sourceForWarm = baseEntries;
+		foreach (var ent in sourceForWarm)
 		{
-			foreach (var ent in source)
-				if (ent.ID.ToString().StartsWith(trimmed))
-					_ctx._entries.Add(ent);
+			// Force cache population on UI thread
+			if (!string.IsNullOrEmpty(ent.Name))
+			{
+				if (!displayNameSnapshot.ContainsKey(ent.ID))
+					displayNameSnapshot[ent.ID] = ent.Name;
+				_ = ent.NormalizedSortAs;
+			}
 		}
-		else
+		string GetDisplayNameSafe(IAppInfoEntry e) =>
+			displayNameSnapshot.TryGetValue(e.ID, out var n) ? n : (e.Name ?? "");
+
+		var result = await Task.Run(() =>
 		{
-			foreach (var ent in source)
-				if (IsFuzzyMatch(GetDisplayName(ent), patternParts))
-					_ctx._entries.Add(ent);
-		}
+			IReadOnlyList<IAppInfoEntry> source;
+			if (!string.IsNullOrEmpty(currentSearchTerm) && trimmed.StartsWith(currentSearchTerm, StringComparison.OrdinalIgnoreCase))
+				source = currentEntries;
+			else if (!string.IsNullOrEmpty(currentSearchTerm) && currentSearchTerm.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
+				source = baseEntries;
+			else
+				source = baseEntries;
+
+			var filtered = new List<IAppInfoEntry>(source.Count);
+			if (isNumeric)
+			{
+				foreach (var ent in source)
+					if (ent.ID.ToString().StartsWith(trimmed))
+						filtered.Add(ent);
+			}
+			else
+			{
+				foreach (var ent in source)
+					if (IsFuzzyMatch(GetDisplayNameSafe(ent), patternParts))
+						filtered.Add(ent);
+			}
+
+			if (sortField == "AppId")
+			{
+				filtered.Sort((a, b) =>
+				{
+					int n = a.ID.CompareTo(b.ID);
+					if (descending) n = -n;
+					if (n == 0) n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
+					return n;
+				});
+			}
+			else
+			{
+				filtered.Sort((a, b) =>
+				{
+					int n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
+					if (descending) n = -n;
+					if (n == 0) n = a.ID - b.ID;
+					return n;
+				});
+			}
+			return filtered;
+		});
+
+		_ctx._entries = result;
 		_ctx.CurrentSearchTerm = trimmed;
-		SortEntries();
+		RebuildListBoxItems();
+		RestoreSelectedEntry();
+	}
+
+	private void RestoreSelectedEntry()
+	{
+		if (_appSelection.SelectedIndex >= 0 && _appSelection.Items.Count > 0)
+			return;
+		if (_appSelection.Items.Count > 0)
+			_appSelection.SelectedIndex = 0;
 	}
 
 	private static bool IsFuzzyMatch(string testString, string[] patternParts)
@@ -615,12 +677,12 @@ internal class GameListManager : IDisposable
 
 		if (selected)
 		{
-			// Rounded selection highlight
+			// Rounded selection highlight — reuse cached path
 			var rowRect = new Rectangle(bounds.X + 1, bounds.Y + 1, bounds.Width - 2, bounds.Height - 2);
 			int radius = Math.Max(2, (int)Math.Round(4.0 * _appSelection.DeviceDpi / 96.0));
-			using var path = ThemeManager.GetRoundedRectangle(rowRect, radius);
+			ThemeManager.UpdateRoundedRectangle(_cachedSelectionPath, rowRect, radius);
 			e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-			e.Graphics.FillPath(backBrush, path);
+			e.Graphics.FillPath(backBrush, _cachedSelectionPath);
 			e.Graphics.SmoothingMode = SmoothingMode.Default;
 
 			if (focused)
@@ -822,6 +884,7 @@ internal class GameListManager : IDisposable
 		_brushListSelectedUnfocusedBackColor?.Dispose();
 		_brushAccentLightAlt?.Dispose();
 		_penBorder?.Dispose();
+		_cachedSelectionPath?.Dispose();
 		foreach (var img in _filterImages.Values)
 			img.Dispose();
 		_dataStore.AppInfo.Modified -= OnEntryModified;

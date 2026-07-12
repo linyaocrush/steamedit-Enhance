@@ -40,12 +40,23 @@ internal static class ThemeManager
     public static GraphicsPath GetRoundedRectangle(Rectangle rect, int radius)
     {
         var path = new GraphicsPath();
+        AddRoundedRect(path, rect, radius);
+        return path;
+    }
+
+    public static void UpdateRoundedRectangle(GraphicsPath path, Rectangle rect, int radius)
+    {
+        path.Reset();
+        AddRoundedRect(path, rect, radius);
+    }
+
+    private static void AddRoundedRect(GraphicsPath path, Rectangle rect, int radius)
+    {
         path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
         path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
         path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
         path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
         path.CloseFigure();
-        return path;
     }
 
     // ── Form / Dialog Styling ──
