@@ -26,6 +26,8 @@ internal interface IAppInfoEntry
 
 	string SortAs { get; set; }
 
+	string NormalizedSortAs { get; }
+
 	string InstallPath { get; }
 
 	AppInfoEntryType Type { get; set; }

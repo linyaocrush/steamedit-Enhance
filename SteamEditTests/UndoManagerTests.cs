@@ -14,6 +14,7 @@ public class UndoManagerTests
         public int ID { get; set; }
         public string Name { get; set; } = "";
         public string SortAs { get; set; } = "";
+        public string NormalizedSortAs => Common.StringTitleComparer.Normalize(SortAs);
         public bool HasSortAs => false;
         public bool IsHidden { get; set; }
         public bool IsCompleted { get; set; }

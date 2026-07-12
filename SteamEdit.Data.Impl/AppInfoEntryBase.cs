@@ -19,6 +19,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	private bool? _cachedHasSortAs;
 	private string? _cachedSortAs;
 	private bool _sortAsCached;
+	private string? _cachedNormalizedSortAs;
+	private bool _normalizedSortAsCached;
 	private AppInfoEntryType? _cachedType;
 	private PropertyTable? _cachedOriginalData;
 
@@ -143,6 +145,19 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		}
 	}
 
+	public string NormalizedSortAs
+	{
+		get
+		{
+			if (!_normalizedSortAsCached)
+			{
+				_cachedNormalizedSortAs = StringTitleComparer.Normalize(SortAs);
+				_normalizedSortAsCached = true;
+			}
+			return _cachedNormalizedSortAs!;
+		}
+	}
+
 	public string InstallPath
 	{
 		get
@@ -212,6 +227,8 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		_cachedSortAs = null;
 		_sortAsCached = false;
 		_cachedHasSortAs = null;
+		_cachedNormalizedSortAs = null;
+		_normalizedSortAsCached = false;
 		_cachedType = null;
 		_cachedOriginalData = null;
 	}

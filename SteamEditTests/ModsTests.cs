@@ -289,6 +289,7 @@ public class ModsTests
         public string Name { get; set; } = "";
         public bool HasSortAs => false;
         public string SortAs { get; set; } = "";
+        public string NormalizedSortAs => Common.StringTitleComparer.Normalize(SortAs);
         public string InstallPath => "";
         public AppInfoEntryType Type { get; set; } = AppInfoEntryType.Game;
         public LaunchTable Launches { get; set; } = new LaunchTable(new PropertyTable());

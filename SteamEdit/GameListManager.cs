@@ -395,17 +395,15 @@ internal class GameListManager : IDisposable
 			{
 				int n = a.ID.CompareTo(b.ID);
 				if (descending) n = -n;
-				if (n == 0) n = StringTitleComparer.CompareStrings(a.SortAs, b.SortAs);
+				if (n == 0) n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
 				return n;
 			});
 		}
 		else
 		{
-			var keys = new Dictionary<IAppInfoEntry, string>(_ctx.Entries.Count);
-			foreach (var e in _ctx.Entries) keys[e] = StringTitleComparer.Normalize(e.SortAs);
 			_ctx.Entries.Sort((a, b) =>
 			{
-				int n = StringComparer.CurrentCulture.Compare(keys[a], keys[b]);
+				int n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
 				if (descending) n = -n;
 				if (n == 0) n = a.ID - b.ID;
 				return n;
