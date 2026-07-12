@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Text;
 using System.Windows.Forms;
@@ -31,6 +32,13 @@ internal class GameListManager : IDisposable
 	private readonly Font _boldAppSelectionFont;
 	private readonly Font _hiddenAppSelectionFont;
 	private readonly ImageAttributes _bgLogoAttributes;
+
+	private readonly SolidBrush _brushListBackColor;
+	private readonly SolidBrush _brushListAlternateBackColor;
+	private readonly SolidBrush _brushListSelectedBackColor;
+	private readonly SolidBrush _brushListSelectedUnfocusedBackColor;
+	private readonly SolidBrush _brushAccentLightAlt;
+	private readonly Pen _penBorder;
 
 	private readonly Timer _appSearchTermTimer = new();
 	private readonly Timer _filterDebounceTimer = new();
@@ -131,6 +139,13 @@ internal class GameListManager : IDisposable
 		_defaultAppSelectionFont = _appSelection.Font;
 		_boldAppSelectionFont = new Font(_appSelection.Font, FontStyle.Bold);
 		_hiddenAppSelectionFont = new Font(_appSelection.Font, FontStyle.Strikeout);
+
+		_brushListBackColor = new SolidBrush(ThemeManager.ListBackColor);
+		_brushListAlternateBackColor = new SolidBrush(ThemeManager.ListAlternateBackColor);
+		_brushListSelectedBackColor = new SolidBrush(ThemeManager.ListSelectedBackColor);
+		_brushListSelectedUnfocusedBackColor = new SolidBrush(ThemeManager.ListSelectedUnfocusedBackColor);
+		_brushAccentLightAlt = new SolidBrush(ThemeManager.AccentLightAlt);
+		_penBorder = new Pen(ThemeManager.BorderColor);
 
 		// 构建筛选器菜单
 		foreach (var kv in _filterImages)
@@ -588,15 +603,15 @@ internal class GameListManager : IDisposable
 		const int iconGap = 4;
 
 		// --- Background ---
-		Color backColor;
+		Brush backBrush;
 		if (selected)
-			backColor = focused ? ThemeManager.ListSelectedBackColor : ThemeManager.ListSelectedUnfocusedBackColor;
+			backBrush = focused ? _brushListSelectedBackColor : _brushListSelectedUnfocusedBackColor;
 		else if (hover)
-			backColor = ThemeManager.AccentLightAlt;
+			backBrush = _brushAccentLightAlt;
 		else if (e.Index % 2 == 1)
-			backColor = ThemeManager.ListAlternateBackColor;
+			backBrush = _brushListAlternateBackColor;
 		else
-			backColor = ThemeManager.ListBackColor;
+			backBrush = _brushListBackColor;
 
 		if (selected)
 		{
@@ -604,23 +619,20 @@ internal class GameListManager : IDisposable
 			var rowRect = new Rectangle(bounds.X + 1, bounds.Y + 1, bounds.Width - 2, bounds.Height - 2);
 			int radius = Math.Max(2, (int)Math.Round(4.0 * _appSelection.DeviceDpi / 96.0));
 			using var path = ThemeManager.GetRoundedRectangle(rowRect, radius);
-			using var brush = new SolidBrush(backColor);
-			e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-			e.Graphics.FillPath(brush, path);
-			e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
+			e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+			e.Graphics.FillPath(backBrush, path);
+			e.Graphics.SmoothingMode = SmoothingMode.Default;
 
 			if (focused)
 				ControlPaint.DrawFocusRectangle(e.Graphics, e.Bounds);
 		}
 		else
 		{
-			using var brush = new SolidBrush(backColor);
-			e.Graphics.FillRectangle(brush, bounds);
+			e.Graphics.FillRectangle(backBrush, bounds);
 		}
 
 		// --- Row separator ---
-		using (var sepPen = new Pen(ThemeManager.BorderColor))
-			e.Graphics.DrawLine(sepPen, bounds.X, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+		e.Graphics.DrawLine(_penBorder, bounds.X, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
 
 		// --- Icons and Text ---
 		Color foreColor = _appSelection.ForeColor;
@@ -803,6 +815,12 @@ internal class GameListManager : IDisposable
 		_boldAppSelectionFont?.Dispose();
 		_hiddenAppSelectionFont?.Dispose();
 		_bgLogoAttributes?.Dispose();
+		_brushListBackColor?.Dispose();
+		_brushListAlternateBackColor?.Dispose();
+		_brushListSelectedBackColor?.Dispose();
+		_brushListSelectedUnfocusedBackColor?.Dispose();
+		_brushAccentLightAlt?.Dispose();
+		_penBorder?.Dispose();
 		foreach (var img in _filterImages.Values)
 			img.Dispose();
 		_dataStore.AppInfo.Modified -= OnEntryModified;
