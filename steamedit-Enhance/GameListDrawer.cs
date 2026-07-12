@@ -17,7 +17,7 @@ internal sealed class GameListDrawer : IDisposable
 	private const int IconSpacing = 6;
 
 	private readonly GameListViewModel _viewModel;
-	private readonly ListBox _appSelection;
+	private readonly ListView _appSelection;
 	private readonly GameDataContext _ctx;
 	private readonly Dictionary<AppInfoEntryType, Image> _filterImages;
 	private readonly ImageAttributes _bgLogoAttributes;
@@ -36,7 +36,7 @@ internal sealed class GameListDrawer : IDisposable
 
 	public GameListDrawer(
 		GameListViewModel viewModel,
-		ListBox appSelection,
+		ListView appSelection,
 		GameDataContext ctx,
 		Dictionary<AppInfoEntryType, Image> filterImages)
 	{
@@ -72,7 +72,8 @@ internal sealed class GameListDrawer : IDisposable
 		_brushAccentLightAlt = new SolidBrush(ThemeManager.AccentLightAlt);
 		_penBorder = new Pen(ThemeManager.BorderColor);
 
-		appSelection.DrawItem += OnDrawItem;
+		appSelection.DrawItem += OnListViewDrawItem;
+		appSelection.DrawSubItem += OnListViewDrawSubItem;
 	}
 
 	public ImageAttributes BgLogoAttributes => _bgLogoAttributes;
@@ -80,8 +81,8 @@ internal sealed class GameListDrawer : IDisposable
 
 	public void InvalidateItem(int index)
 	{
-		if (index >= 0)
-			_appSelection.Invalidate(_appSelection.GetItemRectangle(index));
+		if (index >= 0 && index < _appSelection.VirtualListSize)
+			_appSelection.Invalidate(_appSelection.GetItemRect(index));
 	}
 
 	public void InvalidateAll() => _appSelection.Invalidate();
@@ -101,21 +102,16 @@ internal sealed class GameListDrawer : IDisposable
 		}
 	}
 
-	private void OnDrawItem(object? sender, DrawItemEventArgs e)
+	private void OnListViewDrawItem(object? sender, DrawListViewItemEventArgs e)
 	{
 		var entries = _ctx.Entries;
-		if (e.Index < 0 || e.Index >= entries.Count) return;
+		if (e.ItemIndex < 0 || e.ItemIndex >= entries.Count) return;
 
-		var entry = entries[e.Index];
-		string text = _viewModel.GetDisplayName(entry);
-
-		bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+		bool selected = e.Item.Selected;
 		bool focused = _appSelection.Focused;
-		bool hover = e.Index == _lastHoverIndex && !selected;
+		bool hover = e.ItemIndex == _lastHoverIndex && !selected;
 
-		Rectangle bounds = e.Bounds;
-		const int padding = 4;
-		const int iconGap = 4;
+		Rectangle bounds = new Rectangle(0, e.Bounds.Y, _appSelection.ClientSize.Width, e.Bounds.Height);
 
 		// Background
 		Brush backBrush;
@@ -123,7 +119,7 @@ internal sealed class GameListDrawer : IDisposable
 			backBrush = focused ? _brushListSelectedBackColor : _brushListSelectedUnfocusedBackColor;
 		else if (hover)
 			backBrush = _brushAccentLightAlt;
-		else if (e.Index % 2 == 1)
+		else if (e.ItemIndex % 2 == 1)
 			backBrush = _brushListAlternateBackColor;
 		else
 			backBrush = _brushListBackColor;
@@ -138,7 +134,7 @@ internal sealed class GameListDrawer : IDisposable
 			e.Graphics.SmoothingMode = SmoothingMode.Default;
 
 			if (focused)
-				ControlPaint.DrawFocusRectangle(e.Graphics, e.Bounds);
+				ControlPaint.DrawFocusRectangle(e.Graphics, bounds);
 		}
 		else
 		{
@@ -147,10 +143,21 @@ internal sealed class GameListDrawer : IDisposable
 
 		// Row separator
 		e.Graphics.DrawLine(_penBorder, bounds.X, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+	}
 
-		// Icons and Text
+	private void OnListViewDrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
+	{
+		var entries = _ctx.Entries;
+		if (e.ItemIndex < 0 || e.ItemIndex >= entries.Count) return;
+
+		var entry = entries[e.ItemIndex];
+		string text = _viewModel.GetDisplayName(entry);
+
 		Color foreColor = _appSelection.ForeColor;
 		Font font = _defaultAppSelectionFont;
+		Rectangle bounds = e.Bounds;
+		const int padding = 4;
+		const int iconGap = 4;
 		int iconSize = bounds.Height - 8;
 		int leftX = bounds.X + padding;
 

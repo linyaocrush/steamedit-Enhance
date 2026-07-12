@@ -16,7 +16,7 @@ internal class GameListManager : IDisposable
 	private readonly GameDataContext _ctx;
 	private readonly GameListViewModel _viewModel;
 	private readonly IAppInfoDataStore _dataStore;
-	private readonly ListBox _appSelection;
+	private readonly ListView _appSelection;
 	private readonly ClearableTextBox _appFilterText;
 	private readonly Timer _filterDebounceTimer = new();
 	private bool _refreshingGamesListAfterEdit;
@@ -41,7 +41,7 @@ internal class GameListManager : IDisposable
 	public GameListManager(
 		GameDataContext ctx,
 		GameListViewModel viewModel,
-		ListBox appSelection,
+		ListView appSelection,
 		ContextMenuStrip filterSelectorMenu,
 		ContextMenuStrip sortSelectorMenu,
 		ToolTip toolTips,
@@ -122,6 +122,7 @@ internal class GameListManager : IDisposable
 		// 列表事件
 		appSelection.SelectedIndexChanged += OnAppSelection_SelectedIndexChanged;
 		appSelection.SizeChanged += (_, _) => _appSelection.Invalidate();
+		appSelection.RetrieveVirtualItem += (_, e) => e.Item = new ListViewItem();
 
 		// 搜索文本
 		appFilterText.TextChanged += (_, _) =>
@@ -147,7 +148,7 @@ internal class GameListManager : IDisposable
 
 	public IAppInfoEntry? GetSelectedEntry()
 	{
-		int idx = _appSelection.SelectedIndex;
+		int idx = GetSelectedIndex();
 		return idx >= 0 && idx < _ctx.Entries.Count ? _ctx.Entries[idx] : null;
 	}
 
@@ -197,7 +198,7 @@ internal class GameListManager : IDisposable
 	public void SelectIndex(int idx)
 	{
 		if (idx >= 0 && idx < _ctx.Entries.Count)
-			_appSelection.SelectedIndex = idx;
+			SetSelectedIndex(idx);
 	}
 
 	public void InvalidateItem(IAppInfoEntry entry)
@@ -246,11 +247,8 @@ internal class GameListManager : IDisposable
 
 	private void RebuildListBoxItems()
 	{
-		_appSelection.BeginUpdate();
-		_appSelection.Items.Clear();
-		for (int i = 0; i < _ctx.Entries.Count; i++)
-			_appSelection.Items.Add(i);
-		_appSelection.EndUpdate();
+		_appSelection.VirtualListSize = _ctx.Entries.Count;
+		_appSelection.Invalidate();
 	}
 
 	private void RestoreSelection(IAppInfoEntry? selected)
@@ -258,10 +256,18 @@ internal class GameListManager : IDisposable
 		if (selected != null)
 		{
 			int newIdx = _ctx._entries.IndexOf(selected);
-			if (newIdx >= 0) _appSelection.SelectedIndex = newIdx;
+			if (newIdx >= 0) SetSelectedIndex(newIdx);
 		}
-		if (_appSelection.SelectedIndex < 0 && _ctx.Entries.Count > 0)
-			_appSelection.SelectedIndex = 0;
+		if (GetSelectedIndex() < 0 && _ctx.Entries.Count > 0)
+			SetSelectedIndex(0);
+	}
+
+	private int GetSelectedIndex() => _appSelection.SelectedIndices.Count > 0 ? _appSelection.SelectedIndices[0] : -1;
+
+	private void SetSelectedIndex(int idx)
+	{
+		_appSelection.SelectedIndices.Clear();
+		if (idx >= 0) _appSelection.SelectedIndices.Add(idx);
 	}
 
 	private void OnSearchTextChanged()

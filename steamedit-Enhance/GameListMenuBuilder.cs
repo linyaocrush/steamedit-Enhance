@@ -34,7 +34,7 @@ internal sealed class GameListMenuBuilder
 		Dictionary<AppInfoEntryType, Image> filterImages,
 		ContextMenuStrip filterSelectorMenu,
 		ContextMenuStrip sortSelectorMenu,
-		ListBox appSelection)
+		ListView appSelection)
 	{
 		_viewModel = viewModel;
 		_filterSelectorMenu = filterSelectorMenu;

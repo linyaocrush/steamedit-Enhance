@@ -51,7 +51,7 @@ internal class MainWindow : LocalizableForm
 	private ContextMenuStrip sortSelectorMenu = null!;
 	private Button sortSelector = null!;
 	private SplitContainer splitContainer1 = null!;
-	private ListBox appSelection = null!;
+	private ListView appSelection = null!;
 	private ClearableTextBox appFilterText = null!;
 	private Panel panel1 = null!;
 	private FlowLayoutPanel flowLayoutPanel3 = null!;
@@ -460,10 +460,20 @@ internal class MainWindow : LocalizableForm
 		switch (e.KeyCode)
 		{
 		case Keys.Next:
-			appSelection.SelectedIndex = Math.Min(appSelection.SelectedIndex + 1, _ctx.Entries.Count - 1);
+			{
+				int cur = appSelection.SelectedIndices.Count > 0 ? appSelection.SelectedIndices[0] : -1;
+				int next = Math.Min(cur + 1, _ctx.Entries.Count - 1);
+				appSelection.SelectedIndices.Clear();
+				if (next >= 0) appSelection.SelectedIndices.Add(next);
+			}
 			break;
 		case Keys.Prior:
-			appSelection.SelectedIndex = Math.Max(appSelection.SelectedIndex - 1, 0);
+			{
+				int cur = appSelection.SelectedIndices.Count > 0 ? appSelection.SelectedIndices[0] : -1;
+				int prev = Math.Max(cur - 1, 0);
+				appSelection.SelectedIndices.Clear();
+				appSelection.SelectedIndices.Add(prev);
+			}
 			break;
 		}
 	}
@@ -928,10 +938,9 @@ internal class MainWindow : LocalizableForm
 		ThemeManager.StyleButton(filterSelector);
 		ThemeManager.StyleButton(sortSelector);
 
-		// ListBox
+		// ListView
 		appSelection.BackColor = ThemeManager.ListBackColor;
 		appSelection.BorderStyle = BorderStyle.None;
-		appSelection.ItemHeight = 22;
 
 		// TextBoxes
 		ThemeManager.StyleTextBox(textGameName);
@@ -978,7 +987,7 @@ internal class MainWindow : LocalizableForm
 		this.filterSelectorMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
 		this.filterSelector = new System.Windows.Forms.Button();
 		this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-		this.appSelection = new System.Windows.Forms.ListBox();
+		this.appSelection = new System.Windows.Forms.ListView();
 		this.appFilterText = new steamedit_Enhance.ClearableTextBox();
 		this.panel1 = new System.Windows.Forms.Panel();
 		this.listEntryType = new System.Windows.Forms.ComboBox();
@@ -1253,14 +1262,21 @@ internal class MainWindow : LocalizableForm
 		this.splitContainer1.TabStop = false;
 		this.splitContainer1.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(splitContainer1_SplitterMoved);
 		this.appSelection.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-		this.appSelection.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-		this.appSelection.FormattingEnabled = true;
-		this.appSelection.IntegralHeight = false;
-		this.appSelection.ItemHeight = 20;
+		this.appSelection.View = System.Windows.Forms.View.Details;
+		this.appSelection.VirtualMode = true;
+		this.appSelection.FullRowSelect = true;
+		this.appSelection.OwnerDraw = true;
+		this.appSelection.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
 		this.appSelection.Location = new System.Drawing.Point(2, 29);
 		this.appSelection.Name = "appSelection";
 		this.appSelection.Size = new System.Drawing.Size(221, 274);
 		this.appSelection.TabIndex = 2;
+		// 
+		// appSelectionColumn
+		// 
+		System.Windows.Forms.ColumnHeader appSelectionColumn = new System.Windows.Forms.ColumnHeader();
+		appSelectionColumn.Width = -2;
+		this.appSelection.Columns.Add(appSelectionColumn);
 		this.appFilterText.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 		this.appFilterText.AutoClearX = true;
 		this.appFilterText.ClearXVisible = false;

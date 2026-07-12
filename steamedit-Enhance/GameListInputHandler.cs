@@ -11,7 +11,7 @@ namespace steamedit_Enhance;
 internal sealed class GameListInputHandler : IDisposable
 {
 	private readonly GameListDrawer _drawer;
-	private readonly ListBox _appSelection;
+	private readonly ListView _appSelection;
 	private readonly ToolTip _toolTips;
 	private readonly Func<int, string> _getToolTip;
 	private readonly IReadOnlyList<IAppInfoEntry> _entries;
@@ -21,7 +21,7 @@ internal sealed class GameListInputHandler : IDisposable
 
 	public GameListInputHandler(
 		GameListDrawer drawer,
-		ListBox appSelection,
+		ListView appSelection,
 		ToolTip toolTips,
 		Func<int, string> getToolTip,
 		IReadOnlyList<IAppInfoEntry> entries)
@@ -48,14 +48,15 @@ internal sealed class GameListInputHandler : IDisposable
 		_appSearchTermTimer.Stop();
 		_appSearchTermTimer.Start();
 		string text = _appSearchTerm.ToString();
-		int start = _appSelection.SelectedIndex;
+		int start = _appSelection.SelectedIndices.Count > 0 ? _appSelection.SelectedIndices[0] : 0;
 		if (text.Length == 1) start++;
 		for (int i = 0; i < _entries.Count; i++)
 		{
 			int idx = (start + i) % _entries.Count;
 			if (_getToolTip(idx).StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
 			{
-				_appSelection.SelectedIndex = idx;
+				_appSelection.SelectedIndices.Clear();
+				_appSelection.SelectedIndices.Add(idx);
 				break;
 			}
 		}
@@ -63,8 +64,7 @@ internal sealed class GameListInputHandler : IDisposable
 
 	private void OnMouseMove(object? sender, MouseEventArgs e)
 	{
-		Point p = _appSelection.PointToClient(Control.MousePosition);
-		int idx = _appSelection.IndexFromPoint(p);
+		int idx = _appSelection.HitTest(e.Location).Item?.Index ?? -1;
 		if (idx >= 0 && idx < _entries.Count)
 		{
 			_drawer.LastHoverIndex = idx;
@@ -88,12 +88,13 @@ internal sealed class GameListInputHandler : IDisposable
 	private void OnMouseDown(object? sender, MouseEventArgs e)
 	{
 		if (e.Button != MouseButtons.Right) return;
-		int idx = _appSelection.IndexFromPoint(e.Location);
+		int idx = _appSelection.HitTest(e.Location).Item?.Index ?? -1;
 		if (idx >= 0 && idx < _entries.Count)
 		{
 			if (_appSelection.SelectedIndices.Contains(idx))
 				return;
-			_appSelection.SelectedIndex = idx;
+			_appSelection.SelectedIndices.Clear();
+			_appSelection.SelectedIndices.Add(idx);
 		}
 	}
 

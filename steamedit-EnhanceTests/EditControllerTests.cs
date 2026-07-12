@@ -33,7 +33,7 @@ public class EditControllerTests
     {
         var vm = new GameListViewModel(dataStore: new MockDataStore());
         return new GameListManager(ctx, vm,
-            new System.Windows.Forms.ListBox(),
+            new System.Windows.Forms.ListView(),
             new System.Windows.Forms.ContextMenuStrip(),
             new System.Windows.Forms.ContextMenuStrip(),
             new System.Windows.Forms.ToolTip(),
