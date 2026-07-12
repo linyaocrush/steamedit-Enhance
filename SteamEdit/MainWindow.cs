@@ -530,11 +530,18 @@ internal class MainWindow : LocalizableForm
 			{
 				BeginInvoke(() =>
 				{
-					var currentEntry = _listManager.GetSelectedEntry();
-					if (currentEntry == null) return;
-					string previousName = currentEntry.Name;
-					_editController.ApplyTranslation(currentEntry, translated, previousName);
-					Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
+					try
+					{
+						var currentEntry = _listManager.GetSelectedEntry();
+						if (currentEntry == null) return;
+						string previousName = currentEntry.Name;
+						_editController.ApplyTranslation(currentEntry, translated, previousName);
+						Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
+					}
+					catch (Exception ex)
+					{
+						Log.WriteLine("AI Translate: BeginInvoke error: {0}", ex);
+					}
 				});
 			}
 			else if (string.IsNullOrWhiteSpace(translated))
