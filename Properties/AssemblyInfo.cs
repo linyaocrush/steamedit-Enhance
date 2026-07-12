@@ -4,12 +4,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-[assembly: InternalsVisibleTo("SteamEditTests")]
-[assembly: AssemblyTitle("steamedit-Enhance")]
+[assembly: InternalsVisibleTo("steamedit-EnhanceTests")]
+[assembly: AssemblyTitle("steamedit_Enhance-Enhance")]
 [assembly: AssemblyDescription("Tool for editing local Steam appinfo")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tim Green")]
-[assembly: AssemblyProduct("steamedit-Enhance")]
+[assembly: AssemblyProduct("steamedit_Enhance-Enhance")]
 [assembly: AssemblyCopyright("Copyright © 2017-2025 Tim Green | Modified by linyao crush")]
 [assembly: AssemblyTrademark("")]
 [assembly: ComVisible(false)]

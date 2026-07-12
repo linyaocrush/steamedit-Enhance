@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:element name="root" msdata:IsDataSet="true">
@@ -27,8 +27,8 @@
       </xsd:complexType>
     </xsd:element>
   </xsd:schema>
-<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>1.3</value></resheader><resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><data name="textAppInfoPath.ToolTip" xml:space="preserve"><value>Arguments to pass along when launching Steam. Used both when launching from the SteamEdit UI, and when using -autofix/-forcelaunch/etc.
-Will be combined with arguments passed to SteamEdit's commandline after '--'.</value></data>
-  <data name="textPassThroughArgs.ToolTip" xml:space="preserve"><value>Arguments to pass along when launching Steam. Used both when launching from the SteamEdit UI, and when using -autofix/-forcelaunch/etc.
-Will be combined with arguments passed to SteamEdit's commandline after '--'.</value></data>
+<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>1.3</value></resheader><resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><data name="textAppInfoPath.ToolTip" xml:space="preserve"><value>Arguments to pass along when launching Steam. Used both when launching from the steamedit_Enhance UI, and when using -autofix/-forcelaunch/etc.
+Will be combined with arguments passed to steamedit_Enhance's commandline after '--'.</value></data>
+  <data name="textPassThroughArgs.ToolTip" xml:space="preserve"><value>Arguments to pass along when launching Steam. Used both when launching from the steamedit_Enhance UI, and when using -autofix/-forcelaunch/etc.
+Will be combined with arguments passed to steamedit_Enhance's commandline after '--'.</value></data>
   </root>

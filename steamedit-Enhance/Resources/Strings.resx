@@ -1,0 +1,715 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- MainWindow -->
+  <data name="MainWindow_Title" xml:space="preserve">
+    <value>steamedit_Enhance-Enhance</value>
+  </data>
+  <data name="MainWindow_UnsavedSuffix" xml:space="preserve">
+    <value> [unsaved]</value>
+  </data>
+  <data name="MainWindow_UnappliedSuffix" xml:space="preserve">
+    <value> [unapplied]</value>
+  </data>
+  <data name="MainWindow_BtnSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="MainWindow_BtnSaveApply" xml:space="preserve">
+    <value>Save &amp; Apply</value>
+  </data>
+  <data name="MainWindow_BtnSaveApplyRestart" xml:space="preserve">
+    <value>Save, Apply &amp; Restart</value>
+  </data>
+  <data name="MainWindow_BtnEditLaunch" xml:space="preserve">
+    <value>Edit Launch</value>
+  </data>
+  <data name="MainWindow_BtnRevert" xml:space="preserve">
+    <value>Revert Game</value>
+  </data>
+  <data name="MainWindow_BtnTranslate" xml:space="preserve">
+    <value>AI Translate</value>
+  </data>
+  <data name="MainWindow_BtnSearch" xml:space="preserve">
+    <value>Web Search</value>
+  </data>
+  <data name="Tooltip_Search" xml:space="preserve">
+    <value>Search game name + translated name in browser</value>
+  </data>
+  <data name="MainWindow_LabelName" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="MainWindow_LabelSortAs" xml:space="preserve">
+    <value>Sort As:</value>
+  </data>
+  <data name="MainWindow_LabelControllerSupport" xml:space="preserve">
+    <value>Controller Support:</value>
+  </data>
+  <data name="MainWindow_LabelVRCategory" xml:space="preserve">
+    <value>VR Category:</value>
+  </data>
+  <data name="MainWindow_CheckHidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="MainWindow_CheckCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="MainWindow_StatusShown" xml:space="preserve">
+    <value>Shown: ({0}/{1})</value>
+  </data>
+  <data name="MainWindow_StatusModified" xml:space="preserve">
+    <value>Modified: {0}</value>
+  </data>
+  <data name="MainWindow_Filter_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="MainWindow_Filter_OnlyModified" xml:space="preserve">
+    <value>Only Modified</value>
+  </data>
+  <data name="MainWindow_Filter_OnlyUnmodified" xml:space="preserve">
+    <value>Only Unmodified</value>
+  </data>
+  <data name="MainWindow_Controller_None" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="MainWindow_Controller_Partial" xml:space="preserve">
+    <value>partial</value>
+  </data>
+  <data name="MainWindow_Controller_Full" xml:space="preserve">
+    <value>full</value>
+  </data>
+  <data name="MainWindow_VR_Default" xml:space="preserve">
+    <value>default</value>
+  </data>
+  <data name="MainWindow_VR_Removed" xml:space="preserve">
+    <value>removed</value>
+  </data>
+
+  <!-- Tooltips -->
+  <data name="Tooltip_Save" xml:space="preserve">
+    <value>Save all edits to mods file</value>
+  </data>
+  <data name="Tooltip_SaveApply" xml:space="preserve">
+    <value>Save all edits to mods file, and apply to Steam.</value>
+  </data>
+  <data name="Tooltip_SaveApplyRestart" xml:space="preserve">
+    <value>Save edits, apply to Steam, and restart Steam.</value>
+  </data>
+  <data name="Tooltip_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Tooltip_About" xml:space="preserve">
+    <value>About</value>
+  </data>
+
+  <!-- Settings -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings_EnableCompleted" xml:space="preserve">
+    <value>Enable "Completed"</value>
+  </data>
+  <data name="Settings_EnableHidden" xml:space="preserve">
+    <value>Enable "Hidden"</value>
+  </data>
+  <data name="Settings_Language" xml:space="preserve">
+    <value>Language:</value>
+  </data>
+  <data name="Settings_ReplaceLocalizedNames" xml:space="preserve">
+    <value>Replace All Localized Names</value>
+  </data>
+  <data name="Settings_PassThroughArgs" xml:space="preserve">
+    <value>Pass-Through Arguments</value>
+  </data>
+  <data name="Settings_AppInfoPath" xml:space="preserve">
+    <value>AppInfo Path (requires restart)</value>
+  </data>
+  <data name="Tooltip_ReplaceLocalizedNames" xml:space="preserve">
+    <value>Replace all localized game names with the original name.</value>
+  </data>
+  <data name="Tooltip_EnableHidden" xml:space="preserve">
+    <value>Hide games in Steam's list.</value>
+  </data>
+  <data name="Tooltip_EnableCompleted" xml:space="preserve">
+    <value>Append symbol on completed games</value>
+  </data>
+  <data name="Tooltip_AppInfoPath" xml:space="preserve">
+    <value>Path to Steam's appinfo.vdf file</value>
+  </data>
+  <data name="Tooltip_PassThroughArgs" xml:space="preserve">
+    <value>Arguments to pass along when launching Steam...</value>
+  </data>
+  <data name="Settings_AutoStart" xml:space="preserve">
+    <value>Start on Boot</value>
+  </data>
+  <data name="Settings_AutoStartAutoFix" xml:space="preserve">
+    <value>autofix</value>
+  </data>
+  <data name="Settings_AutoStartForceStart" xml:space="preserve">
+    <value>forcestart</value>
+  </data>
+  <data name="Tooltip_AutoStart" xml:space="preserve">
+    <value>Add steamedit_Enhance to Windows startup registry</value>
+  </data>
+  <data name="Tooltip_AutoStartAutoFix" xml:space="preserve">
+    <value>Auto-apply pending changes on startup (autofix)</value>
+  </data>
+  <data name="Tooltip_AutoStartForceStart" xml:space="preserve">
+    <value>Also restart Steam after applying changes (forcestart). Requires autofix.</value>
+  </data>
+  <data name="Settings_AiApiUrl" xml:space="preserve">
+    <value>AI API URL</value>
+  </data>
+  <data name="Settings_AiApiKey" xml:space="preserve">
+    <value>AI API Key</value>
+  </data>
+  <data name="Settings_AiTargetLanguage" xml:space="preserve">
+    <value>AI Target Language</value>
+  </data>
+  <data name="Settings_AiModel" xml:space="preserve">
+    <value>AI Model</value>
+  </data>
+  <data name="Settings_AiFetchModels" xml:space="preserve">
+    <value>Fetch Models</value>
+  </data>
+  <data name="Settings_SearchEngine" xml:space="preserve">
+    <value>Search Engine</value>
+  </data>
+  <data name="Tooltip_AiApiUrl" xml:space="preserve">
+    <value>OpenAI-compatible API endpoint (e.g. https://api.openai.com/v1/chat/completions)</value>
+  </data>
+  <data name="Tooltip_AiApiKey" xml:space="preserve">
+    <value>API key for AI translation service</value>
+  </data>
+  <data name="Tooltip_Translate" xml:space="preserve">
+    <value>Translate game name using AI</value>
+  </data>
+  <data name="Msg_Translating" xml:space="preserve">
+    <value>Translating...</value>
+  </data>
+  <data name="Msg_TranslateFailed" xml:space="preserve">
+    <value>Translation failed: {0}</value>
+  </data>
+  <data name="AiLang_zhCN" xml:space="preserve">
+    <value>Chinese</value>
+  </data>
+  <data name="AiLang_en" xml:space="preserve">
+    <value>English</value>
+  </data>
+
+  <!-- LaunchEditor -->
+  <data name="LaunchEditor_Title" xml:space="preserve">
+    <value>Launch Editor</value>
+  </data>
+  <data name="LaunchEditor_LabelInstallPath" xml:space="preserve">
+    <value>Install Path:</value>
+  </data>
+  <data name="LaunchEditor_BtnAddNew" xml:space="preserve">
+    <value>Add New</value>
+  </data>
+  <data name="LaunchEditor_BtnOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="LaunchEditor_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="LaunchEditor_InstallDirPlaceholder" xml:space="preserve">
+    <value>[Install Dir]</value>
+  </data>
+
+  <!-- LaunchEditorItem -->
+  <data name="LaunchEditorItem_LabelExecutable" xml:space="preserve">
+    <value>Executable:</value>
+  </data>
+  <data name="LaunchEditorItem_LabelLabel" xml:space="preserve">
+    <value>Label:</value>
+  </data>
+  <data name="LaunchEditorItem_LabelWorkingDir" xml:space="preserve">
+    <value>Working Dir:</value>
+  </data>
+  <data name="LaunchEditorItem_LabelArguments" xml:space="preserve">
+    <value>Arguments:</value>
+  </data>
+  <data name="LaunchEditorItem_BtnUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="LaunchEditorItem_BtnDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="LaunchEditorItem_BtnDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="LaunchEditorItem_BtnCopy" xml:space="preserve">
+    <value>Copy...</value>
+  </data>
+  <data name="LaunchEditorItem_PlayPrefix" xml:space="preserve">
+    <value>Play </value>
+  </data>
+
+
+  <!-- SelectAppLaunch -->
+  <data name="SelectAppLaunch_Title" xml:space="preserve">
+    <value>Select Launch Info</value>
+  </data>
+  <data name="SelectAppLaunch_LabelLaunchItem" xml:space="preserve">
+    <value>Launch Item:</value>
+  </data>
+  <data name="SelectAppLaunch_BtnOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="SelectAppLaunch_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <!-- MessageBoxWithDetails -->
+  <data name="MessageBoxWithDetails_BtnClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="MessageBoxWithDetails_BtnCopyClipboard" xml:space="preserve">
+    <value>Copy To Clipboard</value>
+  </data>
+
+  <!-- WaitingDialog -->
+  <data name="WaitingDialog_Title" xml:space="preserve">
+    <value>Please Wait...</value>
+  </data>
+  <data name="WaitingDialog_Waiting" xml:space="preserve">
+    <value>[Waiting...]</value>
+  </data>
+  <data name="WaitingDialog_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <!-- About -->
+  <data name="About_Title" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="About_LabelWebsite" xml:space="preserve">
+    <value>Website:</value>
+  </data>
+  <data name="About_LabelAuthor" xml:space="preserve">
+    <value>Author:</value>
+  </data>
+  <data name="About_LabelModifiedBy" xml:space="preserve">
+    <value>Modified by:</value>
+  </data>
+  <data name="About_LabelEnhanced" xml:space="preserve">
+    <value>Enhanced ver:</value>
+  </data>
+  <data name="About_AppName" xml:space="preserve">
+    <value>steamedit_Enhance-Enhance</value>
+  </data>
+  <data name="About_BtnClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+
+  <!-- Shortcuts -->
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>Keyboard Shortcuts</value>
+  </data>
+  <data name="Tooltip_Shortcuts" xml:space="preserve">
+    <value>Keyboard Shortcuts</value>
+  </data>
+  <data name="Shortcuts_Content" xml:space="preserve">
+    <value>Ctrl+S              Save
+Ctrl+Enter          Save &amp; Apply
+Ctrl+Shift+Enter    Save &amp; Apply &amp; Restart
+Ctrl+Z              Undo
+Ctrl+T              Translate game name
+Ctrl+B              Batch translate
+Ctrl+R              Revert changes
+Ctrl+F              Focus search box
+Ctrl+C              Copy game name
+Double-click list   Focus name field
+Page Up             Previous game
+Page Down           Next game</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_UnsavedChanges" xml:space="preserve">
+    <value>You have unsaved changes! Do you want to save before closing?</value>
+  </data>
+  <data name="Msg_SaveFirst" xml:space="preserve">
+    <value>Save First?</value>
+  </data>
+  <data name="Msg_FailedRevert" xml:space="preserve">
+    <value>Failed to revert '{0}'. Do you want to remove it from your local appinfo? This should cause Steam to refresh it on next launch.</value>
+  </data>
+  <data name="Msg_FailedRevertTitle" xml:space="preserve">
+    <value>Failed to Revert</value>
+  </data>
+  <data name="Msg_SaveFailed" xml:space="preserve">
+    <value>Save failed:&#10;{0}</value>
+  </data>
+  <data name="Msg_ApplyFailed" xml:space="preserve">
+    <value>Apply failed:&#10;{0}</value>
+  </data>
+  <data name="Msg_KillSteamFailed" xml:space="preserve">
+    <value>Failed to close Steam:&#10;{0}&#10;&#10;Save and apply will be skipped.</value>
+  </data>
+  <data name="Msg_RestartFailed" xml:space="preserve">
+    <value>Failed to restart Steam:&#10;{0}</value>
+  </data>
+  <data name="Msg_MakeItMatch" xml:space="preserve">
+    <value>Do you want to change the working directory to match the executable's location?</value>
+  </data>
+  <data name="Msg_MakeItMatchTitle" xml:space="preserve">
+    <value>Make It Match</value>
+  </data>
+  <data name="Msg_SelectAppInfoTitle" xml:space="preserve">
+    <value>Select Steam's appinfo.vdf file</value>
+  </data>
+  <data name="Msg_UnknownVersion" xml:space="preserve">
+    <value>Unknown version while trying to load appinfo.vdf. Either we're trying to load the wrong file, or maybe Steam has updated something, and a fix is needed for steamedit_Enhance</value>
+  </data>
+  <data name="Msg_CriticalError" xml:space="preserve">
+    <value>steamedit_Enhance: Critical Error</value>
+  </data>
+  <data name="Msg_SettingsSaveFailed" xml:space="preserve">
+    <value>Failed to save settings: {0}</value>
+  </data>
+  <data name="Msg_LoadFailed" xml:space="preserve">
+    <value>Failed to load appinfo.vdf. Possibly corrupted. Please locate your appinfo.vdf file.</value>
+  </data>
+  <data name="Msg_UnhandledException" xml:space="preserve">
+    <value>Unhandled exception. Not sure what went wrong, but you might be able to continue working.</value>
+  </data>
+  <data name="Msg_UnhandledExceptionTitle" xml:space="preserve">
+    <value>steamedit_Enhance: Unhandled exception</value>
+  </data>
+
+  <!-- SteamData -->
+  <data name="SteamData_WaitingForClose" xml:space="preserve">
+    <value>Waiting for Steam to close...</value>
+  </data>
+
+  <!-- Enum display names -->
+  <data name="Enum_Game" xml:space="preserve">
+    <value>Game</value>
+  </data>
+  <data name="Enum_Application" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="Enum_Video" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="Enum_Music" xml:space="preserve">
+    <value>Music</value>
+  </data>
+  <data name="Enum_Guide" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="Enum_DLC" xml:space="preserve">
+    <value>DLC</value>
+  </data>
+  <data name="Enum_Demo" xml:space="preserve">
+    <value>Demo</value>
+  </data>
+  <data name="Enum_Tool" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="Enum_Config" xml:space="preserve">
+    <value>Config</value>
+  </data>
+  <data name="Enum_Beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="Enum_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+
+  <!-- Batch Translate -->
+  <data name="BatchTranslate_Title" xml:space="preserve">
+    <value>Batch Translate</value>
+  </data>
+  <data name="BatchTranslate_Progress" xml:space="preserve">
+    <value>Progress: {0}/{1}</value>
+  </data>
+  <data name="BatchTranslate_Current" xml:space="preserve">
+    <value>Translating: {0}</value>
+  </data>
+  <data name="BatchTranslate_Stats" xml:space="preserve">
+    <value>✅ Success: {0}   ⏭ Skipped: {1}   ❌ Failed: {2}</value>
+  </data>
+  <data name="BatchTranslate_Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="BatchTranslate_Resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="BatchTranslate_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="BatchTranslate_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="MainWindow_BatchTranslate" xml:space="preserve">
+    <value>Translate All Filtered</value>
+  </data>
+  <data name="Tooltip_BatchTranslate" xml:space="preserve">
+    <value>Batch translate all filtered games</value>
+  </data>
+  <data name="Msg_AiNotConfigured" xml:space="preserve">
+    <value>Please configure AI API URL and API Key in Settings first.</value>
+  </data>
+  <data name="Msg_NoTranslatableGames" xml:space="preserve">
+    <value>No translatable games found in the current filter.</value>
+  </data>
+
+  <!-- Custom Prompt Settings -->
+  <data name="Settings_CustomSystemPrompt" xml:space="preserve">
+    <value>Custom System Prompt</value>
+  </data>
+  <data name="Settings_CustomUserMessage" xml:space="preserve">
+    <value>Custom User Message</value>
+  </data>
+  <data name="Settings_ResetPrompt" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Tooltip_CustomSystemPrompt" xml:space="preserve">
+    <value>Customize the system prompt sent to AI. Variables: {target_lang} {context}</value>
+  </data>
+  <data name="Tooltip_CustomUserMessage" xml:space="preserve">
+    <value>Customize the user message sent to AI. Variables: {game_name} {target_lang} {context}</value>
+  </data>
+  <data name="Settings_TranslationRules" xml:space="preserve">
+    <value>Translation Rules (AI Summary)</value>
+  </data>
+  <data name="Settings_BatchConcurrency" xml:space="preserve">
+    <value>Batch Concurrency</value>
+  </data>
+  <data name="Tooltip_TranslationRules" xml:space="preserve">
+    <value>AI-analyzed translation rules from your glossary. Appended to system prompt during translation.</value>
+  </data>
+  <data name="Settings_AnalyzeRules" xml:space="preserve">
+    <value>AI Analyze</value>
+  </data>
+  <data name="Settings_ClearRules" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Msg_NoGlossaryData" xml:space="preserve">
+    <value>Glossary is empty. Translate some games first to accumulate data for analysis.</value>
+  </data>
+  <data name="Msg_AnalyzingRules" xml:space="preserve">
+    <value>Analyzing...</value>
+  </data>
+
+  <!-- Settings Tab -->
+  <data name="Settings_TabGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings_TabAi" xml:space="preserve">
+    <value>AI</value>
+  </data>
+
+  <!-- Sort -->
+  <data name="Sort_Title" xml:space="preserve">
+    <value>Sort</value>
+  </data>
+  <data name="Sort_ByName" xml:space="preserve">
+    <value>By Name</value>
+  </data>
+  <data name="Sort_ById" xml:space="preserve">
+    <value>By App ID</value>
+  </data>
+  <data name="Sort_Ascending" xml:space="preserve">
+    <value>Ascending</value>
+  </data>
+  <data name="Sort_Descending" xml:space="preserve">
+    <value>Descending</value>
+  </data>
+  <!-- BatchReplace -->
+  <data name="BatchReplace_Title" xml:space="preserve">
+    <value>Batch Find &amp; Replace</value>
+  </data>
+  <data name="BatchReplace_Find" xml:space="preserve">
+    <value>Find:</value>
+  </data>
+  <data name="BatchReplace_Replace" xml:space="preserve">
+    <value>Replace:</value>
+  </data>
+  <data name="BatchReplace_CaseSensitive" xml:space="preserve">
+    <value>Case Sensitive</value>
+  </data>
+  <data name="BatchReplace_Regex" xml:space="preserve">
+    <value>Regex Mode</value>
+  </data>
+  <data name="BatchReplace_MatchCount" xml:space="preserve">
+    <value>Matched: {0} games</value>
+  </data>
+  <data name="BatchReplace_BtnReplaceAll" xml:space="preserve">
+    <value>Replace All</value>
+  </data>
+  <data name="BatchReplace_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="BatchReplace_InvalidRegex" xml:space="preserve">
+    <value>Invalid regular expression: {0}</value>
+  </data>
+  <data name="BatchReplace_ConfirmReplace" xml:space="preserve">
+    <value>Replace {0} occurrences in {1} games?</value>
+  </data>
+  <data name="BatchReplace_PreviewOriginal" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="BatchReplace_PreviewResult" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="ContextMenu_CopyName" xml:space="preserve">
+    <value>Copy Name</value>
+  </data>
+  <data name="ContextMenu_CopyAppId" xml:space="preserve">
+    <value>Copy App ID</value>
+  </data>
+  <data name="ContextMenu_OpenInSteam" xml:space="preserve">
+    <value>Open in Steam</value>
+  </data>
+  <data name="ContextMenu_OpenInSteamDB" xml:space="preserve">
+    <value>Open in SteamDB</value>
+  </data>
+  <data name="About_ViewLog" xml:space="preserve">
+    <value>View Log</value>
+  </data>
+  <data name="LogViewer_Title" xml:space="preserve">
+    <value>Log Viewer</value>
+  </data>
+  <data name="Tooltip_BatchReplace" xml:space="preserve">
+    <value>Batch find and replace game names</value>
+  </data>
+  <data name="MainWindow_BatchReplace" xml:space="preserve">
+    <value>Find &amp; Replace</value>
+  </data>
+
+  <!-- Crash Dialog -->
+  <data name="CrashDialog_ExitButton" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="CrashDialog_SavedTo" xml:space="preserve">
+    <value>Crash log saved to:</value>
+  </data>
+
+  <!-- Steam Status -->
+  <data name="SteamStatus_Running" xml:space="preserve">
+    <value>Steam: Running</value>
+  </data>
+  <data name="SteamStatus_NotRunning" xml:space="preserve">
+    <value>Steam: Not Running</value>
+  </data>
+  <data name="SteamLaunch_ConfirmTitle" xml:space="preserve">
+    <value>Launch Steam</value>
+  </data>
+  <data name="SteamLaunch_ConfirmMessage" xml:space="preserve">
+    <value>Would you like to launch Steam?</value>
+  </data>
+  <data name="SteamLaunch_LaunchButton" xml:space="preserve">
+    <value>Launch</value>
+  </data>
+  <data name="SteamLaunch_CancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SteamLaunch_PathError" xml:space="preserve">
+    <value>Unable to find Steam installation path.</value>
+  </data>
+  <!-- Batch Operations -->
+  <data name="ContextMenu_Batch" xml:space="preserve">
+    <value>Batch</value>
+  </data>
+  <data name="ContextMenu_BatchRename" xml:space="preserve">
+    <value>Batch Rename...</value>
+  </data>
+  <data name="ContextMenu_BatchChangeType" xml:space="preserve">
+    <value>Batch Change Type...</value>
+  </data>
+  <data name="ContextMenu_BatchMark" xml:space="preserve">
+    <value>Batch Mark as Hidden/Completed</value>
+  </data>
+  <data name="ContextMenu_BatchMarkHidden" xml:space="preserve">
+    <value>Mark as Hidden</value>
+  </data>
+  <data name="ContextMenu_BatchMarkVisible" xml:space="preserve">
+    <value>Mark as Visible</value>
+  </data>
+  <data name="ContextMenu_BatchMarkCompleted" xml:space="preserve">
+    <value>Mark as Completed</value>
+  </data>
+  <data name="ContextMenu_BatchMarkIncomplete" xml:space="preserve">
+    <value>Mark as Incomplete</value>
+  </data>
+  <data name="ContextMenu_BatchReset" xml:space="preserve">
+    <value>Batch Reset</value>
+  </data>
+
+  <data name="BatchRename_Title" xml:space="preserve">
+    <value>Batch Rename</value>
+  </data>
+  <data name="BatchRename_Prefix" xml:space="preserve">
+    <value>Prefix:</value>
+  </data>
+  <data name="BatchRename_Suffix" xml:space="preserve">
+    <value>Suffix:</value>
+  </data>
+  <data name="BatchRename_BtnApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="BatchRename_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <data name="BatchChangeType_Title" xml:space="preserve">
+    <value>Batch Change Type</value>
+  </data>
+  <data name="BatchChangeType_Label" xml:space="preserve">
+    <value>New Type:</value>
+  </data>
+  <data name="BatchChangeType_BtnApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="BatchChangeType_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <data name="BatchReset_ConfirmTitle" xml:space="preserve">
+    <value>Batch Reset</value>
+  </data>
+  <data name="BatchReset_ConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to reset {0} selected entries?</value>
+  </data>
+</root>
