@@ -23,6 +23,8 @@ internal class MainWindow : LocalizableForm
 
 	private IContainer components = null!;
 
+	private readonly Dictionary<(Keys Key, bool Control, bool Shift), Action> _shortcutMap = new();
+
 	private ClearableTextBox textGameName = null!;
 	private CheckBox checkHidden = null!;
 	private CheckBox checkCompleted = null!;
@@ -149,6 +151,9 @@ internal class MainWindow : LocalizableForm
 			_ctx, _steamData.DataStore, _listManager, textGameName, textSortAs,
 			checkHidden, checkCompleted, listControllerSupport,
 			listVR, listEntryType);
+
+		RegisterShortcuts();
+
 		// 订阅 SteamData 事件
 		_steamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
 		_steamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
@@ -363,73 +368,40 @@ internal class MainWindow : LocalizableForm
 		}
 	}
 
-	private void OnMainWindow_KeyDown(object? sender, KeyEventArgs e)
+	private void RegisterShortcuts()
 	{
-		if (e.Control && e.KeyCode == Keys.S)
+		_shortcutMap[(Keys.S, true, false)] = () =>
 		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
 			try { _steamData.Save(); }
 			catch (Exception ex) { MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.ToString())); }
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.Z)
-		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			_editController.PerformUndo();
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.C && !appFilterText.Focused)
-		{
-			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) { try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { } }
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.F)
+		};
+		_shortcutMap[(Keys.Z, true, false)] = () => _editController.PerformUndo();
+		_shortcutMap[(Keys.C, true, false)] = () =>
 		{
 			if (appFilterText.Focused) return;
-			e.Handled = true;
-			e.SuppressKeyPress = true;
+			var entry = _listManager.GetSelectedEntry();
+			if (entry != null) try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { }
+		};
+		_shortcutMap[(Keys.F, true, false)] = () =>
+		{
+			if (appFilterText.Focused) return;
 			appFilterText.Focus();
 			appFilterText.SelectAll();
-			return;
-		}
-		if (e.Control && e.Shift && e.KeyCode == Keys.Enter)
+		};
+		_shortcutMap[(Keys.Enter, true, true)] = () => OnBtnSaveApplyRestart_Click(this, EventArgs.Empty);
+		_shortcutMap[(Keys.Enter, true, false)] = () => OnBtnSaveApply_Click(this, EventArgs.Empty);
+		_shortcutMap[(Keys.T, true, false)] = () => OnBtnTranslate_Click(this, EventArgs.Empty);
+		_shortcutMap[(Keys.B, true, false)] = () => OnBtnBatchTranslate_Click(this, EventArgs.Empty);
+		_shortcutMap[(Keys.R, true, false)] = () => OnBtnRevert_Click(this, EventArgs.Empty);
+	}
+
+	private void OnMainWindow_KeyDown(object? sender, KeyEventArgs e)
+	{
+		if (_shortcutMap.TryGetValue((e.KeyCode, e.Control, e.Shift), out var action))
 		{
 			e.Handled = true;
 			e.SuppressKeyPress = true;
-			OnBtnSaveApplyRestart_Click(sender, EventArgs.Empty);
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.Enter)
-		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			OnBtnSaveApply_Click(sender, EventArgs.Empty);
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.T)
-		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			OnBtnTranslate_Click(sender, EventArgs.Empty);
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.B)
-		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			OnBtnBatchTranslate_Click(sender, EventArgs.Empty);
-			return;
-		}
-		if (e.Control && e.KeyCode == Keys.R)
-		{
-			e.Handled = true;
-			e.SuppressKeyPress = true;
-			OnBtnRevert_Click(sender, EventArgs.Empty);
+			action();
 			return;
 		}
 		switch (e.KeyCode)
