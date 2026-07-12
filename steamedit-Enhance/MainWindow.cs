@@ -27,6 +27,7 @@ internal class MainWindow : LocalizableForm
 	private IContainer components = null!;
 
 	private readonly ShortcutHandler _shortcutHandler;
+	private readonly List<(Control Control, Func<string> Text)> _tooltipMappings = new();
 
 	private ClearableTextBox textGameName = null!;
 	private CheckBox checkHidden = null!;
@@ -77,6 +78,19 @@ internal class MainWindow : LocalizableForm
 
 		// 构建 EntryType 下拉框（依赖 filterImages，由 GameListManager 构建）
 		listEntryType.Format += ComboBoxFormatter.FormatEntryType;
+
+		// 注册工具提示映射（供 ApplyLanguage 增量更新）
+		_tooltipMappings.Add((btnTranslate, () => Strings.Tooltip_Translate));
+		_tooltipMappings.Add((btnBatchTranslate, () => Strings.Tooltip_BatchTranslate));
+		_tooltipMappings.Add((btnBatchReplace, () => Strings.Tooltip_BatchReplace));
+		_tooltipMappings.Add((btnSearch, () => Strings.Tooltip_Search));
+		_tooltipMappings.Add((btnSave, () => Strings.Tooltip_Save));
+		_tooltipMappings.Add((btnSaveApply, () => Strings.Tooltip_SaveApply));
+		_tooltipMappings.Add((btnSaveApplyRestart, () => Strings.Tooltip_SaveApplyRestart));
+		_tooltipMappings.Add((btnSettings, () => Strings.Tooltip_Settings));
+		_tooltipMappings.Add((btnHelp, () => Strings.Tooltip_About));
+		_tooltipMappings.Add((btnShortcuts, () => Strings.Tooltip_Shortcuts));
+		_tooltipMappings.Add((sortSelector, () => Strings.Sort_Title));
 
 		base.Icon = Resources.logo;
 
@@ -383,19 +397,9 @@ internal class MainWindow : LocalizableForm
 		btnSearch.Text = Strings.MainWindow_BtnSearch;
 		btnRevert.Text = Strings.MainWindow_BtnRevert;
 		btnEditLaunch.Text = Strings.MainWindow_BtnEditLaunch;
-		toolTips.SetToolTip(btnTranslate, Strings.Tooltip_Translate);
+		foreach (var (control, text) in _tooltipMappings)
+			toolTips.SetToolTip(control, text());
 		btnBatchTranslate.Text = Strings.MainWindow_BatchTranslate;
-		toolTips.SetToolTip(btnBatchTranslate, Strings.Tooltip_BatchTranslate);
-		btnBatchReplace.Text = Strings.MainWindow_BatchReplace;
-		toolTips.SetToolTip(btnBatchReplace, Strings.Tooltip_BatchReplace);
-		toolTips.SetToolTip(btnSearch, Strings.Tooltip_Search);
-		toolTips.SetToolTip(btnSave, Strings.Tooltip_Save);
-		toolTips.SetToolTip(btnSaveApply, Strings.Tooltip_SaveApply);
-		toolTips.SetToolTip(btnSaveApplyRestart, Strings.Tooltip_SaveApplyRestart);
-		toolTips.SetToolTip(btnSettings, Strings.Tooltip_Settings);
-		toolTips.SetToolTip(btnHelp, Strings.Tooltip_About);
-		toolTips.SetToolTip(btnShortcuts, Strings.Tooltip_Shortcuts);
-		toolTips.SetToolTip(sortSelector, Strings.Sort_Title);
 
 		UpdateStatusBar();
 		UpdateSteamStatus();
