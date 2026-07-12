@@ -105,7 +105,7 @@ public class DataIntegrityTests
 
 		ms.Position = 0;
 		using var reader = new BinaryReader(ms);
-		var loaded = AppInfoEntry_0x07564428.FromReader(reader);
+		var loaded = AppInfoEntryBase.ReadFromReader<AppInfoEntry_0x07564428>(reader);
 
 		Assert.IsNotNull(loaded);
 		Assert.AreEqual(entry.ID, loaded!.ID);
@@ -127,7 +127,7 @@ public class DataIntegrityTests
 
 		ms.Position = 0;
 		using var reader = new BinaryReader(ms);
-		var loaded = AppInfoEntry_0x07564428.FromReader(reader);
+		var loaded = AppInfoEntryBase.ReadFromReader<AppInfoEntry_0x07564428>(reader);
 
 		Assert.IsNotNull(loaded);
 		Assert.AreEqual(entry.ChangeNumber, loaded!.ChangeNumber);

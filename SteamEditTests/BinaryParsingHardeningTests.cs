@@ -225,22 +225,22 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ReadPropertyTableCore_DepthExceeds32_ThrowsInvalidDataException()
+    public void ReadPropertyTableCore_DepthExceeds64_ThrowsInvalidDataException()
     {
-        // Build binary data with 33 nested Table properties
+        // Build binary data with 65 nested Table properties
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
         {
-            for (int i = 0; i < 33; i++)
+            for (int i = 0; i < 65; i++)
             {
                 bw.Write((byte)PropertyType.Table);
                 PropertyTableIO.WriteZString(bw, $"level{i}");
             }
-            // 33rd level tries to open another table but should hit depth limit
+            // 65th level tries to open another table but should hit depth limit
             bw.Write((byte)PropertyType.Table);
             PropertyTableIO.WriteZString(bw, "one_too_many");
             // End markers for all levels
-            for (int i = 0; i <= 33; i++)
+            for (int i = 0; i <= 65; i++)
                 bw.Write((byte)8);
         }
 
@@ -252,13 +252,13 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ReadPropertyTableCore_DepthExactly32_DoesNotThrow()
+    public void ReadPropertyTableCore_DepthExactly64_DoesNotThrow()
     {
-        // Build binary data with exactly 32 nested Table properties (at the limit)
+        // Build binary data with exactly 64 nested Table properties (at the limit)
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
         {
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 64; i++)
             {
                 bw.Write((byte)PropertyType.Table);
                 PropertyTableIO.WriteZString(bw, $"level{i}");
@@ -269,25 +269,25 @@ public class BinaryParsingHardeningTests
             PropertyTableIO.WriteZString(bw, "value");
             bw.Write((byte)8); // end innermost
             // End markers for remaining levels
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 64; i++)
                 bw.Write((byte)8);
         }
 
         ms.Position = 0;
         using var br = new BinaryReader(ms);
 
-        // Should NOT throw — depth 32 is the max allowed
+        // Should NOT throw — depth 64 is the max allowed
         var table = PropertyTableIO.ReadPropertyTable_0x00000000(br);
         Assert.IsNotNull(table);
     }
 
     [TestMethod]
-    public void ToStringInternal_DepthExceeds32_ThrowsInvalidDataException()
+    public void ToStringInternal_DepthExceeds64_ThrowsInvalidDataException()
     {
-        // Build a PropertyTable with 33 levels of nesting
+        // Build a PropertyTable with 65 levels of nesting
         var table = new PropertyTable();
         var current = table;
-        for (int i = 0; i < 33; i++)
+        for (int i = 0; i < 65; i++)
         {
             var nested = new PropertyTable();
             current.AddPropertyValue($"level{i}", PropertyType.Table, nested);
@@ -312,7 +312,7 @@ public class BinaryParsingHardeningTests
         using var br = new BinaryReader(ms);
 
         Assert.ThrowsException<AppInfoLoadException>(
-            () => AppInfoEntry_0x07564427.FromReader(br));
+            () => AppInfoEntryBase.ReadFromReader<AppInfoEntry_0x07564427>(br));
     }
 
     [TestMethod]
@@ -329,7 +329,7 @@ public class BinaryParsingHardeningTests
         using var br = new BinaryReader(ms);
 
         Assert.ThrowsException<AppInfoLoadException>(
-            () => AppInfoEntry_0x07564428.FromReader(br));
+            () => AppInfoEntryBase.ReadFromReader<AppInfoEntry_0x07564428>(br));
     }
 
     [TestMethod]
@@ -351,15 +351,15 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ApplyChanges_DepthExceeds32_ThrowsInvalidDataException()
+    public void ApplyChanges_DepthExceeds64_ThrowsInvalidDataException()
     {
-        // Build changes and entry tables with 33 levels of nesting
+        // Build changes and entry tables with 65 levels of nesting
         var changes = new PropertyTable();
         var entry = new PropertyTable();
 
         var currentChanges = changes;
         var currentEntry = entry;
-        for (int i = 0; i < 33; i++)
+        for (int i = 0; i < 65; i++)
         {
             var nestedChanges = new PropertyTable();
             var nestedEntry = new PropertyTable();
