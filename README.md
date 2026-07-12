@@ -125,19 +125,19 @@ steamedit-Enhance.exe -autofix -forcestart
 
 ```bash
 # 构建
-dotnet build SteamEdit.csproj
+dotnet build steamedit-Enhance.csproj
 
 # 测试（173 个）
-dotnet test SteamEditTests/SteamEditTests.csproj
+dotnet test steamedit-EnhanceTests/steamedit-EnhanceTests.csproj
 
 # 运行
-dotnet run --project SteamEdit.csproj
+dotnet run --project steamedit-Enhance.csproj
 
 # 发布独立 EXE（~110 MB）
-dotnet publish SteamEdit.csproj -c Release
+dotnet publish steamedit-Enhance.csproj -c Release
 
 # 发布依赖框架（~650 KB）
-dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
+dotnet publish steamedit-Enhance.csproj -c Release -p:SelfContained=false -p:PublishSingleFile=true
 ```
 
 发布输出：`bin/Release/net10.0-windows/win-x64/publish/steamedit-Enhance.exe`
@@ -159,29 +159,37 @@ dotnet publish SteamEdit.csproj -c Release -p:SelfContained=false -p:PublishSing
 ## 📁 项目结构
 
 ```
-steamedit/
-├── SteamEdit/                        # 🖥️ WinForms UI
-│   ├── Program.cs                    # 入口 + 全局异常处理 + 命令行
-│   ├── MainWindow.cs                 # 主窗口
-│   ├── GameListManager.cs            # 列表搜索/筛选/排序/绘制
-│   ├── EditController.cs             # 属性编辑/撤销/还原
-│   ├── BatchTranslateDialog.cs       # 批量 AI 翻译（并行）
-│   └── Resources/Strings*.resx       # 多语言资源
-├── SteamEdit.Data/                   # 📦 数据模型与 I/O
-│   ├── SteamData.cs                  # 加载/保存/应用协调
-│   ├── PropertyTable.cs              # 属性表（Dictionary O(1) + 缓存）
-│   ├── PropertyTableIO.cs            # 三格式序列化（委托注入）
-│   ├── Mods.cs                       # mods.dat 读写
-│   └── UndoManager.cs                # 多级撤销
-├── SteamEdit.Data.Impl/              # 🔬 版本特定解析器
-│   ├── AppInfoBase.cs                # 泛型容器基类
-│   └── AppInfoEntryBase.cs           # 条目基类（读/写/修改）
-├── Common/                           # 🛠️ 共享工具
-│   ├── Settings.cs                   # JSON 序列化 + 脏标记
-│   ├── AiTranslator.cs               # OpenAI 兼容 API 客户端
-│   ├── TranslationGlossary.cs        # 术语缓存
-│   └── StringTitleComparer.cs        # 自然排序
-└── SteamEditTests/                   # ✅ MSTest 单元测试（173 个）
+steamedit-Enhance/
+├── steamedit-Enhance/               # 🖥️ WinForms UI
+│   ├── Program.cs                   # 入口 + 全局异常处理 + 命令行
+│   ├── MainWindow.cs                # 主窗口
+│   ├── GameListManager.cs           # 列表搜索/筛选/排序/绘制
+│   ├── EditController.cs            # 属性编辑/撤销/还原
+│   ├── BatchTranslateDialog.cs      # 批量 AI 翻译（并行）
+│   ├── Resources/Strings*.resx      # 多语言资源
+│   └── Properties/AssemblyInfo.cs   # InternalsVisibleTo
+├── steamedit-Enhance.ViewModels/    # 📐 MVVM ViewModel 层
+│   ├── MainViewModel.cs             # 应用状态/命令/窗口标题
+│   ├── GameListViewModel.cs         # 搜索/排序/筛选
+│   ├── PropertyEditorViewModel.cs   # 属性绑定 + 撤销管理
+│   ├── BatchTranslateViewModel.cs   # 并行翻译/暂停/取消
+│   ├── ViewModelBase.cs             # INotifyPropertyChanged
+│   └── RelayCommand.cs              # ICommand 实现
+├── steamedit-Enhance.Data/          # 📦 数据模型与 I/O
+│   ├── SteamData.cs                 # 加载/保存/应用协调
+│   ├── PropertyTable.cs             # 属性表（Dictionary O(1) + 缓存）
+│   ├── PropertyTableIO.cs           # 三格式序列化（委托注入）
+│   ├── Mods.cs                      # mods.dat 读写
+│   └── UndoManager.cs               # 多级撤销
+├── steamedit-Enhance.Data.Impl/     # 🔬 版本特定解析器
+│   ├── AppInfoBase.cs               # 泛型容器基类
+│   └── AppInfoEntryBase.cs          # 条目基类（读/写/修改）
+├── Common/                          # 🛠️ 共享工具
+│   ├── Settings.cs                  # JSON 序列化 + 脏标记
+│   ├── AiTranslator.cs              # OpenAI 兼容 API 客户端
+│   ├── TranslationGlossary.cs       # 术语缓存
+│   └── StringTitleComparer.cs       # 自然排序
+└── steamedit-EnhanceTests/          # ✅ MSTest 单元测试（173 个）
 ```
 
 ---
