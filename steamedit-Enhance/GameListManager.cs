@@ -70,7 +70,7 @@ internal class GameListManager : IDisposable
 		};
 
 		// 创建子组件
-		Drawer = new GameListDrawer(viewModel, appSelection, _ctx.Entries, filterImages);
+		Drawer = new GameListDrawer(viewModel, appSelection, _ctx, filterImages);
 		InputHandler = new GameListInputHandler(Drawer, appSelection, toolTips, idx => GetEntryToolTip(_ctx.Entries[idx]), _ctx.Entries);
 		MenuBuilder = new GameListMenuBuilder(viewModel, filterImages, filterSelectorMenu, sortSelectorMenu, appSelection);
 

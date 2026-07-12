@@ -18,7 +18,7 @@ internal sealed class GameListDrawer : IDisposable
 
 	private readonly GameListViewModel _viewModel;
 	private readonly ListBox _appSelection;
-	private readonly IReadOnlyList<IAppInfoEntry> _entries;
+	private readonly GameDataContext _ctx;
 	private readonly Dictionary<AppInfoEntryType, Image> _filterImages;
 	private readonly ImageAttributes _bgLogoAttributes;
 
@@ -37,12 +37,12 @@ internal sealed class GameListDrawer : IDisposable
 	public GameListDrawer(
 		GameListViewModel viewModel,
 		ListBox appSelection,
-		IReadOnlyList<IAppInfoEntry> entries,
+		GameDataContext ctx,
 		Dictionary<AppInfoEntryType, Image> filterImages)
 	{
 		_viewModel = viewModel;
 		_appSelection = appSelection;
-		_entries = entries;
+		_ctx = ctx;
 		_filterImages = filterImages;
 
 		// 构建灰度 ColorMatrix
@@ -103,9 +103,10 @@ internal sealed class GameListDrawer : IDisposable
 
 	private void OnDrawItem(object? sender, DrawItemEventArgs e)
 	{
-		if (e.Index < 0 || e.Index >= _entries.Count) return;
+		var entries = _ctx.Entries;
+		if (e.Index < 0 || e.Index >= entries.Count) return;
 
-		var entry = _entries[e.Index];
+		var entry = entries[e.Index];
 		string text = _viewModel.GetDisplayName(entry).Replace("&", "&&");
 
 		bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
