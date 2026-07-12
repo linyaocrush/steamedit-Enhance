@@ -95,62 +95,31 @@ internal class BatchTranslateDialog : LocalizableForm
         }
     }
 
-    private async Task RunBatchAsync()
-    {
-        _cts = new CancellationTokenSource();
-        string customSystemPrompt = Settings.Default.AiCustomSystemPrompt;
-        string customUserMessage = Settings.Default.AiCustomUserMessage;
-        int concurrency = Math.Max(Settings.Default.AiBatchTranslateConcurrency, 1);
+	private async Task RunBatchAsync()
+	{
+		_cts = new CancellationTokenSource();
+		string customSystemPrompt = Settings.Default.AiCustomSystemPrompt;
+		string customUserMessage = Settings.Default.AiCustomUserMessage;
+		int concurrency = Math.Max(Settings.Default.AiBatchTranslateConcurrency, 1);
 
-        if (concurrency <= 1)
-        {
-            // 串行模式
-            for (_currentIndex = 0; _currentIndex < _entries.Count; _currentIndex++)
-            {
-                if (_cts.Token.IsCancellationRequested) break;
-                _pauseEvent.Wait(_cts.Token);
-                if (_cts.Token.IsCancellationRequested) break;
+		var parallelOptions = new ParallelOptions
+		{
+			MaxDegreeOfParallelism = concurrency,
+			CancellationToken = _cts.Token
+		};
 
-                await TranslateOneAsync(_entries[_currentIndex], customSystemPrompt, customUserMessage, _cts.Token);
-            }
-        }
-        else
-        {
-            // 并行模式
-            var semaphore = new SemaphoreSlim(concurrency);
-            var tasks = new List<Task>();
-            int index = 0;
+		int index = 0;
+		await Parallel.ForEachAsync(_entries, parallelOptions, async (entry, ct) =>
+		{
+			_pauseEvent.Wait(ct);
+			_currentIndex = Interlocked.Increment(ref index);
+			await TranslateOneAsync(entry, customSystemPrompt, customUserMessage, ct);
+		});
 
-            foreach (var entry in _entries)
-            {
-                if (_cts.Token.IsCancellationRequested) break;
+		TranslationGlossary.Flush();
 
-                _pauseEvent.Wait(_cts.Token);
-                if (_cts.Token.IsCancellationRequested) break;
-
-                await semaphore.WaitAsync(_cts.Token);
-                _currentIndex = Interlocked.Increment(ref index);
-
-                tasks.Add(Task.Run(async () =>
-                {
-                    try
-                    {
-                        await TranslateOneAsync(entry, customSystemPrompt, customUserMessage, _cts.Token);
-                    }
-                    finally
-                    {
-                        semaphore.Release();
-                    }
-                }, _cts.Token));
-            }
-
-            await Task.WhenAll(tasks);
-        }
-
-        TranslationGlossary.Flush();
-
-        InvokeOnUI(() => { UpdateStatsDisplay(); btnPause.Enabled = false; btnCancel.Text = Strings.BatchTranslate_Close; });
-    }
+		InvokeOnUI(() => { UpdateStatsDisplay(); btnPause.Enabled = false; btnCancel.Text = Strings.BatchTranslate_Close; });
+	}
 
     private async Task TranslateOneAsync(IAppInfoEntry entry, string customSystemPrompt, string customUserMessage, CancellationToken ct)
     {

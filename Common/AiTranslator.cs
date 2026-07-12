@@ -139,6 +139,7 @@ Rules:
 		Log.WriteLine("AI: Requesting {0}", apiUrl);
 
 		const int maxRetries = 3;
+		const int maxBackoffMs = 30_000;
 		string responseBody = null!;
 		using var client = CreateClient();
 		for (int attempt = 0; ; attempt++)
@@ -162,7 +163,7 @@ Rules:
 				if (attempt < maxRetries - 1)
 				{
 					Log.WriteLine("AI: Network error (attempt {0}/{1}): {2}", attempt + 1, maxRetries, ex.Message);
-					await Task.Delay(1000 << attempt, cancellationToken);
+					await Task.Delay(Math.Min(1000 << attempt, maxBackoffMs), cancellationToken);
 					continue;
 				}
 				Log.WriteLine("AI: Network error: {0}", ex.Message);
@@ -178,7 +179,7 @@ Rules:
 				if ((statusCode == 429 || statusCode == 503) && attempt < maxRetries - 1)
 				{
 					Log.WriteLine("AI: Transient error {0} (attempt {1}/{2}), retrying...", statusCode, attempt + 1, maxRetries);
-					await Task.Delay(1000 << attempt, cancellationToken);
+					await Task.Delay(Math.Min(1000 << attempt, maxBackoffMs), cancellationToken);
 					continue;
 				}
 				Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
