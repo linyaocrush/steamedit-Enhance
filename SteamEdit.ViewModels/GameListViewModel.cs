@@ -12,6 +12,7 @@ namespace SteamEdit.ViewModels;
 internal sealed class GameListViewModel : ViewModelBase
 {
     private readonly IAppInfoDataStore _dataStore;
+    public IAppInfoDataStore DataStore => _dataStore;
     private readonly Dictionary<int, string> _displayNames = new();
 
     private AppInfoEntryType _filterFlags = Settings.Default.Filters;

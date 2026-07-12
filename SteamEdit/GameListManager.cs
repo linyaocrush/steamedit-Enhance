@@ -5,11 +5,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
 using SteamEdit.Properties;
+using SteamEdit.ViewModels;
 
 namespace SteamEdit;
 
@@ -18,6 +18,7 @@ internal class GameListManager : IDisposable
 	private const int IconSpacing = 6;
 
 	private readonly GameDataContext _ctx;
+	private readonly GameListViewModel _viewModel;
 	private readonly IAppInfoDataStore _dataStore;
 	private readonly ListBox _appSelection;
 	private readonly ContextMenuStrip _filterSelectorMenu;
@@ -27,7 +28,6 @@ internal class GameListManager : IDisposable
 	private readonly ToolStripStatusLabel _lblNumAppsShown;
 	private readonly ToolStripStatusLabel _lblModifiedCount;
 
-	private AppInfoEntryType _currentFilters;
 	private Dictionary<AppInfoEntryType, Image> _filterImages;
 	private readonly Font _defaultAppSelectionFont;
 	private readonly Font _boldAppSelectionFont;
@@ -48,8 +48,6 @@ internal class GameListManager : IDisposable
 	private readonly StringBuilder _appSearchTerm = new();
 	private int _appSelectionLastHoverI = -1;
 	private bool _refreshingGamesListAfterEdit;
-	private int _modifiedCount;
-	private bool _modifiedCountDirty = true;
 	private int _tooltipCachedId = -1;
 	private string _tooltipCachedText = "";
 
@@ -80,7 +78,7 @@ internal class GameListManager : IDisposable
 
 	public GameListManager(
 		GameDataContext ctx,
-		IAppInfoDataStore dataStore,
+		GameListViewModel viewModel,
 		ListBox appSelection,
 		ContextMenuStrip filterSelectorMenu,
 		ContextMenuStrip sortSelectorMenu,
@@ -90,7 +88,8 @@ internal class GameListManager : IDisposable
 		ToolStripStatusLabel lblModifiedCount)
 	{
 		_ctx = ctx;
-		_dataStore = dataStore;
+		_viewModel = viewModel;
+		_dataStore = _viewModel.DataStore;
 		_appSelection = appSelection;
 		_filterSelectorMenu = filterSelectorMenu;
 		_sortSelectorMenu = sortSelectorMenu;
@@ -98,8 +97,6 @@ internal class GameListManager : IDisposable
 		_appFilterText = appFilterText;
 		_lblNumAppsShown = lblNumAppsShown;
 		_lblModifiedCount = lblModifiedCount;
-
-		_currentFilters = Settings.Default.Filters;
 
 		// 构建灰度 ColorMatrix
 		float[][] gray = new float[3][]
@@ -149,10 +146,10 @@ internal class GameListManager : IDisposable
 		_brushAccentLightAlt = new SolidBrush(ThemeManager.AccentLightAlt);
 		_penBorder = new Pen(ThemeManager.BorderColor);
 
-		// 构建筛选器菜单
+		// 构建筛选器菜单（初始选中状态从 ViewModel 读取）
 		foreach (var kv in _filterImages)
 		{
-			var item = CreateMenuItem(I18n.GetEnumDisplayName(kv.Key), kv.Key, _currentFilters.HasFlag(kv.Key), kv.Value);
+			var item = CreateMenuItem(I18n.GetEnumDisplayName(kv.Key), kv.Key, _viewModel.FilterFlags.HasFlag(kv.Key), kv.Value);
 			item.CheckedChanged += OnFilter_CheckedChanged;
 			_filterSelectorMenu.Items.Add(item);
 		}
@@ -163,19 +160,19 @@ internal class GameListManager : IDisposable
 
 		// 构建排序菜单
 		{
-			var sortByName = CreateMenuItem(Strings.Sort_ByName, "Name", false);
+			var sortByName = CreateMenuItem(Strings.Sort_ByName, "Name", _viewModel.SortField == "Name");
 			sortByName.Click += OnSortField_Click;
 			_sortSelectorMenu.Items.Add(sortByName);
-			var sortById = CreateMenuItem(Strings.Sort_ById, "AppId", false);
+			var sortById = CreateMenuItem(Strings.Sort_ById, "AppId", _viewModel.SortField == "AppId");
 			sortById.Click += OnSortField_Click;
 			_sortSelectorMenu.Items.Add(sortById);
 		}
 		_sortSelectorMenu.Items.Add(new ToolStripSeparator());
 		{
-			var sortAsc = CreateMenuItem(Strings.Sort_Ascending, false, false);
+			var sortAsc = CreateMenuItem(Strings.Sort_Ascending, false, !_viewModel.SortDescending);
 			sortAsc.Click += OnSortDirection_Click;
 			_sortSelectorMenu.Items.Add(sortAsc);
-			var sortDesc = CreateMenuItem(Strings.Sort_Descending, true, false);
+			var sortDesc = CreateMenuItem(Strings.Sort_Descending, true, _viewModel.SortDescending);
 			sortDesc.Click += OnSortDirection_Click;
 			_sortSelectorMenu.Items.Add(sortDesc);
 		}
@@ -187,8 +184,7 @@ internal class GameListManager : IDisposable
 		_filterDebounceTimer.Tick += (_, _) =>
 		{
 			_filterDebounceTimer.Stop();
-			ApplyIncrementalSearch();
-			UpdateStatusBar();
+			OnSearchTextChanged();
 		};
 		_statusBarDebounceTimer.Interval = 200;
 		_statusBarDebounceTimer.Tick += (_, _) => { _statusBarDebounceTimer.Stop(); UpdateStatusBar(); };
@@ -292,7 +288,8 @@ internal class GameListManager : IDisposable
 		}
 	}
 
-	public AppInfoEntryType CurrentFilters => _currentFilters;
+	public AppInfoEntryType CurrentFilters => _viewModel.FilterFlags;
+	public GameListViewModel ViewModel => _viewModel;
 	public bool RefreshingAfterEdit { get => _refreshingGamesListAfterEdit; set => _refreshingGamesListAfterEdit = value; }
 	public ImageAttributes BgLogoAttributes => _bgLogoAttributes;
 	public Dictionary<AppInfoEntryType, Image> GetFilterImages() => _filterImages;
@@ -327,40 +324,16 @@ internal class GameListManager : IDisposable
 		return entries.AsReadOnly();
 	}
 
-	public string GetDisplayName(IAppInfoEntry entry)
-	{
-		if (_ctx.DisplayNames.TryGetValue(entry.ID, out var name)) return name;
-		name = entry.ToString()!;
-		_ctx.DisplayNames[entry.ID] = name;
-		return name;
-	}
+	public string GetDisplayName(IAppInfoEntry entry) => _viewModel.GetDisplayName(entry);
 
-	public void InvalidateDisplayName(IAppInfoEntry entry) => _ctx.DisplayNames.Remove(entry.ID);
-	public void ClearDisplayNameCache() => _ctx.DisplayNames.Clear();
+	public void InvalidateDisplayName(IAppInfoEntry entry) => _viewModel.InvalidateDisplayName(entry);
+	public void ClearDisplayNameCache() => _viewModel.ClearDisplayNameCache();
 
 	public void RefreshGameList()
 	{
 		var selected = GetSelectedEntry();
-		var showMode = Settings.Default.FiltersShowEntries;
-		ClearDisplayNameCache();
-
-		int totalCount = 0;
-		_modifiedCount = 0;
-		_ctx._baseEntries = new List<IAppInfoEntry>();
-		foreach (var ent in _dataStore.AppInfo.Entries)
-		{
-			if (ent.Name == null) continue;
-			totalCount++;
-			if (ent.IsModified) _modifiedCount++;
-			if ((ent.Type & _currentFilters) == 0) continue;
-			if (showMode == ShowEntriesMode.OnlyModified && !ent.IsModified) continue;
-			if (showMode == ShowEntriesMode.OnlyUnmodified && ent.IsModified) continue;
-			_ctx._baseEntries.Add(ent);
-		}
-		_modifiedCountDirty = false;
-		_ctx.TotalEntryCount = totalCount;
-		_ctx.CurrentSearchTerm = "";
-		ApplyIncrementalSearch();
+		_viewModel.Refresh();
+		SyncFromViewModel();
 
 		if (selected != null)
 		{
@@ -376,26 +349,10 @@ internal class GameListManager : IDisposable
 	public void ResortEntry(IAppInfoEntry entry)
 	{
 		var selected = GetSelectedEntry();
-		int i = _ctx._entries.IndexOf(entry);
-		if (i < 0) return;
-		int index = i;
-		while (i > 0 && StringTitleComparer.CompareStrings(entry.SortAs, _ctx.Entries[i - 1].SortAs) < 0)
-		{
-			_ctx._entries[i] = _ctx._entries[i - 1];
-			_ctx._entries[i - 1] = entry;
-			i--;
-		}
-		for (; i < _ctx._entries.Count - 1 && StringTitleComparer.CompareStrings(entry.SortAs, _ctx._entries[i + 1].SortAs) > 0; i++)
-		{
-			_ctx._entries[i] = _ctx._entries[i + 1];
-			_ctx._entries[i + 1] = entry;
-		}
-		_appSelection.BeginUpdate();
-		int lo = Math.Min(index, i);
-		int hi = Math.Max(index, i);
-		for (int j = lo; j <= hi; j++)
-			_appSelection.Items[j] = j;
-		_appSelection.EndUpdate();
+		var item = _viewModel.FindByEntry(entry);
+		if (item == null) return;
+		_viewModel.ResortEntry(item);
+		SyncFromViewModel();
 		if (selected != null)
 		{
 			int newIdx = _ctx._entries.IndexOf(selected);
@@ -406,30 +363,8 @@ internal class GameListManager : IDisposable
 	public void SortEntries()
 	{
 		var selected = GetSelectedEntry();
-		string sortField = Settings.Default.SortField;
-		bool descending = Settings.Default.SortDescending;
-
-		if (sortField == "AppId")
-		{
-			_ctx._entries.Sort((a, b) =>
-			{
-				int n = a.ID.CompareTo(b.ID);
-				if (descending) n = -n;
-				if (n == 0) n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
-				return n;
-			});
-		}
-		else
-		{
-			_ctx._entries.Sort((a, b) =>
-			{
-				int n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
-				if (descending) n = -n;
-				if (n == 0) n = a.ID - b.ID;
-				return n;
-			});
-		}
-		RebuildListBoxItems();
+		_viewModel.ApplySort();
+		SyncFromViewModel();
 		if (selected != null)
 		{
 			int newIdx = _ctx._entries.IndexOf(selected);
@@ -441,18 +376,22 @@ internal class GameListManager : IDisposable
 
 	public void UpdateStatusBar()
 	{
-		_lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _ctx.Entries?.Count ?? 0, _ctx.TotalEntryCount);
-		if (_modifiedCountDirty)
-		{
-			_modifiedCount = 0;
-			if (_dataStore.AppInfo != null)
-			{
-				foreach (var e in _dataStore.AppInfo.Entries)
-					if (e.IsModified) _modifiedCount++;
-			}
-			_modifiedCountDirty = false;
-		}
-		_lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, _modifiedCount);
+		_lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _viewModel.VisibleCount, _viewModel.TotalEntryCount);
+		_lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, _viewModel.ModifiedCount);
+	}
+
+	private void SyncFromViewModel()
+	{
+		_ctx._entries = new List<IAppInfoEntry>(_viewModel.VisibleGames.Count);
+		_ctx._baseEntries = new List<IAppInfoEntry>(_viewModel.AllGames.Count);
+		foreach (var g in _viewModel.AllGames)
+			_ctx._baseEntries.Add(g.Entry);
+		foreach (var g in _viewModel.VisibleGames)
+			_ctx._entries.Add(g.Entry);
+		_ctx.TotalEntryCount = _viewModel.TotalEntryCount;
+		_ctx.CurrentSearchTerm = _viewModel.SearchText;
+		RebuildListBoxItems();
+		UpdateStatusBar();
 	}
 
 	public void ApplyLanguageToFilters()
@@ -508,7 +447,8 @@ internal class GameListManager : IDisposable
 	public void NotifyEntryReverted(IAppInfoEntry entry)
 	{
 		ClearDisplayNameCache();
-		ResortEntry(entry);
+		_viewModel.Refresh();
+		SyncFromViewModel();
 		int idx = _ctx._entries.IndexOf(entry);
 		if (idx >= 0) SelectIndex(idx);
 	}
@@ -524,95 +464,14 @@ internal class GameListManager : IDisposable
 		_appSelection.EndUpdate();
 	}
 
-	private async void ApplyIncrementalSearch()
+	private void OnSearchTextChanged()
 	{
-		string newText = _appFilterText.Text ?? "";
-		string trimmed = newText.Trim();
-
-		if (string.IsNullOrEmpty(trimmed))
+		string text = _appFilterText.Text ?? "";
+		if (text.Trim() != _viewModel.SearchText.Trim())
 		{
-			_ctx._entries = new List<IAppInfoEntry>(_ctx.BaseEntries);
-			_ctx.CurrentSearchTerm = "";
-			SortEntries();
-			return;
+			_viewModel.SearchText = text;
+			SyncFromViewModel();
 		}
-
-		string[] patternParts = trimmed.Split(' ', '\t', '　');
-		bool isNumeric = int.TryParse(trimmed, out _);
-		string currentSearchTerm = _ctx.CurrentSearchTerm;
-		IReadOnlyList<IAppInfoEntry> baseEntries = _ctx._baseEntries;
-		IReadOnlyList<IAppInfoEntry> currentEntries = _ctx.Entries;
-		string sortField = Settings.Default.SortField;
-		bool descending = Settings.Default.SortDescending;
-
-		// Snapshot display names for background thread safety
-		var displayNameSnapshot = new Dictionary<int, string>(_ctx.DisplayNames);
-		// Pre-warm NormalizedSortAs for all entries in source (thread-safe per-entry cache)
-		IReadOnlyList<IAppInfoEntry> sourceForWarm = baseEntries;
-		foreach (var ent in sourceForWarm)
-		{
-			// Force cache population on UI thread
-			if (!string.IsNullOrEmpty(ent.Name))
-			{
-				if (!displayNameSnapshot.ContainsKey(ent.ID))
-					displayNameSnapshot[ent.ID] = ent.Name;
-				_ = ent.NormalizedSortAs;
-			}
-		}
-		string GetDisplayNameSafe(IAppInfoEntry e) =>
-			displayNameSnapshot.TryGetValue(e.ID, out var n) ? n : (e.Name ?? "");
-
-		var result = await Task.Run(() =>
-		{
-			IReadOnlyList<IAppInfoEntry> source;
-			if (!string.IsNullOrEmpty(currentSearchTerm) && trimmed.StartsWith(currentSearchTerm, StringComparison.OrdinalIgnoreCase))
-				source = currentEntries;
-			else if (!string.IsNullOrEmpty(currentSearchTerm) && currentSearchTerm.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
-				source = baseEntries;
-			else
-				source = baseEntries;
-
-			var filtered = new List<IAppInfoEntry>(source.Count);
-			if (isNumeric)
-			{
-				foreach (var ent in source)
-					if (ent.ID.ToString().StartsWith(trimmed))
-						filtered.Add(ent);
-			}
-			else
-			{
-				foreach (var ent in source)
-					if (IsFuzzyMatch(GetDisplayNameSafe(ent), patternParts))
-						filtered.Add(ent);
-			}
-
-			if (sortField == "AppId")
-			{
-				filtered.Sort((a, b) =>
-				{
-					int n = a.ID.CompareTo(b.ID);
-					if (descending) n = -n;
-					if (n == 0) n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
-					return n;
-				});
-			}
-			else
-			{
-				filtered.Sort((a, b) =>
-				{
-					int n = string.Compare(a.NormalizedSortAs, b.NormalizedSortAs, StringComparison.CurrentCulture);
-					if (descending) n = -n;
-					if (n == 0) n = a.ID - b.ID;
-					return n;
-				});
-			}
-			return filtered;
-		});
-
-		_ctx._entries = result;
-		_ctx.CurrentSearchTerm = trimmed;
-		RebuildListBoxItems();
-		RestoreSelectedEntry();
 	}
 
 	private void RestoreSelectedEntry()
@@ -621,15 +480,6 @@ internal class GameListManager : IDisposable
 			return;
 		if (_appSelection.Items.Count > 0)
 			_appSelection.SelectedIndex = 0;
-	}
-
-	private static bool IsFuzzyMatch(string testString, string[] patternParts)
-	{
-		foreach (string patt in patternParts)
-		{
-			if (!testString.Contains(patt, StringComparison.OrdinalIgnoreCase)) return false;
-		}
-		return true;
 	}
 
 	private string GetEntryToolTip(IAppInfoEntry entry)
@@ -706,7 +556,8 @@ internal class GameListManager : IDisposable
 		int leftX = bounds.X + padding;
 
 		// Left side: filter type icon
-		if ((_currentFilters & (_currentFilters - 1)) != 0)
+		var currentFilters = _viewModel.FilterFlags;
+		if ((currentFilters & (currentFilters - 1)) != 0)
 		{
 			if (_filterImages.TryGetValue(entry.Type, out var icon))
 				e.Graphics.DrawImage(icon, leftX, bounds.Y + (bounds.Height - iconSize) / 2, iconSize, iconSize);
@@ -821,10 +672,11 @@ internal class GameListManager : IDisposable
 	{
 		var item = (ToolStripMenuItem)sender!;
 		var type = (AppInfoEntryType)item.Tag!;
-		if (item.Checked) _currentFilters |= type;
-		else _currentFilters &= ~type;
-		Settings.Default.Filters = _currentFilters;
-		RefreshGameList();
+		AppInfoEntryType flags = _viewModel.FilterFlags;
+		if (item.Checked) flags |= type;
+		else flags &= ~type;
+		_viewModel.FilterFlags = flags;
+		SyncFromViewModel();
 	}
 
 	private void OnFilter_ShowEntriesModeChanged(object? sender, EventArgs e)
@@ -835,40 +687,39 @@ internal class GameListManager : IDisposable
 			if (obj is ToolStripMenuItem mi && mi.Tag is ShowEntriesMode sm)
 				mi.Checked = sm == mode;
 		}
-		Settings.Default.FiltersShowEntries = mode;
-		RefreshGameList();
+		_viewModel.ShowMode = mode;
+		SyncFromViewModel();
 	}
 
 	private void OnSortField_Click(object? sender, EventArgs e)
 	{
 		if (sender is not ToolStripMenuItem item || item.Tag is not string field) return;
-		Settings.Default.SortField = field;
-		Settings.Default.Save();
+		_viewModel.SortField = field;
 		foreach (var obj in _sortSelectorMenu.Items)
 		{
 			if (obj is ToolStripMenuItem mi && mi.Tag is string && mi != item) mi.Checked = false;
 		}
 		item.Checked = true;
-		SortEntries();
+		SyncFromViewModel();
 	}
 
 	private void OnSortDirection_Click(object? sender, EventArgs e)
 	{
 		if (sender is not ToolStripMenuItem item || item.Tag is not bool descending) return;
-		Settings.Default.SortDescending = descending;
-		Settings.Default.Save();
+		_viewModel.SortDescending = descending;
 		foreach (var obj in _sortSelectorMenu.Items)
 		{
 			if (obj is ToolStripMenuItem mi && mi.Tag is bool && mi != item) mi.Checked = false;
 		}
 		item.Checked = true;
-		SortEntries();
+		SyncFromViewModel();
 	}
 
 	private void OnEntryModified(object? sender, EventArgs e)
 	{
 		ClearDisplayNameCache();
-		_modifiedCountDirty = true;
+		_viewModel.Refresh();
+		SyncFromViewModel();
 		_statusBarDebounceTimer.Stop();
 		_statusBarDebounceTimer.Start();
 	}

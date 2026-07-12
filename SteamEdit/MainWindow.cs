@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using Common;
 using SteamEdit.Data;
 using SteamEdit.Properties;
+using SteamEdit.ViewModels;
 
 namespace SteamEdit;
 
@@ -18,6 +19,7 @@ internal class MainWindow : LocalizableForm
 	private string _originalTitle = null!;
 
 	private GameDataContext _ctx = null!;
+	private GameListViewModel _gameListViewModel = null!;
 	private GameListManager _listManager = null!;
 	private EditController _editController = null!;
 
@@ -85,9 +87,12 @@ internal class MainWindow : LocalizableForm
 		// 创建共享数据上下文
 		_ctx = new GameDataContext();
 
-		// 创建游戏列表管理器
+		// 创建游戏列表 ViewModel
+		_gameListViewModel = new GameListViewModel(_steamData.DataStore);
+
+		// 创建游戏列表管理器（注入 ViewModel）
 		_listManager = new GameListManager(
-			_ctx, _steamData.DataStore, appSelection, filterSelectorMenu, sortSelectorMenu,
+			_ctx, _gameListViewModel, appSelection, filterSelectorMenu, sortSelectorMenu,
 			toolTips, appFilterText, lblNumAppsShown, lblModifiedCount);
 
 		// 填充 EntryType 下拉框（依赖 _listManager 的 filterImages）
