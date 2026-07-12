@@ -802,6 +802,7 @@ internal class GameListManager : IDisposable
 
 	private void OnEntryModified(object? sender, EventArgs e)
 	{
+		ClearDisplayNameCache();
 		_modifiedCountDirty = true;
 		_statusBarDebounceTimer.Stop();
 		_statusBarDebounceTimer.Start();
