@@ -74,6 +74,7 @@ internal static class Program
         var initCopy = dataInit;
         Exception? loadError = null;
         SteamData? result = null;
+        var cts = new CancellationTokenSource();
 
         using (var loading = new WaitingDialog(Strings.WaitingDialog_Waiting))
         {
@@ -81,20 +82,24 @@ internal static class Program
             {
                 try
                 {
+                    cts.Token.ThrowIfCancellationRequested();
                     var service = new SteamData();
                     service.Initialize(ref initCopy);
                     result = service;
                 }
+                catch (OperationCanceledException) { }
                 catch (Exception ex) { loadError = ex; }
-            });
+            }, cts.Token);
             if (!loading.ShowAndWait(() => !task.IsCompleted))
             {
                 Log.WriteLine("Load cancelled by user or timed out");
-                task.Wait(TimeSpan.FromSeconds(5));
+                cts.Cancel();
+                try { task.Wait(TimeSpan.FromSeconds(5), cts.Token); } catch (OperationCanceledException) { }
                 return null;
             }
         }
 
+        cts.Dispose();
         if (loadError is UnknownAppInfoVersionException ux)
         {
             MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ux.AppInfoPath}\r\nDetected Version: {ux.AppInfoVersion:X8}");
