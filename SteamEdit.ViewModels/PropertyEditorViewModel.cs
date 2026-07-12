@@ -20,6 +20,9 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
     private int _vrIndex = -1;
     private AppInfoEntryType _entryType;
     private bool _vrEnabled;
+    private bool _gameNameClearXVisible;
+    private bool _sortAsClearXVisible;
+    private bool _hasSortAs;
 
     public IAppInfoEntry? CurrentEntry
     {
@@ -111,6 +114,24 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
         }
     }
 
+    public bool GameNameClearXVisible
+    {
+        get => _gameNameClearXVisible;
+        set => SetProperty(ref _gameNameClearXVisible, value);
+    }
+
+    public bool SortAsClearXVisible
+    {
+        get => _sortAsClearXVisible;
+        set => SetProperty(ref _sortAsClearXVisible, value);
+    }
+
+    public bool HasSortAs
+    {
+        get => _hasSortAs;
+        set => SetProperty(ref _hasSortAs, value);
+    }
+
     public event EventHandler<IAppInfoEntry>? EditCommandExecuted;
 
     public void LoadEntry(IAppInfoEntry? entry)
@@ -142,6 +163,12 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
             VRIndex = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport) != int.MaxValue ? 1 : 0;
         }
 
+        HasSortAs = entry.HasSortAs;
+        GameNameClearXVisible = entry.IsModified
+            && entry.Modification?.Changes?.HasProperty(AppInfoPaths.Name) == true;
+        SortAsClearXVisible = entry.IsModified
+            && entry.Modification?.Changes?.HasProperty(AppInfoPaths.SortAs) == true;
+
         _isSettingUp = false;
     }
 
@@ -153,6 +180,7 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
         {
             GameName = translated;
             _currentEntry.Name = translated;
+            HasSortAs = _currentEntry.HasSortAs;
             EditCommandExecuted?.Invoke(this, _currentEntry);
         }
         finally { _isSettingUp = false; }
