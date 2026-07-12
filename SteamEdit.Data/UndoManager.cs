@@ -47,10 +47,11 @@ internal class UndoManager
 
     private readonly List<UndoRecord> _undoStack = new();
     private readonly int _maxUndoLevel;
+    private readonly object _lock = new();
 
     public int MaxUndoLevel => _maxUndoLevel;
-    public bool CanUndo => _undoStack.Count > 0;
-    public int Count => _undoStack.Count;
+    public bool CanUndo { get { lock (_lock) { return _undoStack.Count > 0; } } }
+    public int Count { get { lock (_lock) { return _undoStack.Count; } } }
 
     public UndoManager(int maxUndoLevel = DefaultMaxUndoLevel)
     {
@@ -59,30 +60,42 @@ internal class UndoManager
 
     public void Push(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object? previousValue)
     {
-        _undoStack.Add(new UndoRecord(entry, propertyPath, type, previousValue));
-        TrimExcess();
+        lock (_lock)
+        {
+            _undoStack.Add(new UndoRecord(entry, propertyPath, type, previousValue));
+            TrimExcess();
+        }
     }
 
     public void PushCompound(UndoRecord compoundRecord)
     {
         if (compoundRecord == null) throw new ArgumentNullException(nameof(compoundRecord));
-        _undoStack.Add(compoundRecord);
-        TrimExcess();
+        lock (_lock)
+        {
+            _undoStack.Add(compoundRecord);
+            TrimExcess();
+        }
     }
 
     public UndoRecord Pop()
     {
-        if (_undoStack.Count == 0)
-            throw new InvalidOperationException("Undo stack is empty.");
-        int last = _undoStack.Count - 1;
-        var item = _undoStack[last];
-        _undoStack.RemoveAt(last);
-        return item;
+        lock (_lock)
+        {
+            if (_undoStack.Count == 0)
+                throw new InvalidOperationException("Undo stack is empty.");
+            int last = _undoStack.Count - 1;
+            var item = _undoStack[last];
+            _undoStack.RemoveAt(last);
+            return item;
+        }
     }
 
     public void Clear()
     {
-        _undoStack.Clear();
+        lock (_lock)
+        {
+            _undoStack.Clear();
+        }
     }
 
     private void TrimExcess()
