@@ -9,7 +9,7 @@ namespace SteamEdit.Data;
 
 internal class PropertyTable : IEquatable<PropertyTable>
 {
-	internal const int MaxNestingDepth = 32;
+	internal const int MaxNestingDepth = 64;
 
 	private List<Property> _properties = new List<Property>();
 	private Dictionary<string, Property> _propertyMap = new Dictionary<string, Property>(StringComparer.Ordinal);
