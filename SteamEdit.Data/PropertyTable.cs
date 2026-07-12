@@ -16,7 +16,6 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	private int _hashCode;
 	private bool _hashCodeDirty = true;
 	private string[]? _propertyNamesCache;
-	private readonly object _cacheLock = new();
 
 	public int Count => _properties.Count;
 
@@ -24,16 +23,13 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	{
 		get
 		{
-			lock (_cacheLock)
+			if (_propertyNamesCache == null)
 			{
-				if (_propertyNamesCache == null)
-				{
-					_propertyNamesCache = new string[_properties.Count];
-					for (int i = 0; i < _properties.Count; i++)
-						_propertyNamesCache[i] = _properties[i].Name;
-				}
-				return _propertyNamesCache;
+				_propertyNamesCache = new string[_properties.Count];
+				for (int i = 0; i < _properties.Count; i++)
+					_propertyNamesCache[i] = _properties[i].Name;
 			}
+			return _propertyNamesCache;
 		}
 	}
 
@@ -158,7 +154,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		Property item = new Property(name, type, value);
 		_properties.Add(item);
 		_propertyMap[name] = item;
-		lock (_cacheLock) { _hashCodeDirty = true; _propertyNamesCache = null; }
+		_hashCodeDirty = true; _propertyNamesCache = null;
 	}
 
 	public bool SetPropertyValue(string name, PropertyType type, object? value)
@@ -169,12 +165,12 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			property = new Property(name);
 			_properties.Add(property);
 			_propertyMap[name] = property;
-			lock (_cacheLock) { _hashCodeDirty = true; _propertyNamesCache = null; }
+			_hashCodeDirty = true; _propertyNamesCache = null;
 		}
 		bool result = property.PropertyType != type || !Equals(property.Value, value);
 		property.PropertyType = type;
 		property.Value = value;
-		lock (_cacheLock) { _hashCodeDirty = true; }
+		_hashCodeDirty = true;
 		return result;
 	}
 
@@ -191,7 +187,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		{
 			_properties.Remove(prop);
 			_propertyMap.Remove(name);
-			lock (_cacheLock) { _hashCodeDirty = true; _propertyNamesCache = null; }
+			_hashCodeDirty = true; _propertyNamesCache = null;
 		}
 	}
 
@@ -234,7 +230,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		_properties.Clear();
 		_propertyMap.Clear();
 		_hashCodeDirty = true;
-		lock (_cacheLock) { _propertyNamesCache = null; }
+		_propertyNamesCache = null;
 	}
 
 	public PropertyTable()
@@ -253,10 +249,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public bool Equals(PropertyTable? other)
 	{
 		if (other == null || Count != other.Count) return false;
-		lock (_cacheLock)
-		{
-			return _properties.All(prop => other._propertyMap.TryGetValue(prop.Name, out var otherProp) && prop.Equals(otherProp));
-		}
+		return _properties.All(prop => other._propertyMap.TryGetValue(prop.Name, out var otherProp) && prop.Equals(otherProp));
 	}
 
 	public override bool Equals(object? obj)
@@ -266,20 +259,17 @@ internal class PropertyTable : IEquatable<PropertyTable>
 
 	public override int GetHashCode()
 	{
-		lock (_cacheLock)
+		if (_hashCodeDirty)
 		{
-			if (_hashCodeDirty)
+			int num = GetType().GetHashCode();
+			foreach (Property property in _properties)
 			{
-				int num = GetType().GetHashCode();
-				foreach (Property property in _properties)
-				{
-					num = num * 31 + property.GetHashCode();
-				}
-				_hashCode = num;
-				_hashCodeDirty = false;
+				num = num * 31 + property.GetHashCode();
 			}
-			return _hashCode;
+			_hashCode = num;
+			_hashCodeDirty = false;
 		}
+		return _hashCode;
 	}
 
 	private string ToStringInternal(int indent)
