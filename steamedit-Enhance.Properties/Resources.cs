@@ -24,7 +24,7 @@ internal class Resources
 		{
 			if (resourceMan == null)
 			{
-				resourceMan = new ResourceManager("steamedit_Enhance.Properties.Resources", typeof(Resources).Assembly);
+				resourceMan = new ResourceManager("steamedit-Enhance.Properties.Resources", typeof(Resources).Assembly);
 			}
 			return resourceMan;
 		}
