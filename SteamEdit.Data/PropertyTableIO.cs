@@ -13,23 +13,31 @@ internal static class PropertyTableIO
 
 	internal static string ReadZString(BinaryReader reader)
 	{
-		byte[] buf = new byte[256];
+		Span<byte> stackBuf = stackalloc byte[256];
+		byte[]? heapBuf = null;
 		int len = 0;
 		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
 		byte value;
 		while (len < remaining && (value = reader.ReadByte()) != 0)
 		{
-			if (len == buf.Length)
+			int capacity = heapBuf?.Length ?? stackBuf.Length;
+			if (len == capacity)
 			{
-				if (buf.Length * 2 > MaxZStringBuffer)
+				int newSize = capacity * 2;
+				if (newSize > MaxZStringBuffer)
 					throw new InvalidDataException("ReadZString: string exceeds maximum buffer size. File may be corrupted.");
-				Array.Resize(ref buf, buf.Length * 2);
+				heapBuf = new byte[newSize];
+				stackBuf[..capacity].CopyTo(heapBuf);
 			}
-			buf[len++] = value;
+			if (heapBuf != null)
+				heapBuf[len] = value;
+			else
+				stackBuf[len] = value;
+			len++;
 		}
 		if (len >= remaining)
 			throw new InvalidDataException("ReadZString: null terminator not found before end of stream");
-		return Encoding.UTF8.GetString(buf, 0, len);
+		return Encoding.UTF8.GetString(heapBuf ?? stackBuf[..len]);
 	}
 
 	internal static void WriteZString(BinaryWriter writer, string str)
