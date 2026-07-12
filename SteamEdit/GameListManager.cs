@@ -152,13 +152,7 @@ internal class GameListManager : IDisposable
 		// 构建筛选器菜单
 		foreach (var kv in _filterImages)
 		{
-			var item = new ToolStripMenuItem(I18n.GetEnumDisplayName(kv.Key), kv.Value)
-			{
-				DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-				CheckOnClick = true,
-				Tag = kv.Key,
-				Checked = _currentFilters.HasFlag(kv.Key)
-			};
+			var item = CreateMenuItem(I18n.GetEnumDisplayName(kv.Key), kv.Key, _currentFilters.HasFlag(kv.Key), kv.Value);
 			item.CheckedChanged += OnFilter_CheckedChanged;
 			_filterSelectorMenu.Items.Add(item);
 		}
@@ -168,19 +162,23 @@ internal class GameListManager : IDisposable
 		AddShowEntriesMenuItem(Strings.MainWindow_Filter_OnlyUnmodified, ShowEntriesMode.OnlyUnmodified);
 
 		// 构建排序菜单
-		var sortByName = new ToolStripMenuItem(Strings.Sort_ByName) { Tag = "Name", CheckOnClick = true };
-		var sortById = new ToolStripMenuItem(Strings.Sort_ById) { Tag = "AppId", CheckOnClick = true };
-		sortByName.Click += OnSortField_Click;
-		sortById.Click += OnSortField_Click;
-		_sortSelectorMenu.Items.Add(sortByName);
-		_sortSelectorMenu.Items.Add(sortById);
+		{
+			var sortByName = CreateMenuItem(Strings.Sort_ByName, "Name", false);
+			sortByName.Click += OnSortField_Click;
+			_sortSelectorMenu.Items.Add(sortByName);
+			var sortById = CreateMenuItem(Strings.Sort_ById, "AppId", false);
+			sortById.Click += OnSortField_Click;
+			_sortSelectorMenu.Items.Add(sortById);
+		}
 		_sortSelectorMenu.Items.Add(new ToolStripSeparator());
-		var sortAsc = new ToolStripMenuItem(Strings.Sort_Ascending) { Tag = false, CheckOnClick = true };
-		var sortDesc = new ToolStripMenuItem(Strings.Sort_Descending) { Tag = true, CheckOnClick = true };
-		sortAsc.Click += OnSortDirection_Click;
-		sortDesc.Click += OnSortDirection_Click;
-		_sortSelectorMenu.Items.Add(sortAsc);
-		_sortSelectorMenu.Items.Add(sortDesc);
+		{
+			var sortAsc = CreateMenuItem(Strings.Sort_Ascending, false, false);
+			sortAsc.Click += OnSortDirection_Click;
+			_sortSelectorMenu.Items.Add(sortAsc);
+			var sortDesc = CreateMenuItem(Strings.Sort_Descending, true, false);
+			sortDesc.Click += OnSortDirection_Click;
+			_sortSelectorMenu.Items.Add(sortDesc);
+		}
 
 		// Timer 设置
 		_appSearchTermTimer.Interval = 500;
@@ -288,13 +286,7 @@ internal class GameListManager : IDisposable
 
 		void AddShowEntriesMenuItem(string name, ShowEntriesMode mode)
 		{
-			var mi = new ToolStripMenuItem(name)
-			{
-				DisplayStyle = ToolStripItemDisplayStyle.Text,
-				CheckOnClick = true,
-				Tag = mode,
-				Checked = Settings.Default.FiltersShowEntries == mode
-			};
+			var mi = CreateMenuItem(name, mode, Settings.Default.FiltersShowEntries == mode);
 			mi.Click += OnFilter_ShowEntriesModeChanged;
 			_filterSelectorMenu.Items.Add(mi);
 		}
@@ -304,6 +296,17 @@ internal class GameListManager : IDisposable
 	public bool RefreshingAfterEdit { get => _refreshingGamesListAfterEdit; set => _refreshingGamesListAfterEdit = value; }
 	public ImageAttributes BgLogoAttributes => _bgLogoAttributes;
 	public Dictionary<AppInfoEntryType, Image> GetFilterImages() => _filterImages;
+
+	private static ToolStripMenuItem CreateMenuItem<T>(string text, T tag, bool isChecked, Image? icon = null)
+	{
+		return new ToolStripMenuItem(text, icon)
+		{
+			Tag = tag,
+			CheckOnClick = true,
+			Checked = isChecked,
+			DisplayStyle = icon != null ? ToolStripItemDisplayStyle.ImageAndText : ToolStripItemDisplayStyle.Text
+		};
+	}
 
 	// --- 公开方法 ---
 

@@ -411,45 +411,63 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		common.RemoveProperty("name_localized");
 	}
 
-	/// <summary>
-	/// 通用的条目读取模板。各版本子类传入工厂方法、属性表读取委托和哈希块数量。
-	/// </summary>
-	protected static TEntry? ReadEntryCore<TEntry>(
-		BinaryReader reader,
-		Func<TEntry> createEntry,
-		Func<BinaryReader, PropertyTable> readPropertyTable,
-		int hashBlockCount,
-		Action<TEntry>? postProcess = null) where TEntry : AppInfoEntryBase
-	{
-		int num = reader.ReadInt32();
-		if (num == 0) return null;
+	protected virtual int HashBlockCount => 1;
 
-		var entry = createEntry();
-		entry.ID = num;
+	protected virtual PropertyTable ReadPropertyTableFrom(BinaryReader reader)
+		=> PropertyTableIO.ReadPropertyTable_0x00000000(reader);
+
+	protected virtual void OnReadCompleted() { }
+
+	protected virtual void WritePropertyTableTo(BinaryWriter writer, PropertyTable table)
+	{
+		byte[] data = PropertyTableIO.WritePropertyTable_0x00000000(table);
+		writer.Write(data);
+	}
+
+	public void Write(BinaryWriter writer) => WriteEntryCore(writer, HashBlockCount, WritePropertyTableTo);
+
+	internal static TEntry? ReadFromReader<TEntry>(BinaryReader reader)
+		where TEntry : AppInfoEntryBase, new()
+		=> ReadFromReader<TEntry>(reader, null);
+
+	internal static TEntry? ReadFromReader<TEntry>(BinaryReader reader, Action<TEntry>? setup)
+		where TEntry : AppInfoEntryBase, new()
+	{
+		int id = reader.ReadInt32();
+		if (id == 0) return null;
+
+		var entry = new TEntry();
+		entry.ID = id;
+		setup?.Invoke(entry);
 		try
 		{
-			int count = reader.ReadInt32();
-			if (count < 0)
-				throw new InvalidDataException($"Entry data size {count} is negative.");
-			using (BinaryReader subReader = new BinaryReader(new MemoryStream(reader.ReadBytes(count))))
-			{
-				entry._stuffBeforeHash = subReader.ReadBytes(16);
-				subReader.ReadBytes(20); // hash 1
-				entry._changeNumber = subReader.ReadUInt32();
-				for (int i = 1; i < hashBlockCount; i++)
-					subReader.ReadBytes(20); // additional hash blocks
-				entry._properties = readPropertyTable(subReader);
-				entry.RestoreBaseProperties();
-			}
-			postProcess?.Invoke(entry);
-			entry._originalData = PropertyTableIO.WritePropertyTable_0x00000000(entry._properties);
-			entry.ClearCachedProps();
-			return entry;
+			entry.InitializeFromReader(reader);
 		}
 		catch (Exception e)
 		{
 			throw new AppInfoLoadException($"Failed to load entry with appId {entry.ID:X8}", e);
 		}
+		return entry;
+	}
+
+	private void InitializeFromReader(BinaryReader reader)
+	{
+		int count = reader.ReadInt32();
+		if (count < 0)
+			throw new InvalidDataException($"Entry data size {count} is negative.");
+		using (BinaryReader subReader = new BinaryReader(new MemoryStream(reader.ReadBytes(count))))
+		{
+			_stuffBeforeHash = subReader.ReadBytes(16);
+			subReader.ReadBytes(20);
+			_changeNumber = subReader.ReadUInt32();
+			for (int i = 1; i < HashBlockCount; i++)
+				subReader.ReadBytes(20);
+			_properties = ReadPropertyTableFrom(subReader);
+			RestoreBaseProperties();
+		}
+		OnReadCompleted();
+		_originalData = PropertyTableIO.WritePropertyTable_0x00000000(_properties);
+		ClearCachedProps();
 	}
 
 	/// <summary>
