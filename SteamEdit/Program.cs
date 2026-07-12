@@ -286,6 +286,7 @@ internal static class Program
 
     private static void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
     {
+        Log.Flush();
         var ex = e.ExceptionObject as Exception;
         string? crashPath = ex != null ? WriteCrashFile(ex) : null;
         string? details = e.ExceptionObject.ToString();
@@ -298,6 +299,7 @@ internal static class Program
 
     private static void Application_ThreadException(object? sender, ThreadExceptionEventArgs e)
     {
+        Log.Flush();
         string crashPath = WriteCrashFile(e.Exception);
         string details = e.Exception.ToString();
         if (crashPath != null)
