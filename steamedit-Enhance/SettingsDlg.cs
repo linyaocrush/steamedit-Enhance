@@ -191,6 +191,8 @@ internal class SettingsDlg : LocalizableForm
             Settings.Default.AiBatchTranslateConcurrency = (int)numBatchConcurrency.Value;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
             Settings.Default.LogLevel = comboLogLevel.SelectedItem as Log.LogLevel? ?? Log.LogLevel.Info;
+            // 立即应用新的日志级别
+            Log.SetMinimumLevel(Settings.Default.LogLevel);
             if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
                 MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             Settings.Default.Save();
