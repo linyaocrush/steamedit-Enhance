@@ -26,7 +26,7 @@ internal class MainWindow : LocalizableForm
 
 	private IContainer components = null!;
 
-	private readonly Dictionary<(Keys Key, bool Control, bool Shift), Action> _shortcutMap = new();
+	private readonly ShortcutHandler _shortcutHandler;
 
 	private ClearableTextBox textGameName = null!;
 	private CheckBox checkHidden = null!;
@@ -277,7 +277,7 @@ internal class MainWindow : LocalizableForm
 		_editController = new EditController(
 			_ctx, _steamData.DataStore, _listManager, _propertyEditorViewModel);
 
-		RegisterShortcuts();
+		_shortcutHandler = new ShortcutHandler(() => RegisterShortcuts());
 
 		// 启动 Steam 状态检测
 		UpdateSteamStatus();
@@ -483,34 +483,33 @@ internal class MainWindow : LocalizableForm
 
 	private void RegisterShortcuts()
 	{
-		_shortcutMap[(Keys.S, true, false)] = () => _mainViewModel.SaveCommand.Execute(null);
-		_shortcutMap[(Keys.Z, true, false)] = () => _mainViewModel.UndoCommand.Execute(null);
-		_shortcutMap[(Keys.C, true, false)] = () =>
+		_shortcutHandler.Register((Keys.S, true, false), () => _mainViewModel.SaveCommand.Execute(null));
+		_shortcutHandler.Register((Keys.Z, true, false), () => _mainViewModel.UndoCommand.Execute(null));
+		_shortcutHandler.Register((Keys.C, true, false), () =>
 		{
 			if (appFilterText.Focused) return;
 			var entry = _listManager.GetSelectedEntry();
 			if (entry != null) try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { }
-		};
-		_shortcutMap[(Keys.F, true, false)] = () =>
+		});
+		_shortcutHandler.Register((Keys.F, true, false), () =>
 		{
 			if (appFilterText.Focused) return;
 			appFilterText.Focus();
 			appFilterText.SelectAll();
-		};
-		_shortcutMap[(Keys.Enter, true, true)] = () => _mainViewModel.SaveApplyRestartCommand.Execute(null);
-		_shortcutMap[(Keys.Enter, true, false)] = () => _mainViewModel.SaveApplyCommand.Execute(null);
-		_shortcutMap[(Keys.T, true, false)] = () => _mainViewModel.TranslateCommand.Execute(null);
-		_shortcutMap[(Keys.B, true, false)] = () => _mainViewModel.BatchTranslateCommand.Execute(null);
-		_shortcutMap[(Keys.R, true, false)] = () => _mainViewModel.RevertCommand.Execute(null);
+		});
+		_shortcutHandler.Register((Keys.Enter, true, true), () => _mainViewModel.SaveApplyRestartCommand.Execute(null));
+		_shortcutHandler.Register((Keys.Enter, true, false), () => _mainViewModel.SaveApplyCommand.Execute(null));
+		_shortcutHandler.Register((Keys.T, true, false), () => _mainViewModel.TranslateCommand.Execute(null));
+		_shortcutHandler.Register((Keys.B, true, false), () => _mainViewModel.BatchTranslateCommand.Execute(null));
+		_shortcutHandler.Register((Keys.R, true, false), () => _mainViewModel.RevertCommand.Execute(null));
 	}
 
 	private void OnMainWindow_KeyDown(object? sender, KeyEventArgs e)
 	{
-		if (_shortcutMap.TryGetValue((e.KeyCode, e.Control, e.Shift), out var action))
+		if (_shortcutHandler.TryHandle(e.KeyCode, e.Control, e.Shift))
 		{
 			e.Handled = true;
 			e.SuppressKeyPress = true;
-			action();
 			return;
 		}
 		switch (e.KeyCode)
