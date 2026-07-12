@@ -9,7 +9,7 @@ internal sealed class MainViewModel : ViewModelBase
 {
     private readonly ISteamDataService _steamData;
     private bool _canUndo;
-    private string _windowTitle = "steamedit_Enhance";
+    private string _windowTitle = "SteamEdit";
     private string _appIdText = "App ID: —";
     private bool _isBusy;
 
@@ -124,7 +124,7 @@ internal sealed class MainViewModel : ViewModelBase
 
     private string BuildWindowTitle()
     {
-        var title = "steamedit_Enhance";
+        var title = "SteamEdit";
         if (_steamData.NeedsSave)
             title += " *";
         if (_steamData.NeedsApply)

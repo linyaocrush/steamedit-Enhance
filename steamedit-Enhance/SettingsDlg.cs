@@ -369,7 +369,7 @@ internal class SettingsDlg : LocalizableForm
                 if (autoFix) args += " -autofix";
                 if (forceStart) args += " -forcestart";
                 key.SetValue(RunValueName, $"\"{exePath}\"{args}");
-                key.DeleteValue("steamedit_Enhance", throwOnMissingValue: false);
+                key.DeleteValue("steamedit-Enhance", throwOnMissingValue: false);
             }
             else
             {

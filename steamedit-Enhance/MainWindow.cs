@@ -1381,7 +1381,7 @@ internal class MainWindow : LocalizableForm
 		base.MaximizeBox = true;
 		this.MinimumSize = new System.Drawing.Size(518, 289);
 		base.Name = "MainWindow";
-		this.Text = "steamedit_Enhance";
+		this.Text = "steamedit-Enhance";
 		base.FormClosing += new System.Windows.Forms.FormClosingEventHandler(OnMainWindow_FormClosing);
 		base.Load += new System.EventHandler(MainWindow_Load);
 		base.KeyDown += new System.Windows.Forms.KeyEventHandler(OnMainWindow_KeyDown);
