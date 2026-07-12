@@ -24,6 +24,8 @@ internal sealed class GameListViewModel : ViewModelBase
     private int _visibleCount;
     private int _modifiedCount;
     private GameItemViewModel? _selectedGame;
+    private int _tooltipCachedId = -1;
+    private string _tooltipCachedText = "";
 
     public ObservableCollection<GameItemViewModel> AllGames { get; } = new();
     public ObservableCollection<GameItemViewModel> VisibleGames { get; } = new();
@@ -244,6 +246,18 @@ internal sealed class GameListViewModel : ViewModelBase
 
     public GameItemViewModel? SelectById(int id) =>
         VisibleGames.FirstOrDefault(g => g.ID == id);
+
+    public string GetEntryToolTip(IAppInfoEntry entry)
+    {
+        if (entry.ID == _tooltipCachedId) return _tooltipCachedText;
+        var sb = new System.Text.StringBuilder();
+        sb.AppendFormat("{0}: {1}", entry.ID, entry.Name);
+        string? oslist = entry.GetPropertyValue<string>(null!, AppInfoPaths.OsList);
+        if (oslist != null) sb.AppendFormat(" [{0}]", oslist);
+        _tooltipCachedId = entry.ID;
+        _tooltipCachedText = sb.ToString();
+        return _tooltipCachedText;
+    }
 
     private static bool IsFuzzyMatch(string testString, string[] patternParts)
     {

@@ -199,7 +199,7 @@ internal class MainWindow : LocalizableForm
 		// 创建游戏列表管理器（注入 ViewModel）
 		_listManager = new GameListManager(
 			_ctx, _gameListViewModel, appSelection, filterSelectorMenu, sortSelectorMenu,
-			toolTips, appFilterText, lblNumAppsShown, lblModifiedCount);
+			toolTips, appFilterText);
 
 		// 填充 EntryType 下拉框（依赖 _listManager 的 filterImages）
 		listEntryType.BeginUpdate();
@@ -333,7 +333,8 @@ internal class MainWindow : LocalizableForm
 
 	private void UpdateStatusBar()
 	{
-		_listManager.UpdateStatusBar();
+		lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _mainViewModel.GameList.VisibleCount, _mainViewModel.GameList.TotalEntryCount);
+		lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, _mainViewModel.GameList.ModifiedCount);
 	}
 
 	private void UpdateSteamStatus()

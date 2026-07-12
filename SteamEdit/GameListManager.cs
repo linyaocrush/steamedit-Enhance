@@ -25,9 +25,6 @@ internal class GameListManager : IDisposable
 	private readonly ContextMenuStrip _sortSelectorMenu;
 	private readonly ToolTip _toolTips;
 	private readonly ClearableTextBox _appFilterText;
-	private readonly ToolStripStatusLabel _lblNumAppsShown;
-	private readonly ToolStripStatusLabel _lblModifiedCount;
-
 	private Dictionary<AppInfoEntryType, Image> _filterImages;
 	private readonly Font _defaultAppSelectionFont;
 	private readonly Font _boldAppSelectionFont;
@@ -44,12 +41,9 @@ internal class GameListManager : IDisposable
 
 	private readonly Timer _appSearchTermTimer = new();
 	private readonly Timer _filterDebounceTimer = new();
-	private readonly Timer _statusBarDebounceTimer = new();
 	private readonly StringBuilder _appSearchTerm = new();
 	private int _appSelectionLastHoverI = -1;
 	private bool _refreshingGamesListAfterEdit;
-	private int _tooltipCachedId = -1;
-	private string _tooltipCachedText = "";
 
 	private readonly EventHandler? _onLanguageChanged;
 
@@ -83,9 +77,7 @@ internal class GameListManager : IDisposable
 		ContextMenuStrip filterSelectorMenu,
 		ContextMenuStrip sortSelectorMenu,
 		ToolTip toolTips,
-		ClearableTextBox appFilterText,
-		ToolStripStatusLabel lblNumAppsShown,
-		ToolStripStatusLabel lblModifiedCount)
+		ClearableTextBox appFilterText)
 	{
 		_ctx = ctx;
 		_viewModel = viewModel;
@@ -95,8 +87,6 @@ internal class GameListManager : IDisposable
 		_sortSelectorMenu = sortSelectorMenu;
 		_toolTips = toolTips;
 		_appFilterText = appFilterText;
-		_lblNumAppsShown = lblNumAppsShown;
-		_lblModifiedCount = lblModifiedCount;
 
 		// 构建灰度 ColorMatrix
 		float[][] gray = new float[3][]
@@ -186,9 +176,6 @@ internal class GameListManager : IDisposable
 			_filterDebounceTimer.Stop();
 			OnSearchTextChanged();
 		};
-		_statusBarDebounceTimer.Interval = 200;
-		_statusBarDebounceTimer.Tick += (_, _) => { _statusBarDebounceTimer.Stop(); UpdateStatusBar(); };
-
 		// 事件订阅
 		_appSelection.DrawItem += OnAppSelection_DrawItem;
 		_appSelection.SelectionMode = SelectionMode.MultiExtended;
@@ -343,7 +330,6 @@ internal class GameListManager : IDisposable
 		if (_appSelection.SelectedIndex < 0 && _appSelection.Items.Count > 0)
 			_appSelection.SelectedIndex = 0;
 
-		UpdateStatusBar();
 	}
 
 	public void ResortEntry(IAppInfoEntry entry)
@@ -374,12 +360,6 @@ internal class GameListManager : IDisposable
 			_appSelection.SelectedIndex = 0;
 	}
 
-	public void UpdateStatusBar()
-	{
-		_lblNumAppsShown.Text = string.Format(Strings.MainWindow_StatusShown, _viewModel.VisibleCount, _viewModel.TotalEntryCount);
-		_lblModifiedCount.Text = string.Format(Strings.MainWindow_StatusModified, _viewModel.ModifiedCount);
-	}
-
 	private void SyncFromViewModel()
 	{
 		_ctx._entries = new List<IAppInfoEntry>(_viewModel.VisibleGames.Count);
@@ -391,7 +371,6 @@ internal class GameListManager : IDisposable
 		_ctx.TotalEntryCount = _viewModel.TotalEntryCount;
 		_ctx.CurrentSearchTerm = _viewModel.SearchText;
 		RebuildListBoxItems();
-		UpdateStatusBar();
 	}
 
 	public void ApplyLanguageToFilters()
@@ -482,17 +461,7 @@ internal class GameListManager : IDisposable
 			_appSelection.SelectedIndex = 0;
 	}
 
-	private string GetEntryToolTip(IAppInfoEntry entry)
-	{
-		if (entry.ID == _tooltipCachedId) return _tooltipCachedText;
-		var sb = new StringBuilder();
-		sb.AppendFormat("{0}: {1}", entry.ID, entry.Name);
-		string oslist = entry.GetPropertyValue<string>(null!, AppInfoPaths.OsList);
-		if (oslist != null) sb.AppendFormat(" [{0}]", oslist);
-		_tooltipCachedId = entry.ID;
-		_tooltipCachedText = sb.ToString();
-		return _tooltipCachedText;
-	}
+	private string GetEntryToolTip(IAppInfoEntry entry) => _viewModel.GetEntryToolTip(entry);
 
 	// --- 事件处理 ---
 
@@ -720,15 +689,12 @@ internal class GameListManager : IDisposable
 		ClearDisplayNameCache();
 		_viewModel.Refresh();
 		SyncFromViewModel();
-		_statusBarDebounceTimer.Stop();
-		_statusBarDebounceTimer.Start();
 	}
 
 	public void Dispose()
 	{
 		_appSearchTermTimer?.Dispose();
 		_filterDebounceTimer?.Dispose();
-		_statusBarDebounceTimer?.Dispose();
 		_boldAppSelectionFont?.Dispose();
 		_hiddenAppSelectionFont?.Dispose();
 		_bgLogoAttributes?.Dispose();
