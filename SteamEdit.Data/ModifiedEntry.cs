@@ -32,7 +32,7 @@ internal class ModifiedEntry
 
 	public uint OriginalDataChangeNumber { get; set; }
 
-	public PropertyTable Changes { get; set; } = null!;
+	public PropertyTable Changes { get; internal set; } = null!;
 
 	public ModifiedEntry(IAppInfoEntry entry)
 	{
