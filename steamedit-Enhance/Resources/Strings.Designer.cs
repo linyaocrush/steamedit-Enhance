@@ -261,5 +261,11 @@ namespace steamedit_Enhance {
 
         internal static string BatchReset_ConfirmTitle => ResourceManager.GetString("BatchReset_ConfirmTitle", resourceCulture);
         internal static string BatchReset_ConfirmMessage => ResourceManager.GetString("BatchReset_ConfirmMessage", resourceCulture);
+        internal static string Settings_LogLevel => ResourceManager.GetString("Settings_LogLevel", resourceCulture);
+        internal static string LogLevel_Debug => ResourceManager.GetString("LogLevel_Debug", resourceCulture);
+        internal static string LogLevel_Info => ResourceManager.GetString("LogLevel_Info", resourceCulture);
+        internal static string LogLevel_Warning => ResourceManager.GetString("LogLevel_Warning", resourceCulture);
+        internal static string LogLevel_Error => ResourceManager.GetString("LogLevel_Error", resourceCulture);
+        internal static string Tooltip_LogLevel => ResourceManager.GetString("Tooltip_LogLevel", resourceCulture);
     }
 }

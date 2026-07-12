@@ -618,12 +618,23 @@ Page Down           Next game</value>
     <value>Find &amp; Replace</value>
   </data>
 
-  <!-- Crash Dialog -->
-  <data name="CrashDialog_ExitButton" xml:space="preserve">
-    <value>Exit</value>
+  <data name="Settings_LogLevel" xml:space="preserve">
+    <value>Log Level</value>
   </data>
-  <data name="CrashDialog_SavedTo" xml:space="preserve">
-    <value>Crash log saved to:</value>
+  <data name="LogLevel_Debug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="LogLevel_Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="LogLevel_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="LogLevel_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Tooltip_LogLevel" xml:space="preserve">
+    <value>Minimum log level to record</value>
   </data>
 
   <!-- Steam Status -->

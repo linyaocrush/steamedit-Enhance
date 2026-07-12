@@ -86,6 +86,8 @@ internal class SettingsDlg : LocalizableForm
     private Button btnAnalyzeRules = null!;
     private Button btnClearRules = null!;
     private Label lblBatchConcurrency = null!;
+    private Label lblLogLevel = null!;
+    private ComboBox comboLogLevel = null!;
     private NumericUpDown numBatchConcurrency = null!;
 
     private TabControl tabSettings = null!;
@@ -148,6 +150,8 @@ internal class SettingsDlg : LocalizableForm
         string aiLang = Settings.Default.AiTargetLanguage;
         comboAiTargetLanguage.SelectedIndex = aiLang == "en" ? 1 : 0;
 
+        comboAiTargetLanguage.SelectedIndex = aiLang == "en" ? 1 : 0;
+
         string aiModel = Settings.Default.AiModel;
         comboAiModel.Items.Add(aiModel);
         comboAiModel.SelectedIndex = 0;
@@ -155,6 +159,12 @@ internal class SettingsDlg : LocalizableForm
         string searchEngine = Settings.Default.SearchEngine;
         int seIdx = comboSearchEngine.Items.IndexOf(searchEngine);
         comboSearchEngine.SelectedIndex = seIdx >= 0 ? seIdx : 0;
+
+        // LogLevel
+        var allLogLevels = Enum.GetValues<Log.LogLevel>();
+        foreach (var level in allLogLevels)
+            comboLogLevel.Items.Add(level);
+        comboLogLevel.SelectedItem = Settings.Default.LogLevel;
 
         ApplyLanguage();
     }
@@ -180,6 +190,7 @@ internal class SettingsDlg : LocalizableForm
             Settings.Default.AiTranslationRules = textTranslationRules.Text;
             Settings.Default.AiBatchTranslateConcurrency = (int)numBatchConcurrency.Value;
             Settings.Default.SearchEngine = comboSearchEngine.Text;
+            Settings.Default.LogLevel = comboLogLevel.SelectedItem as Log.LogLevel? ?? Log.LogLevel.Info;
             if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
                 MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             Settings.Default.Save();
@@ -429,6 +440,11 @@ internal class SettingsDlg : LocalizableForm
         toolTip.SetToolTip(checkAutoStartForceStart, Strings.Tooltip_AutoStartForceStart);
         toolTip.SetToolTip(textAiApiUrl, Strings.Tooltip_AiApiUrl);
         toolTip.SetToolTip(textAiApiKey, Strings.Tooltip_AiApiKey);
+        if (comboLogLevel != null)
+        {
+            lblLogLevel.Text = Strings.Settings_LogLevel;
+            toolTip.SetToolTip(comboLogLevel, Strings.Tooltip_LogLevel);
+        }
     }
 
     protected override void Dispose(bool disposing)
@@ -489,6 +505,8 @@ internal class SettingsDlg : LocalizableForm
         System.Windows.Forms.Panel panelUserMsg = new System.Windows.Forms.Panel();
         System.Windows.Forms.Panel panelRules = new System.Windows.Forms.Panel();
         System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
+        this.lblLogLevel = new System.Windows.Forms.Label();
+        this.comboLogLevel = new System.Windows.Forms.ComboBox();
         System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
         this.tabSettings = new System.Windows.Forms.TabControl();
         this.tabGeneral = new System.Windows.Forms.TabPage();
@@ -647,7 +665,19 @@ internal class SettingsDlg : LocalizableForm
         this.checkAutoStartForceStart.UseVisualStyleBackColor = true;
         this.checkAutoStartForceStart.Anchor = System.Windows.Forms.AnchorStyles.None;
         this.checkAutoStartForceStart.CheckedChanged += new System.EventHandler(checkAutoStartForceStart_CheckedChanged);
-        // panelAutoStartSub
+        // lblLogLevel
+        this.lblLogLevel = new System.Windows.Forms.Label();
+        this.lblLogLevel.AutoSize = true;
+        this.lblLogLevel.Margin = new System.Windows.Forms.Padding(6);
+        this.lblLogLevel.Name = "lblLogLevel";
+        this.lblLogLevel.TabIndex = 17;
+        this.lblLogLevel.Text = "Log Level";
+        // comboLogLevel
+        this.comboLogLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+        this.comboLogLevel.FormattingEnabled = true;
+        this.comboLogLevel.Name = "comboLogLevel";
+        this.comboLogLevel.Size = new System.Drawing.Size(121, 21);
+        this.comboLogLevel.TabIndex = 18;
         this.panelAutoStartSub.Controls.Add(this.checkAutoStart);
         this.panelAutoStartSub.Controls.Add(this.checkAutoStartAutoFix);
         this.panelAutoStartSub.Controls.Add(this.checkAutoStartForceStart);
@@ -872,17 +902,20 @@ internal class SettingsDlg : LocalizableForm
         tableGeneral.Controls.Add(panel, 1, 5);
         tableGeneral.Controls.Add(this.lblAutoStart, 0, 6);
         tableGeneral.Controls.Add(this.panelAutoStartSub, 1, 6);
+        tableGeneral.Controls.Add(this.lblLogLevel, 0, 7);
+        tableGeneral.Controls.Add(this.comboLogLevel, 1, 7);
         tableGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
         tableGeneral.Location = new System.Drawing.Point(0, 0);
         tableGeneral.Margin = new System.Windows.Forms.Padding(0);
         tableGeneral.Name = "tableGeneral";
-        tableGeneral.RowCount = 7;
+        tableGeneral.RowCount = 8;
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27f));
+        tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
         tableGeneral.Size = new System.Drawing.Size(389, 430);
         tableGeneral.TabIndex = 0;
