@@ -23,4 +23,20 @@
   <ItemGroup>
     <Compile Remove="steamedit-EnhanceTests\**" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Obfuscar" Version="2.2.50">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Target Name="Obfuscar" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <ObfuscarConfigPath>$(MSBuildProjectDirectory)\obfuscar.xml</ObfuscarConfigPath>
+      <ObfuscarConsolePath>$(NuGetPackageRoot)obfuscar\2.2.50\tools\Obfuscar.Console.exe</ObfuscarConsolePath>
+    </PropertyGroup>
+    <Message Text="Obfuscar: Running obfuscation..." Importance="high" />
+    <Exec Command="&quot;$(ObfuscarConsolePath)&quot; &quot;$(ObfuscarConfigPath)&quot;" ConsoleToMSBuild="true" />
+    <Message Text="Obfuscar: Obfuscation complete - obfuscated output in bin\Release\net10.0-windows\win-x64\obfuscated\" Importance="high" />
+  </Target>
 </Project>
