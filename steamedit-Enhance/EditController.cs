@@ -133,4 +133,15 @@ internal class EditController
 	{
 		_listManager.NotifyEntryEdited(entry);
 	}
+
+	public void ClearProperty(string[] propertyPath, bool refreshList = false)
+	{
+		var entry = _listManager.GetSelectedEntry();
+		if (entry == null) return;
+		entry.RevertModifiedProperty(propertyPath);
+		_listManager.NotifyEntryEdited(entry);
+		if (refreshList)
+			_listManager.RefreshGameList();
+		LoadEntry(entry);
+	}
 }

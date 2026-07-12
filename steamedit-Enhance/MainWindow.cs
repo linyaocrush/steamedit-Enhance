@@ -143,21 +143,12 @@ internal class MainWindow : LocalizableForm
 		textGameName.ClearXClicked += (_, e) =>
 		{
 			e.Handled = true;
-			var entry = _listManager.GetSelectedEntry();
-			if (entry == null) return;
-			entry.RevertModifiedProperty(AppInfoPaths.Name);
-			_listManager.NotifyEntryEdited(entry);
-			_listManager.RefreshGameList();
-			_editController.LoadEntry(entry);
+			_editController.ClearProperty(AppInfoPaths.Name, refreshList: true);
 		};
 		textSortAs.ClearXClicked += (_, e) =>
 		{
 			e.Handled = true;
-			var entry = _listManager.GetSelectedEntry();
-			if (entry == null) return;
-			entry.RevertModifiedProperty(AppInfoPaths.SortAs);
-			_listManager.NotifyEntryEdited(entry);
-			_editController.LoadEntry(entry);
+			_editController.ClearProperty(AppInfoPaths.SortAs);
 		};
 
 		// ComboBox 键盘拦截（阻止翻页按键改变选中项）
