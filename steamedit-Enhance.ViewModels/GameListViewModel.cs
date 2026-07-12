@@ -14,6 +14,11 @@ internal sealed class GameListViewModel : ViewModelBase
     private readonly IAppInfoDataStore _dataStore;
     public IAppInfoDataStore DataStore => _dataStore;
     private readonly Dictionary<int, string> _displayNames = new();
+    
+    // 搜索缓存：提高模糊搜索性能
+    private readonly Dictionary<(int GameId, string SearchPattern), bool> _searchCache = new();
+    private readonly Queue<(int GameId, string SearchPattern)> _searchCacheQueue = new();
+    private const int MaxSearchCacheSize = 1000;
 
     private AppInfoEntryType _filterFlags = Settings.Default.Filters;
     private ShowEntriesMode _showMode = Settings.Default.FiltersShowEntries;
@@ -180,7 +185,9 @@ internal sealed class GameListViewModel : ViewModelBase
             if (_showMode == ShowEntriesMode.OnlyUnmodified && g.IsModified) return false;
             if (string.IsNullOrEmpty(trimmed)) return true;
             if (isNumeric) return g.ID.ToString().StartsWith(trimmed);
-            return IsFuzzyMatch(g.DisplayName, patternParts!);
+            
+            // 使用缓存的模糊匹配结果
+            return IsFuzzyMatchCached(g, trimmed, patternParts!);
         }).ToList();
 
         ApplySortTo(filtered);
@@ -263,9 +270,38 @@ internal sealed class GameListViewModel : ViewModelBase
     {
         foreach (string patt in patternParts)
         {
-            if (!testString.Contains(patt, StringComparison.OrdinalIgnoreCase)) return false;
+            // 使用 IndexOf 代替 Contains 以获得更好的性能
+            if (testString.IndexOf(patt, StringComparison.OrdinalIgnoreCase) < 0) return false;
         }
         return true;
+    }
+    
+    private bool IsFuzzyMatchCached(GameItemViewModel game, string searchPattern, string[] patternParts)
+    {
+        var cacheKey = (game.ID, searchPattern);
+        
+        if (_searchCache.TryGetValue(cacheKey, out var cachedResult))
+            return cachedResult;
+            
+        var result = IsFuzzyMatch(game.DisplayName, patternParts);
+        
+        // 添加到缓存
+        _searchCache[cacheKey] = result;
+        _searchCacheQueue.Enqueue(cacheKey);
+        
+        // 清理LRU缓存
+        while (_searchCacheQueue.Count > MaxSearchCacheSize && _searchCacheQueue.TryDequeue(out var oldestKey))
+        {
+            _searchCache.Remove(oldestKey);
+        }
+        
+        return result;
+    }
+    
+    public void ClearSearchCache()
+    {
+        _searchCache.Clear();
+        _searchCacheQueue.Clear();
     }
 
     private void OnEntryModified(object? sender, EventArgs e)
