@@ -27,6 +27,7 @@ internal class BatchTranslateDialog : LocalizableForm
         ThemeManager.StyleDialog(this);
 
         _viewModel.StateChanged += OnViewModelStateChanged;
+        _viewModel.FailuresDetected += OnFailuresDetected;
 
         // Start translation after load
         Load += async (_, _) =>
@@ -77,6 +78,27 @@ internal class BatchTranslateDialog : LocalizableForm
         InvokeOnUI(UpdateDisplay);
     }
 
+    private void OnFailuresDetected(IReadOnlyList<(int Id, string Name, string Error)> failures)
+    {
+        if (IsDisposed) return;
+        InvokeOnUI(() =>
+        {
+            if (IsDisposed) return;
+            var detail = new System.Text.StringBuilder();
+            detail.AppendLine($"Batch translate completed with {failures.Count} failure(s):");
+            detail.AppendLine();
+            int maxShow = Math.Min(failures.Count, 10);
+            for (int i = 0; i < maxShow; i++)
+            {
+                var f = failures[i];
+                detail.AppendLine($"  [{f.Id:X8}] {f.Name}: {f.Error}");
+            }
+            if (failures.Count > 10)
+                detail.AppendLine($"... and {failures.Count - 10} more failure(s)");
+            MessageBox.Show(this, detail.ToString(), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        });
+    }
+
     private void UpdateDisplay()
     {
         lblProgress.Text = string.Format(Strings.BatchTranslate_Progress, _viewModel.Progress, _viewModel.Total);
@@ -109,6 +131,7 @@ internal class BatchTranslateDialog : LocalizableForm
     protected override void Dispose(bool disposing)
     {
         _viewModel.StateChanged -= OnViewModelStateChanged;
+        _viewModel.FailuresDetected -= OnFailuresDetected;
         _viewModel.Dispose();
         if (disposing && components != null)
             components.Dispose();

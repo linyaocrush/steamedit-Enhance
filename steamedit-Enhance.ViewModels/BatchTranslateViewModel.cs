@@ -32,6 +32,9 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
     public bool IsPaused { get => _isPaused; set { if (SetProperty(ref _isPaused, value)) OnPausedChanged(); } }
 
     public event Action? StateChanged;
+    public event Action<IReadOnlyList<(int Id, string Name, string Error)>>? FailuresDetected;
+
+    private readonly List<(int Id, string Name, string Error)> _failures = new();
 
     public async Task RunAsync(List<IAppInfoEntry> entries, string targetLanguage)
     {
@@ -73,6 +76,8 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
         finally
         {
             IsRunning = false;
+            if (_failures.Count > 0)
+                FailuresDetected?.Invoke(_failures.AsReadOnly());
             StateChanged?.Invoke();
         }
     }
@@ -156,6 +161,7 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
         catch (Exception ex)
         {
             Log.WriteLine("Batch translate failed for \"{0}\": {1}", currentName, ex.Message);
+            lock (_failures) _failures.Add((entry.ID, currentName, ex.Message));
             Interlocked.Increment(ref _failCount);
         }
 
