@@ -68,11 +68,12 @@ internal static class Program
         return openFileDialog.FileName;
     }
 
-    private static bool LoadSteamData(ref SteamDataInitProps dataInit, string appInfoPath)
+    private static SteamData? LoadSteamData(ref SteamDataInitProps dataInit, string appInfoPath)
     {
         dataInit.AppInfoPath = appInfoPath;
         var initCopy = dataInit;
         Exception? loadError = null;
+        SteamData? result = null;
 
         using (var loading = new WaitingDialog(Strings.WaitingDialog_Waiting))
         {
@@ -82,7 +83,7 @@ internal static class Program
                 {
                     var service = new SteamData();
                     service.Initialize(ref initCopy);
-                    SteamData.Instance = service;
+                    result = service;
                 }
                 catch (Exception ex) { loadError = ex; }
             });
@@ -90,43 +91,44 @@ internal static class Program
             {
                 Log.WriteLine("Load cancelled by user or timed out");
                 task.Wait(TimeSpan.FromSeconds(5));
-                return false;
+                return null;
             }
         }
 
         if (loadError is UnknownAppInfoVersionException ux)
         {
             MessageBoxWithDetails.Show(Strings.Msg_UnknownVersion, Strings.Msg_CriticalError, $"AppInfo Path: {ux.AppInfoPath}\r\nDetected Version: {ux.AppInfoVersion:X8}");
-            return false;
+            return null;
         }
         if (loadError is AppInfoLoadException al)
         {
             MessageBoxWithDetails.Show(Strings.Msg_LoadFailed, Strings.Msg_CriticalError, al.ToString());
-            return false;
+            return null;
         }
         if (loadError != null) throw loadError;
-        return true;
+        return result;
     }
 
-    private static bool InitializeSteamData(ref SteamDataInitProps dataInit, bool tryCurrentPath, bool silent)
+    private static SteamData? InitializeSteamData(ref SteamDataInitProps dataInit, bool tryCurrentPath, bool silent)
     {
         bool firstAttempt = true;
         while (true)
         {
             string appInfoPath = ResolveAppInfoPath(trySavedPath: firstAttempt && tryCurrentPath, allowManual: !silent);
-            if (appInfoPath == null) return false;
+            if (appInfoPath == null) return null;
 
-            if (LoadSteamData(ref dataInit, appInfoPath))
+            var service = LoadSteamData(ref dataInit, appInfoPath);
+            if (service != null)
             {
                 if (appInfoPath != Settings.Default.AppInfoPath)
                 {
                     Settings.Default.AppInfoPath = appInfoPath;
                     Settings.Default.Save();
                 }
-                return true;
+                return service;
             }
 
-            if (silent) return false;
+            if (silent) return null;
             firstAttempt = false;
         }
     }
@@ -148,9 +150,9 @@ internal static class Program
         bool flag = AppHelper.HasArgument("autofix", cmdArgs);
         if (flag)
         {
-            if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: true))
+            var svc = InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: true);
+            if (svc != null)
             {
-                var svc = SteamData.Instance;
                 bool flag2 = AppHelper.HasArgument("forcestart", cmdArgs);
                 if (svc.NeedsApply)
                 {
@@ -184,34 +186,35 @@ internal static class Program
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(defaultValue: false);
-            if (InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: false))
+            var svc = InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: false);
+            if (svc != null)
             {
-                if (SteamData.Instance.NeedsApply)
+                if (svc.NeedsApply)
                 {
                     Log.WriteLine("Startup auto-apply: unapplied changes detected, applying...");
-                    SteamData.Instance.Apply();
+                    svc.Apply();
                 }
                 TranslationGlossary.Initialize(dataInit.DataDirectory);
-                Task.Run(() => SyncGlossaryFromEntries());
+                Task.Run(() => SyncGlossaryFromEntries(svc));
                 try
                 {
-                    MainWindow_ = new MainWindow(SteamData.Instance);
+                    MainWindow_ = new MainWindow(svc);
                     Application.Run(MainWindow_);
                 }
                 finally
                 {
-                    SteamData.Instance.Shutdown();
+                    svc.Shutdown();
                     Log.Close();
                 }
             }
         }
     }
 
-    private static void SyncGlossaryFromEntries()
+    private static void SyncGlossaryFromEntries(ISteamDataService svc)
     {
         try
         {
-            var adapters = SteamData.Instance.AppInfoData.Entries
+            var adapters = svc.AppInfoData.Entries
                 .Where(e => e.IsModified && e.Modification!.Changes.HasProperty(AppInfoPaths.Name))
                 .Select(e => new GlossaryAdapter(e))
                 .ToList();

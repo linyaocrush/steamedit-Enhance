@@ -9,11 +9,7 @@ namespace SteamEditTests;
 [TestClass]
 public class AppInfoEntryTests
 {
-    [AssemblyInitialize]
-    public static void InitDisplaySettings(TestContext _)
-    {
-        AppInfoEntryBase.DisplaySettings = new TestDisplaySettings();
-    }
+    private static readonly TestDisplaySettings _displaySettings = new TestDisplaySettings();
 
     private class TestDisplaySettings : IEntryDisplaySettings
     {
@@ -29,6 +25,7 @@ public class AppInfoEntryTests
 
         public TestEntry()
         {
+            DisplaySettings = _displaySettings;
             _properties = new PropertyTable();
             var appinfo = new PropertyTable();
             var common = new PropertyTable();

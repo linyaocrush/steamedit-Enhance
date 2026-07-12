@@ -11,12 +11,14 @@ internal class SteamData : ISteamDataService
 	public const string CompletedChar = "✓";
 	public static string CompletedSuffix => " ✓";
 
-	/// <summary>
-	/// 全局单例访问器。由 Program.Main 在初始化时赋值。
-	/// </summary>
-	public static SteamData Instance { get; set; } = null!;
-
 	private readonly object _lock = new();
+
+	public SteamData()
+	{
+		DisplaySettings = new DisplaySettingsImpl(this);
+		DataStore = new DataStoreImpl(this);
+	}
+
 	private SteamDataInitProps _initProps;
 	private Mods _modData = null!;
 	private volatile bool _needsSave;
@@ -101,21 +103,25 @@ internal class SteamData : ISteamDataService
 
 	public event EventHandler? OnNeedsApply;
 
-	public IEntryDisplaySettings DisplaySettings { get; } = new DisplaySettingsImpl();
+	public IEntryDisplaySettings DisplaySettings { get; }
 
-	public IAppInfoDataStore DataStore { get; } = new DataStoreImpl();
+	public IAppInfoDataStore DataStore { get; }
 
 	private sealed class DisplaySettingsImpl : IEntryDisplaySettings
 	{
-		public string SteamDir => Instance.SteamDir;
-		public bool UseCompleted => Instance.UseCompleted;
+		private readonly SteamData _outer;
+		public DisplaySettingsImpl(SteamData outer) { _outer = outer; }
+		public string SteamDir => _outer.SteamDir;
+		public bool UseCompleted => _outer.UseCompleted;
 		public string CompletedSuffix => SteamData.CompletedSuffix;
-		public bool UseHidden => Instance.UseHidden;
+		public bool UseHidden => _outer.UseHidden;
 	}
 
 	private sealed class DataStoreImpl : IAppInfoDataStore
 	{
-		public IAppInfo AppInfo => Instance.AppInfoData;
+		private readonly SteamData _outer;
+		public DataStoreImpl(SteamData outer) { _outer = outer; }
+		public IAppInfo AppInfo => _outer.AppInfoData;
 	}
 
 	public void Initialize(ref SteamDataInitProps props)
@@ -142,7 +148,11 @@ internal class SteamData : ISteamDataService
 		_modData = Mods.Load(ModInfoPath, AppInfoData);
 		Log.WriteLine("  SteamData initialized!");
 		NeedsSave = false;
-		SteamEdit.Data.Impl.AppInfoEntryBase.DisplaySettings = DisplaySettings;
+		foreach (var entry in AppInfoData.Entries)
+		{
+			if (entry is SteamEdit.Data.Impl.AppInfoEntryBase e)
+				e.DisplaySettings = DisplaySettings;
+		}
 	}
 
 	private void OnEntryModified(object? sender, EventArgs e)

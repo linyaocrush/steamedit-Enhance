@@ -12,11 +12,7 @@ namespace SteamEdit.Data.Impl;
 
 internal abstract class AppInfoEntryBase : IAppInfoEntry
 {
-	/// <summary>
-	/// 注入的显示设置，解耦对静态 SteamData 的直接依赖。
-	/// 初始化时由 Program.InitializeSteamData 设置。
-	/// </summary>
-	internal static IEntryDisplaySettings DisplaySettings { get; set; } = null!;
+	internal IEntryDisplaySettings? DisplaySettings { get; set; }
 
 	private string? _cachedName;
 	private bool _nameCached;
@@ -152,7 +148,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		get
 		{
 			string propertyValue = _properties.GetPropertyValue<string>("", AppInfoPaths.InstallDir);
-			return Path.Combine(DisplaySettings.SteamDir, "steamapps", "common", propertyValue);
+			return Path.Combine(DisplaySettings!.SteamDir, "steamapps", "common", propertyValue);
 		}
 	}
 
@@ -366,7 +362,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 					HandleNameLocalizedRemoval(common, nameLocalized);
 				}
 				table.SetPropertyValue(PropertyType.String, text, AppInfoPaths.BaseName);
-				if (DisplaySettings.UseCompleted && IsCompleted)
+				if (DisplaySettings!.UseCompleted && IsCompleted)
 				{
 					text += DisplaySettings.CompletedSuffix;
 				}
@@ -380,7 +376,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			if (text2 != null)
 			{
 				table.SetPropertyValue(PropertyType.String, text2, AppInfoPaths.BaseType);
-				if (DisplaySettings.UseHidden && IsHidden)
+				if (DisplaySettings!.UseHidden && IsHidden)
 				{
 					text2 = "hidden_" + text2;
 				}

@@ -14,14 +14,15 @@ namespace SteamEditTests;
 public class DataIntegrityTests
 {
 	/// <summary>
-	/// 测试用 Entry，可配置 completed/hidden 状态。
+	/// 测试用 Entry，可配置 completed/hidden 状态和 DisplaySettings。
 	/// </summary>
 	private class TestEntry : AppInfoEntryBase
 	{
 		public override uint AppInfoVersion => 0x07564428u;
 
-		public TestEntry(int id = 12345, bool completed = false, bool hidden = false)
+		public TestEntry(IEntryDisplaySettings ds, int id = 12345, bool completed = false, bool hidden = false)
 		{
+			DisplaySettings = ds;
 			ID = id;
 			_stuffBeforeHash = new byte[16]; // 初始化为全零
 			_changeNumber = 0;
@@ -91,8 +92,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void WriteEntryCore_Roundtrip_PreservesNameAndType()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllDisabled();
-		var entry = new TestEntry();
+		var ds = new TestDisplaySettings_AllDisabled();
+		var entry = new TestEntry(ds);
 		entry.Name = "Roundtrip Game";
 		entry.Type = AppInfoEntryType.Tool;
 
@@ -115,8 +116,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void WriteEntryCore_Roundtrip_PreservesChangeNumber()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllDisabled();
-		var entry = new TestEntry();
+		var ds = new TestDisplaySettings_AllDisabled();
+		var entry = new TestEntry(ds);
 
 		using var ms = new MemoryStream();
 		using (var writer = new BinaryWriter(ms, System.Text.Encoding.Default, leaveOpen: true))
@@ -137,8 +138,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void PrepareWriteTable_Completed_AppendsCheckmark()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllEnabled();
-		var entry = new TestEntry(completed: true);
+		var ds = new TestDisplaySettings_AllEnabled();
+		var entry = new TestEntry(ds, completed: true);
 		entry.Name = "My Game";
 
 		entry.PrepareWriteTableForTest(out var common);
@@ -150,8 +151,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void PrepareWriteTable_NotCompleted_NoCheckmark()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllEnabled();
-		var entry = new TestEntry(completed: false);
+		var ds = new TestDisplaySettings_AllEnabled();
+		var entry = new TestEntry(ds, completed: false);
 		entry.Name = "My Game";
 
 		entry.PrepareWriteTableForTest(out var common);
@@ -163,8 +164,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void PrepareWriteTable_Hidden_PrependsHiddenPrefix()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllEnabled();
-		var entry = new TestEntry(hidden: true);
+		var ds = new TestDisplaySettings_AllEnabled();
+		var entry = new TestEntry(ds, hidden: true);
 		entry.Name = "Secret Game";
 		entry.Type = AppInfoEntryType.Game;
 
@@ -177,8 +178,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void PrepareWriteTable_NotHidden_NoPrefix()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllEnabled();
-		var entry = new TestEntry(hidden: false);
+		var ds = new TestDisplaySettings_AllEnabled();
+		var entry = new TestEntry(ds, hidden: false);
 		entry.Name = "Normal Game";
 		entry.Type = AppInfoEntryType.Game;
 
@@ -191,8 +192,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void PrepareWriteTable_CompletedAndHidden_BothApplied()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllEnabled();
-		var entry = new TestEntry(completed: true, hidden: true);
+		var ds = new TestDisplaySettings_AllEnabled();
+		var entry = new TestEntry(ds, completed: true, hidden: true);
 		entry.Name = "Hidden Completed Game";
 		entry.Type = AppInfoEntryType.DLC;
 
@@ -207,8 +208,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void PrepareWriteTable_DisabledSettings_NoModification()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllDisabled();
-		var entry = new TestEntry(completed: true, hidden: true);
+		var ds = new TestDisplaySettings_AllDisabled();
+		var entry = new TestEntry(ds, completed: true, hidden: true);
 		entry.Name = "Game";
 		entry.Type = AppInfoEntryType.Game;
 
@@ -226,8 +227,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void Revert_WithModification_RestoresOriginalName()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllDisabled();
-		var entry = new TestEntry();
+		var ds = new TestDisplaySettings_AllDisabled();
+		var entry = new TestEntry(ds);
 		entry.Name = "Original Name";
 		entry.Type = AppInfoEntryType.Game;
 
@@ -264,8 +265,8 @@ public class DataIntegrityTests
 	[TestMethod]
 	public void Revert_Modification_RestoresOriginalType()
 	{
-		AppInfoEntryBase.DisplaySettings = new TestDisplaySettings_AllDisabled();
-		var entry = new TestEntry();
+		var ds = new TestDisplaySettings_AllDisabled();
+		var entry = new TestEntry(ds);
 		entry.Name = "Game";
 		entry.Type = AppInfoEntryType.Game;
 
