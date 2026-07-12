@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Common;
 using steamedit_Enhance.Data;
 using steamedit_Enhance.ViewModels;
@@ -136,5 +137,28 @@ internal class EditController
 		if (refreshList)
 			_listManager.RefreshGameList();
 		LoadEntry(entry);
+	}
+
+	internal void ApplyBatchPropertyChange(
+		IReadOnlyList<IAppInfoEntry> entries,
+		PropertyType propertyType,
+		Func<IAppInfoEntry, object?> getOldValue,
+		Action<IAppInfoEntry> applyChange,
+		string[] propertyPath)
+	{
+		var subRecords = new UndoRecord[entries.Count];
+		int count = 0;
+		foreach (var entry in entries)
+		{
+			var oldVal = getOldValue(entry);
+			applyChange(entry);
+			_listManager.NotifyEntryEdited(entry);
+			subRecords[count++] = new UndoRecord(entry, propertyPath, propertyType, oldVal);
+		}
+		if (count > 0)
+		{
+			_viewModel.UndoManager.PushCompound(
+				UndoRecord.CreateCompound(subRecords[..count]));
+		}
 	}
 }

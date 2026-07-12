@@ -81,27 +81,27 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return TraverseToParent(path, createMissing);
 	}
 
-	public bool HasProperty(params string[] PropertyPath)
+	public bool HasProperty(params string[] propertyPath)
 	{
-		if (PropertyPath.Length == 0) return false;
-		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName);
+		if (propertyPath.Length == 0) return false;
+		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName);
 		return parent != null && parent[lastName] != null;
 	}
 
-	public Property? GetRawProperty(params string[] PropertyPath)
+	public Property? GetRawProperty(params string[] propertyPath)
 	{
-		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName);
+		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName);
 		return parent?[lastName];
 	}
 
-	public void SetRawProperty(Property prop, params string[] PropertyPath)
+	public void SetRawProperty(Property prop, params string[] propertyPath)
 	{
 		if (prop == null)
 		{
-			RemoveProperty(PropertyPath);
+			RemoveProperty(propertyPath);
 			return;
 		}
-		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName, createMissing: true);
+		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName, createMissing: true);
 		parent?.SetPropertyValue(lastName, prop.PropertyType, prop.Value);
 	}
 
@@ -137,11 +137,11 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return result;
 	}
 
-	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
+	public T GetPropertyValue<T>(T defaultValue, params string[] propertyPath)
 	{
-		if (PropertyPath.Length == 0) return DefaultValue;
-		PropertyTable? parent = TraverseToParent(PropertyPath, out var lastName);
-		return parent == null ? DefaultValue : parent.GetPropertyValue(lastName, DefaultValue);
+		if (propertyPath.Length == 0) return defaultValue;
+		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName);
+		return parent == null ? defaultValue : parent.GetPropertyValue(lastName, defaultValue);
 	}
 
 	public PropertyType GetPropertyType(string name)

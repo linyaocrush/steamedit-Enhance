@@ -13,15 +13,15 @@ internal static class Log
 	
 	// 默认启用Debug级别仅用于调试构建，生产环境默认关闭
 #if DEBUG
-	private static bool _enableDebug = true;
-	private static bool _enableInfo = true;
-	private static bool _enableWarning = true;
-	private static bool _enableError = true;
+	private static volatile bool _enableDebug = true;
+	private static volatile bool _enableInfo = true;
+	private static volatile bool _enableWarning = true;
+	private static volatile bool _enableError = true;
 #else
-	private static bool _enableDebug = false;
-	private static bool _enableInfo = true;
-	private static bool _enableWarning = true;
-	private static bool _enableError = true;
+	private static volatile bool _enableDebug = false;
+	private static volatile bool _enableInfo = true;
+	private static volatile bool _enableWarning = true;
+	private static volatile bool _enableError = true;
 #endif
 
 	public static string FilePath => _path;
@@ -143,7 +143,10 @@ internal static class Log
 		try
 		{
 			if (!File.Exists(_path)) return [];
-			return File.ReadLines(_path).TakeLast(count).ToArray();
+			lock (_syncObj)
+			{
+				return File.ReadLines(_path).TakeLast(count).ToArray();
+			}
 		}
 		catch
 		{

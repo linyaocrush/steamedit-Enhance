@@ -95,7 +95,8 @@ internal class Property
 
 	public T GetValue<T>()
 	{
-		TryGetValue<T>(out var result);
+		if (!TryGetValue<T>(out var result))
+			throw new InvalidCastException($"Property '{Name}': cannot get value as {typeof(T).Name} (actual type: {_value?.GetType().Name ?? "null"}).");
 		return result;
 	}
 

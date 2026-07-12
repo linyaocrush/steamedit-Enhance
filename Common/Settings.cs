@@ -126,7 +126,11 @@ internal class Settings
 
 	// -- 日志设置 --
 	[DefaultValue(Log.LogLevel.Info)]
-	public Log.LogLevel LogLevel { get => Get<Log.LogLevel>(); set => Set(value); }
+	public Log.LogLevel LogLevel
+	{
+		get => Get<Log.LogLevel>();
+		set { Set(value); Log.SetMinimumLevel(value); }
+	}
 	
 	[DefaultValue(false)]
 	public bool EnableDebugLogging { get => Get<bool>(); set => Set(value); }

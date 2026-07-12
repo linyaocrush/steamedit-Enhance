@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -508,6 +509,7 @@ internal class MainWindow : LocalizableForm
 
 	private async void OnBtnTranslate_Click(object? sender, EventArgs e)
 	{
+		if (IsDisposed) return;
 		var entry = _listManager.GetSelectedEntry();
 		if (entry == null) return;
 		string currentName = entry.Name;
@@ -560,11 +562,15 @@ internal class MainWindow : LocalizableForm
 				Log.WriteLine("AI Translate: Result was empty, not updating");
 			}
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (!IsDisposed)
 		{
 			Log.WriteLine("AI Translate: Exception: {0}", ex);
-			if (IsHandleCreated && !IsDisposed)
+			if (IsHandleCreated)
 				MessageBox.Show(this, string.Format(Strings.Msg_TranslateFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+		}
+		catch (Exception)
+		{
+			// 窗口已释放时静默忽略
 		}
 		finally
 		{
@@ -583,13 +589,23 @@ internal class MainWindow : LocalizableForm
 		string suffix = dlg.Suffix;
 		if (string.IsNullOrEmpty(prefix) && string.IsNullOrEmpty(suffix)) return;
 
+		var toEdit = new List<IAppInfoEntry>(entries.Count);
+		var newNames = new List<string>(entries.Count);
 		foreach (var entry in entries)
 		{
 			string newName = prefix + entry.Name + suffix;
 			if (newName == entry.Name) continue;
-			entry.Name = newName;
-			_listManager.NotifyEntryEdited(entry);
+			toEdit.Add(entry);
+			newNames.Add(newName);
 		}
+		if (toEdit.Count == 0) return;
+
+		int idx = 0;
+		_editController.ApplyBatchPropertyChange(toEdit,
+			PropertyType.String,
+			e => e.Name,
+			e => e.Name = newNames[idx++],
+			AppInfoPaths.Name);
 	}
 
 	private void OnBatchChangeType(object? sender, EventArgs e)
@@ -600,52 +616,61 @@ internal class MainWindow : LocalizableForm
 		if (dlg.ShowDialog(this) != DialogResult.OK) return;
 		var newType = dlg.SelectedType;
 
-		foreach (var entry in entries)
-		{
-			if (entry.Type == newType) continue;
-			entry.Type = newType;
-			_listManager.NotifyEntryEdited(entry);
-		}
+		var toEdit = entries.Where(e => e.Type != newType).ToList();
+		if (toEdit.Count == 0) return;
+		_editController.ApplyBatchPropertyChange(toEdit,
+			PropertyType.String,
+			e => e.GetPropertyValue<string>(null!, AppInfoPaths.Type),
+			e => e.Type = newType,
+			AppInfoPaths.Type);
 	}
 
 	private void OnBatchMarkAsHidden(object? sender, EventArgs e)
 	{
-		foreach (var entry in _listManager.GetSelectedEntries())
-		{
-			if (entry.IsHidden) continue;
-			entry.IsHidden = true;
-			_listManager.NotifyEntryEdited(entry);
-		}
+		var entries = _listManager.GetSelectedEntries();
+		var toEdit = entries.Where(e => !e.IsHidden).ToList();
+		if (toEdit.Count == 0) return;
+		_editController.ApplyBatchPropertyChange(toEdit,
+			PropertyType.Int32,
+			e => e.GetPropertyValue(0, AppInfoPaths.IsHidden),
+			e => e.IsHidden = true,
+			AppInfoPaths.IsHidden);
 	}
 
 	private void OnBatchMarkAsVisible(object? sender, EventArgs e)
 	{
-		foreach (var entry in _listManager.GetSelectedEntries())
-		{
-			if (!entry.IsHidden) continue;
-			entry.IsHidden = false;
-			_listManager.NotifyEntryEdited(entry);
-		}
+		var entries = _listManager.GetSelectedEntries();
+		var toEdit = entries.Where(e => e.IsHidden).ToList();
+		if (toEdit.Count == 0) return;
+		_editController.ApplyBatchPropertyChange(toEdit,
+			PropertyType.Int32,
+			e => e.GetPropertyValue(0, AppInfoPaths.IsHidden),
+			e => e.IsHidden = false,
+			AppInfoPaths.IsHidden);
 	}
 
 	private void OnBatchMarkAsCompleted(object? sender, EventArgs e)
 	{
-		foreach (var entry in _listManager.GetSelectedEntries())
-		{
-			if (entry.IsCompleted) continue;
-			entry.IsCompleted = true;
-			_listManager.NotifyEntryEdited(entry);
-		}
+		var entries = _listManager.GetSelectedEntries();
+		var toEdit = entries.Where(e => !e.IsCompleted).ToList();
+		if (toEdit.Count == 0) return;
+		_editController.ApplyBatchPropertyChange(toEdit,
+			PropertyType.Int32,
+			e => e.GetPropertyValue(0, AppInfoPaths.IsCompleted),
+			e => e.IsCompleted = true,
+			AppInfoPaths.IsCompleted);
 	}
 
 	private void OnBatchMarkAsIncomplete(object? sender, EventArgs e)
 	{
-		foreach (var entry in _listManager.GetSelectedEntries())
-		{
-			if (!entry.IsCompleted) continue;
-			entry.IsCompleted = false;
-			_listManager.NotifyEntryEdited(entry);
-		}
+		var entries = _listManager.GetSelectedEntries();
+		var toEdit = entries.Where(e => e.IsCompleted).ToList();
+		if (toEdit.Count == 0) return;
+		_editController.ApplyBatchPropertyChange(toEdit,
+			PropertyType.Int32,
+			e => e.GetPropertyValue(0, AppInfoPaths.IsCompleted),
+			e => e.IsCompleted = false,
+			AppInfoPaths.IsCompleted);
 	}
 
 	private void OnBatchReset(object? sender, EventArgs e)
@@ -719,20 +744,30 @@ internal class MainWindow : LocalizableForm
 
 	private void OnBtnSave_Click(object? sender, EventArgs e)
 	{
+		if (_mainViewModel.IsBusy) return;
+		_mainViewModel.IsBusy = true;
 		try { _steamData.Save(); }
 		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
+		finally { _mainViewModel.IsBusy = false; }
 	}
 
 	private void OnBtnSaveApply_Click(object? sender, EventArgs e)
 	{
-		try { _steamData.Save(); }
-		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
-		try { _steamData.Apply(); }
-		catch (Exception ex2) { Log.WriteLine("Apply failed: {0}", ex2); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex2.Message)); }
+		if (_mainViewModel.IsBusy) return;
+		_mainViewModel.IsBusy = true;
+		try
+		{
+			_steamData.Save();
+			_steamData.Apply();
+		}
+		catch (Exception ex) { Log.WriteLine("Save/Apply failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
+		finally { _mainViewModel.IsBusy = false; }
 	}
 
 	private void OnBtnSaveApplyRestart_Click(object? sender, EventArgs e)
 	{
+		if (_mainViewModel.IsBusy) return;
+		_mainViewModel.IsBusy = true;
 		try
 		{
 			SteamProcessManager.KillSteam(_steamData.SteamDir, Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
@@ -740,14 +775,12 @@ internal class MainWindow : LocalizableForm
 				using var dlg = new WaitingDialog(msg);
 				dlg.ShowAndWait(() => waitWhile());
 			});
+			_steamData.Save();
+			_steamData.Apply();
+			SteamProcessManager.EnsureSteamRunning(_steamData.SteamDir, focusIfRunning: true);
 		}
-		catch (Exception ex) { Log.WriteLine("KillSteam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_KillSteamFailed, ex.Message)); return; }
-		try { _steamData.Save(); }
-		catch (Exception ex) { Log.WriteLine("Save failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); return; }
-		try { _steamData.Apply(); }
-		catch (Exception ex) { Log.WriteLine("Apply failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_ApplyFailed, ex.Message)); return; }
-		try { SteamProcessManager.EnsureSteamRunning(_steamData.SteamDir, focusIfRunning: true); }
-		catch (Exception ex) { Log.WriteLine("Restart Steam failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_RestartFailed, ex.Message)); }
+		catch (Exception ex) { Log.WriteLine("Save/Apply/Restart failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
+		finally { _mainViewModel.IsBusy = false; }
 	}
 
 	private void OnHelp_Click(object? sender, EventArgs e)

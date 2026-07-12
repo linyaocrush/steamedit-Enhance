@@ -10,6 +10,10 @@ namespace steamedit_Enhance.Data;
 internal class Mods
 {
 	private const uint CurrentVersion = 6u;
+	private const int MaxEntryCount = 100_000;
+	private const int V4UnknownFieldSize = 36;
+	private const int V4ChangeNumberOffset = 20;
+	private const int V4MinDataSize = 60;
 
 	private readonly IAppInfo _appInfo;
 
@@ -51,7 +55,7 @@ internal class Mods
 	{
 		int count = reader.ReadInt32();
 		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
-		if (count < 0 || count > 100_000)
+		if (count < 0 || count > MaxEntryCount)
 			throw new InvalidDataException($"Mods entry count {count} is out of valid range.");
 		if (count > remaining / 8)
 			throw new InvalidDataException($"Mods entry count {count} exceeds available stream data.");
@@ -65,15 +69,15 @@ internal class Mods
 
 			if (version <= 5)
 			{
-				// V4/V5: 原始格式，跳过 36+20=60 字节的未知字段
+				// V4/V5: 原始格式，跳过 V4UnknownFieldSize+V4ChangeNumberOffset=60 字节的未知字段
 				int dataSize = reader.ReadInt32();
 				long dataRemaining = reader.BaseStream.Length - reader.BaseStream.Position;
-				if (dataSize < 60 || dataSize > dataRemaining)
+				if (dataSize < V4MinDataSize || dataSize > dataRemaining)
 					throw new InvalidDataException($"Mods entry dataSize {dataSize} is out of valid range (remaining={dataRemaining}).");
-				reader.BaseStream.Seek(36L, SeekOrigin.Current);
+				reader.BaseStream.Seek(V4UnknownFieldSize, SeekOrigin.Current);
 				entry.OriginalDataChangeNumber = reader.ReadUInt32();
-				reader.BaseStream.Seek(20L, SeekOrigin.Current);
-				entry.OriginalData = reader.ReadBytes(dataSize - 60);
+				reader.BaseStream.Seek(V4ChangeNumberOffset, SeekOrigin.Current);
+				entry.OriginalData = reader.ReadBytes(dataSize - V4MinDataSize);
 			}
 			else
 			{

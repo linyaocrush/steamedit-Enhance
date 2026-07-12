@@ -239,32 +239,32 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		return (byte[])_originalData.Clone();
 	}
 
-	public T GetPropertyValue<T>(T DefaultValue, params string[] PropertyPath)
+	public T GetPropertyValue<T>(T defaultValue, params string[] propertyPath)
 	{
-		return _properties.GetPropertyValue(DefaultValue, PropertyPath);
+		return _properties.GetPropertyValue(defaultValue, propertyPath);
 	}
 
-	public void SetPropertyValue(PropertyType Type, object? Value, params string[] PropertyPath)
+	public void SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
-		_properties.SetPropertyValue(Type, Value, PropertyPath);
-		if (ModificationsCreate().AddChange(Type, Value, PropertyPath))
+		_properties.SetPropertyValue(type, value, propertyPath);
+		if (ModificationsCreate().AddChange(type, value, propertyPath))
 		{
 			RaiseModified();
 		}
 		ClearCachedProps();
 	}
 
-	public void RevertModifiedProperty(params string[] PropertyPath)
+	public void RevertModifiedProperty(params string[] propertyPath)
 	{
-		if (_modifications == null || !_modifications.Changes.HasProperty(PropertyPath))
+		if (_modifications == null || !_modifications.Changes.HasProperty(propertyPath))
 		{
 			return;
 		}
-		_modifications.Changes.RemoveProperty(PropertyPath);
+		_modifications.Changes.RemoveProperty(propertyPath);
 		if (_modifications.OriginalData != null)
 		{
-			Property? rawProperty = DeserializeOriginalData().GetRawProperty(PropertyPath);
-			_properties.SetRawProperty(rawProperty!, PropertyPath);
+			Property? rawProperty = DeserializeOriginalData().GetRawProperty(propertyPath);
+			_properties.SetRawProperty(rawProperty!, propertyPath);
 		}
 		if (_modifications.Changes.Count == 0)
 		{
@@ -450,6 +450,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		return entry;
 	}
 
+	private const int StuffBeforeHashSize = 16;
+	private const int Sha1HashSize = 20;
+	private const int ChangeNumberSize = 4;
+
 	private void InitializeFromReader(BinaryReader reader)
 	{
 		int count = reader.ReadInt32();
@@ -457,16 +461,17 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			throw new InvalidDataException($"Entry data size {count} is negative.");
 		using (BinaryReader subReader = new BinaryReader(new MemoryStream(reader.ReadBytes(count))))
 		{
-			_stuffBeforeHash = subReader.ReadBytes(16);
-			subReader.ReadBytes(20);
+			_stuffBeforeHash = subReader.ReadBytes(StuffBeforeHashSize);
+			subReader.ReadBytes(Sha1HashSize);
 			_changeNumber = subReader.ReadUInt32();
 			for (int i = 1; i < HashBlockCount; i++)
-				subReader.ReadBytes(20);
+				subReader.ReadBytes(Sha1HashSize);
 			_properties = ReadPropertyTableFrom(subReader);
+			PropertyTable originalTable = new PropertyTable(_properties);
 			RestoreBaseProperties();
+			_originalData = PropertyTableIO.WritePropertyTable_0x00000000(originalTable);
 		}
 		OnReadCompleted();
-		_originalData = PropertyTableIO.WritePropertyTable_0x00000000(_properties);
 		ClearCachedProps();
 	}
 
@@ -496,7 +501,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			// 回填 tableHash：需要先写入 tableData，计算哈希，再回填
 			MemoryStream subMs = (MemoryStream)subWriter.BaseStream;
-			long afterChangeNumber = 16 + 20 + 4; // stuffBeforeHash + hash + changeNumber
+			long afterChangeNumber = StuffBeforeHashSize + Sha1HashSize + ChangeNumberSize;
 			subMs.Position = afterChangeNumber;
 			byte[] tableData = new byte[subMs.Length - afterChangeNumber];
 			subMs.Read(tableData, 0, tableData.Length);

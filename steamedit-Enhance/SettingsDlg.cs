@@ -228,32 +228,37 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private async void btnFetchModels_Click(object? sender, EventArgs e)
-    {
-        btnFetchModels.Enabled = false;
-        btnFetchModels.Text = "...";
-        try
-        {
-            var models = await AiTranslator.FetchModelsAsync(textAiApiUrl.Text, textAiApiKey.Text);
-            string current = comboAiModel.Text;
-            comboAiModel.Items.Clear();
-            foreach (var m in models) comboAiModel.Items.Add(m);
-            if (comboAiModel.Items.Contains(current))
-                comboAiModel.SelectedItem = current;
-            else if (comboAiModel.Items.Count > 0)
-                comboAiModel.SelectedIndex = 0;
-        }
-        catch (Exception ex)
-        {
-            Log.WriteLine("FetchModels: Exception: {0}", ex);
-            MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        finally
-        {
-            btnFetchModels.Text = Strings.Settings_AiFetchModels;
-            btnFetchModels.Enabled = true;
-        }
-    }
+	private async void btnFetchModels_Click(object? sender, EventArgs e)
+	{
+		if (IsDisposed) return;
+		btnFetchModels.Enabled = false;
+		btnFetchModels.Text = "...";
+		try
+		{
+			var models = await AiTranslator.FetchModelsAsync(textAiApiUrl.Text, textAiApiKey.Text);
+			string current = comboAiModel.Text;
+			comboAiModel.Items.Clear();
+			foreach (var m in models) comboAiModel.Items.Add(m);
+			if (comboAiModel.Items.Contains(current))
+				comboAiModel.SelectedItem = current;
+			else if (comboAiModel.Items.Count > 0)
+				comboAiModel.SelectedIndex = 0;
+		}
+		catch (Exception ex) when (!IsDisposed)
+		{
+			Log.WriteLine("FetchModels: Exception: {0}", ex);
+			MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+		}
+		catch (Exception)
+		{
+			// 窗口已释放时静默忽略
+		}
+		finally
+		{
+			btnFetchModels.Text = Strings.Settings_AiFetchModels;
+			btnFetchModels.Enabled = true;
+		}
+	}
 
     private void btnResetPrompt_Click(object? sender, EventArgs e)
     {
@@ -272,6 +277,7 @@ internal class SettingsDlg : LocalizableForm
 
     private async void btnAnalyzeRules_Click(object? sender, EventArgs e)
     {
+        if (IsDisposed) return;
         string glossaryPath = Path.Combine(AppHelper.GetAppDirectory(), "glossary.json");
         if (!File.Exists(glossaryPath))
         {
@@ -308,10 +314,14 @@ internal class SettingsDlg : LocalizableForm
                 textTranslationRules.Text = rules;
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!IsDisposed)
         {
             Log.WriteLine("AnalyzeRules: Exception: {0}", ex);
             MessageBox.Show(this, ex.Message, Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception)
+        {
+            // 窗口已释放时静默忽略
         }
         finally
         {

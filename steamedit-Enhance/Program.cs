@@ -213,10 +213,12 @@ internal static class Program
                     svc.Apply();
                 }
                 TranslationGlossary.Initialize(dataInit.DataDirectory);
-                Task.Run(() => SyncGlossaryFromEntries(svc));
+                var mainWindow = new MainWindow(svc);
+                // Load 事件后触发 glossary 同步（UI 初始化完成后再运行，避免竞态）
+                mainWindow.Load += (_, _) => Task.Run(() => SyncGlossaryFromEntries(svc));
                 try
                 {
-                    MainWindow_ = new MainWindow(svc);
+                    MainWindow_ = mainWindow;
                     Application.Run(MainWindow_);
                 }
                 finally

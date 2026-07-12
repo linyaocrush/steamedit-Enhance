@@ -33,7 +33,7 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
     public bool IsSettingUp
     {
         get => _isSettingUp;
-        set => SetProperty(ref _isSettingUp, value);
+        private set => SetProperty(ref _isSettingUp, value);
     }
 
     public UndoManager UndoManager => _undoManager;
