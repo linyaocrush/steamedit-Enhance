@@ -40,15 +40,8 @@ internal class EditController
 		if (!undoManager.CanUndo) return;
 		var record = undoManager.Pop();
 
-		if (record.IsCompound)
-		{
-			foreach (var sub in record.SubRecords!)
-				ApplyUndoRecord(sub);
-		}
-		else
-		{
-			ApplyUndoRecord(record);
-		}
+		foreach (var sub in record.SubRecords)
+			ApplyUndoRecord(sub);
 	}
 
 	private void ApplyUndoRecord(UndoRecord record)

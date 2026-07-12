@@ -10,7 +10,7 @@ internal class UndoRecord
     public string[] PropertyPath { get; }
     public PropertyType Type { get; }
     public object? PreviousValue { get; }
-    public UndoRecord[]? SubRecords { get; }
+    public UndoRecord[] SubRecords { get; }
 
     public UndoRecord(IAppInfoEntry entry, string[] propertyPath, PropertyType type, object? previousValue)
     {
@@ -18,12 +18,9 @@ internal class UndoRecord
         PropertyPath = propertyPath;
         Type = type;
         PreviousValue = previousValue;
+        SubRecords = [this];
     }
 
-    /// <summary>
-    /// 创建复合撤销记录，将多个属性变更作为一个原子操作撤销。
-    /// 例如 VR 修改同时涉及 OpenVrSupport 和 BaseOpenVrSupport 两个属性。
-    /// </summary>
     private UndoRecord(UndoRecord[] subRecords)
     {
         if (subRecords == null || subRecords.Length == 0)
@@ -34,8 +31,6 @@ internal class UndoRecord
         PreviousValue = subRecords[0].PreviousValue;
         SubRecords = subRecords;
     }
-
-    public bool IsCompound => SubRecords != null;
 
     public static UndoRecord CreateCompound(params UndoRecord[] subRecords)
         => new UndoRecord(subRecords);

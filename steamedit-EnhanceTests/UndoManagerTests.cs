@@ -124,8 +124,8 @@ public class UndoManagerTests
         var r1 = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, 1);
         var r2 = new UndoRecord(entry, AppInfoPaths.BaseOpenVrSupport, PropertyType.Int32, 2);
         var compound = UndoRecord.CreateCompound(r1, r2);
-        Assert.IsTrue(compound.IsCompound);
-        Assert.AreEqual(2, compound.SubRecords!.Length);
+        Assert.IsTrue(compound.SubRecords.Length > 1);
+        Assert.AreEqual(2, compound.SubRecords.Length);
     }
 
     [TestMethod]
@@ -150,8 +150,8 @@ public class UndoManagerTests
         mgr.PushCompound(UndoRecord.CreateCompound(r1, r2));
         Assert.IsTrue(mgr.CanUndo);
         var record = mgr.Pop();
-        Assert.IsTrue(record.IsCompound);
-        Assert.AreEqual(2, record.SubRecords!.Length);
+        Assert.IsTrue(record.SubRecords.Length > 1);
+        Assert.AreEqual(2, record.SubRecords.Length);
     }
 
     [TestMethod]
@@ -167,10 +167,10 @@ public class UndoManagerTests
         mgr.PushCompound(UndoRecord.CreateCompound(r1, r2));
         // LIFO: 先弹出复合记录
         var popped = mgr.Pop();
-        Assert.IsTrue(popped.IsCompound);
+        Assert.IsTrue(popped.SubRecords.Length > 1);
         // 再弹出普通记录
         popped = mgr.Pop();
-        Assert.IsFalse(popped.IsCompound);
+        Assert.AreEqual(1, popped.SubRecords.Length);
         Assert.AreEqual("OldName", popped.PreviousValue);
     }
 
@@ -181,12 +181,12 @@ public class UndoManagerTests
     }
 
     [TestMethod]
-    public void RegularRecord_IsCompound_ReturnsFalse()
+    public void RegularRecord_SubRecordsContainsSelf()
     {
         var entry = new FakeEntry { ID = 1 };
         var record = new UndoRecord(entry, AppInfoPaths.Name, PropertyType.String, "Old");
-        Assert.IsFalse(record.IsCompound);
-        Assert.IsNull(record.SubRecords);
+        Assert.AreEqual(1, record.SubRecords.Length);
+        Assert.AreSame(record, record.SubRecords[0]);
     }
 
     [TestMethod]
