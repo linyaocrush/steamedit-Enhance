@@ -216,7 +216,8 @@ internal class MainWindow : LocalizableForm
 		_editController = new EditController(
 			_ctx, _steamData.DataStore, _listManager, _propertyEditorViewModel);
 
-		_shortcutHandler = new ShortcutHandler(() => RegisterShortcuts());
+		_shortcutHandler = new ShortcutHandler();
+		RegisterShortcuts();
 
 		// 启动 Steam 状态检测
 		UpdateSteamStatus();

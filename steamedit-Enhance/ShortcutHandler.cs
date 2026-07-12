@@ -10,11 +10,6 @@ internal sealed class ShortcutHandler
 {
 	private readonly Dictionary<(Keys Key, bool Control, bool Shift), Action> _shortcutMap = new();
 
-	public ShortcutHandler(Action registerActions)
-	{
-		registerActions();
-	}
-
 	public void Register((Keys Key, bool Control, bool Shift) combo, Action action)
 	{
 		_shortcutMap[combo] = action;
