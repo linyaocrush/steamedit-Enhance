@@ -88,13 +88,6 @@ internal class MainWindow : LocalizableForm
 		_propertyEditorViewModel = new PropertyEditorViewModel();
 		_mainViewModel = new MainViewModel(_steamData, _gameListViewModel, _propertyEditorViewModel);
 
-		// 绑定 PropertyEditorViewModel 到控件
-		BindingConfigurator.Configure(
-			_propertyEditorViewModel,
-			textGameName, textSortAs,
-			checkHidden, checkCompleted,
-			listControllerSupport, listVR, listEntryType);
-
 		// 初始化 ComboBox 项（必须在绑定之前，否则空 ComboBox 的 SelectedIndex 绑定会崩溃）
 		listControllerSupport.Items.Add("none");
 		listControllerSupport.Items.Add("partial");
@@ -103,6 +96,13 @@ internal class MainWindow : LocalizableForm
 		listVR.Items.Add("default");
 		listVR.Items.Add("removed");
 		listVR.Format += ComboBoxFormatter.FormatVR;
+
+		// 绑定 PropertyEditorViewModel 到控件
+		BindingConfigurator.Configure(
+			_propertyEditorViewModel,
+			textGameName, textSortAs,
+			checkHidden, checkCompleted,
+			listControllerSupport, listVR, listEntryType);
 
 		// ClearX 按钮点击
 		textGameName.ClearXClicked += (_, e) =>
