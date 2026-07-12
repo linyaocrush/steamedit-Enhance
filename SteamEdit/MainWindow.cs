@@ -278,18 +278,9 @@ internal class MainWindow : LocalizableForm
 
 		RegisterShortcuts();
 
-		// 订阅 SteamData 事件
-		_steamData.OnNeedsSave += SteamData_OnNeedsSaveOrApply;
-		_steamData.OnNeedsApply += SteamData_OnNeedsSaveOrApply;
-
 		// 启动 Steam 状态检测
 		UpdateSteamStatus();
 		steamStatusTimer.Start();
-	}
-
-	private void SteamData_OnNeedsSaveOrApply(object? sender, EventArgs e)
-	{
-		_mainViewModel.RefreshTitle();
 	}
 
 	private bool IsOnScreen()
@@ -326,7 +317,7 @@ internal class MainWindow : LocalizableForm
 			base.Size = size;
 		if (Settings.Default.MainWindowSplitter != int.MaxValue)
 			splitContainer1.SplitterDistance = Settings.Default.MainWindowSplitter;
-		SteamData_OnNeedsSaveOrApply(null, EventArgs.Empty);
+		_mainViewModel.RefreshTitle();
 		_listManager.RefreshGameList();
 		appSelection.Select();
 	}
@@ -426,7 +417,7 @@ internal class MainWindow : LocalizableForm
 
 	protected override void ApplyLanguage()
 	{
-		SteamData_OnNeedsSaveOrApply(null, EventArgs.Empty);
+		_mainViewModel.RefreshTitle();
 
 		checkHidden.Text = Strings.MainWindow_CheckHidden;
 		checkCompleted.Text = Strings.MainWindow_CheckCompleted;
@@ -474,8 +465,6 @@ internal class MainWindow : LocalizableForm
 	private void OnMainWindow_FormClosing(object? sender, FormClosingEventArgs e)
 	{
 		_mainViewModel.DetachEvents();
-		_steamData.OnNeedsSave -= SteamData_OnNeedsSaveOrApply;
-		_steamData.OnNeedsApply -= SteamData_OnNeedsSaveOrApply;
 		try { Settings.Default.Save(); } catch (Exception ex) { Log.WriteLine("Settings save failed: {0}", ex.Message); MessageBox.Show(this, string.Format(Strings.Msg_SettingsSaveFailed, ex.Message), Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Error); }
 		if (_steamData.NeedsSave)
 		{
