@@ -341,10 +341,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		string arg = new string('\t', indent);
 		foreach (Property property in _properties)
 		{
-			string arg2 = property.Name.Replace("\\", "\\\\").Replace("\"", "\\\"");
 			writer.Write(arg);
 			writer.Write('"');
-			writer.Write(arg2);
+			WriteEscapedString(writer, property.Name);
 			writer.Write('"');
 			switch (property.PropertyType)
 			{
@@ -359,7 +358,7 @@ internal class PropertyTable : IEquatable<PropertyTable>
 			case PropertyType.String:
 			case PropertyType.WString:
 				writer.Write("\t\t\"");
-				writer.Write(property.GetValue<string>().Replace("\\", "\\\\").Replace("\"", "\\\""));
+				WriteEscapedString(writer, property.GetValue<string>());
 				writer.Write('"');
 				break;
 			case PropertyType.Int32:
@@ -374,6 +373,19 @@ internal class PropertyTable : IEquatable<PropertyTable>
 				throw new InvalidDataException("The property type " + property.PropertyType.ToString() + " is invalid.");
 			}
 			writer.Write('\n');
+		}
+	}
+
+	private static void WriteEscapedString(TextWriter writer, string value)
+	{
+		foreach (char c in value)
+		{
+			switch (c)
+			{
+				case '\\': writer.Write("\\\\"); break;
+				case '"': writer.Write("\\\""); break;
+				default: writer.Write(c); break;
+			}
 		}
 	}
 
