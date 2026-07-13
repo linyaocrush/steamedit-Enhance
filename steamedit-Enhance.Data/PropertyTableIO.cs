@@ -46,7 +46,9 @@ internal static class PropertyTableIO
 			}
 			if (len >= remaining)
 				throw new InvalidDataException("ReadZString: null terminator not found before end of stream");
-			return Encoding.UTF8.GetString(heapBuf ?? stackBuf[..len]);
+			if (heapBuf != null)
+			return Encoding.UTF8.GetString(heapBuf, 0, len);
+		return Encoding.UTF8.GetString(stackBuf[..len]);
 		}
 		finally
 		{
