@@ -17,7 +17,7 @@ internal sealed class GameListViewModel : ViewModelBase
     private readonly Dictionary<int, string> _escapedDisplayNameCache = new();
     
     // 搜索缓存：LRU 缓存，LinkedList + Dictionary 实现 O(1) 淘汰
-    private readonly Dictionary<(int GameId, string SearchPattern), LinkedListNode<(int GameId, string SearchPattern)>> _searchCache = new();
+    private readonly Dictionary<(int GameId, string SearchPattern), (LinkedListNode<(int GameId, string SearchPattern)> Node, bool Result)> _searchCache = new();
     private readonly LinkedList<(int GameId, string SearchPattern)> _searchCacheList = new();
     private const int MaxSearchCacheSize = 1000;
 
@@ -300,20 +300,18 @@ internal sealed class GameListViewModel : ViewModelBase
     {
         var cacheKey = (game.ID, searchPattern);
         
-        if (_searchCache.TryGetValue(cacheKey, out var node))
+        if (_searchCache.TryGetValue(cacheKey, out var entry))
         {
-            _searchCacheList.Remove(node);
-            _searchCacheList.AddLast(node);
-            return node.Value.Item2 != null; // cached result stored in pattern string (non-null = match)
+            _searchCacheList.Remove(entry.Node);
+            _searchCacheList.AddLast(entry.Node);
+            return entry.Result;
         }
             
-        var result = IsFuzzyMatch(game.DisplayName, patternParts);
+        bool result = IsFuzzyMatch(game.DisplayName, patternParts);
         
-        // 添加到缓存（使用 node 标记结果：pattern = null 表示不匹配，非 null 表示匹配）
         var newNode = _searchCacheList.AddLast(cacheKey);
-        _searchCache[cacheKey] = newNode;
+        _searchCache[cacheKey] = (newNode, result);
         
-        // 淘汰 LRU 条目
         while (_searchCache.Count > MaxSearchCacheSize)
         {
             var oldest = _searchCacheList.First!;
