@@ -19,16 +19,36 @@ internal class LaunchTable
 
 	private List<LaunchItem> BuildItems()
 	{
-		return (from prop in _propertyTable.Properties.Where((Property prop) => prop.PropertyType == PropertyType.Table).OrderBy((Property prop) => prop.Name, StringComparer.OrdinalIgnoreCase)
-			select prop.GetValue<PropertyTable>() into table
-			where !table.TryGetPropertyValue<PropertyTable>("config", out var result) || !result.TryGetPropertyValue<string>("oslist", out var result2) || string.Equals(result2, "windows", StringComparison.OrdinalIgnoreCase)
-			select new LaunchItem
+		var items = new List<(string Key, LaunchItem Item)>();
+		foreach (var prop in _propertyTable.Properties)
+		{
+			if (prop.PropertyType != PropertyType.Table)
+				continue;
+
+			var table = prop.GetValue<PropertyTable>();
+
+			if (ShouldSkipNonWindows(table))
+				continue;
+
+			items.Add((prop.Name, new LaunchItem
 			{
 				Label = table.GetPropertyValue("description", ""),
 				Executable = table.GetPropertyValue("executable", ""),
 				Arguments = table.GetPropertyValue("arguments", ""),
 				WorkingDir = table.GetPropertyValue("workingdir", "")
-			}).ToList();
+			}));
+		}
+		items.Sort((a, b) => string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase));
+		return items.ConvertAll(t => t.Item);
+	}
+
+	private static bool ShouldSkipNonWindows(PropertyTable table)
+	{
+		if (!table.TryGetPropertyValue<PropertyTable>("config", out var config))
+			return false;
+		if (!config.TryGetPropertyValue<string>("oslist", out var oslist))
+			return false;
+		return !string.Equals(oslist, "windows", StringComparison.OrdinalIgnoreCase);
 	}
 
 	public LaunchTable()
