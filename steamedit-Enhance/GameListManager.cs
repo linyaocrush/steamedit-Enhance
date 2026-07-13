@@ -147,7 +147,7 @@ internal class GameListManager : IDisposable
 
 	public AppInfoEntryType CurrentFilters => _viewModel.FilterFlags;
 	public GameListViewModel ViewModel => _viewModel;
-	public bool RefreshingAfterEdit { get => _refreshingGamesListAfterEdit; set => _refreshingGamesListAfterEdit = value; }
+	public bool RefreshingAfterEdit => _refreshingGamesListAfterEdit;
 	public ImageAttributes BgLogoAttributes => Drawer.BgLogoAttributes;
 	public Dictionary<AppInfoEntryType, Image> GetFilterImages() => Drawer.FilterImages;
 
@@ -221,8 +221,14 @@ internal class GameListManager : IDisposable
 	{
 		InvalidateDisplayName(entry);
 		_refreshingGamesListAfterEdit = true;
-		ResortEntry(entry);
-		_refreshingGamesListAfterEdit = false;
+		try
+		{
+			ResortEntry(entry);
+		}
+		finally
+		{
+			_refreshingGamesListAfterEdit = false;
+		}
 		InvalidateItem(entry);
 	}
 
