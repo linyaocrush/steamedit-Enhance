@@ -30,6 +30,7 @@ internal partial class MainWindow : LocalizableForm
 		InitializeComponent();
 		ApplyTheme();
 		SetupServices();
+		_shortcutHandler = new ShortcutHandler();
 		RegisterShortcuts();
 		StartSteamMonitor();
 	}
