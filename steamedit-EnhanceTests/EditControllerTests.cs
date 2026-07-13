@@ -31,8 +31,9 @@ public class EditControllerTests
 
     private static GameListManager CreateListManager(GameDataContext ctx, PropertyEditorViewModel viewModel)
     {
-        var vm = new GameListViewModel(dataStore: new MockDataStore());
-        return new GameListManager(ctx, vm,
+        var dataStore = new MockDataStore();
+        var vm = new GameListViewModel(dataStore);
+        return new GameListManager(ctx, vm, dataStore,
             new System.Windows.Forms.ListView(),
             new System.Windows.Forms.ContextMenuStrip(),
             new System.Windows.Forms.ContextMenuStrip(),

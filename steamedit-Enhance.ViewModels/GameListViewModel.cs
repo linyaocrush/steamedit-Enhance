@@ -12,7 +12,6 @@ namespace steamedit_Enhance.ViewModels;
 internal sealed class GameListViewModel : ViewModelBase
 {
     private readonly IAppInfoDataStore _dataStore;
-    public IAppInfoDataStore DataStore => _dataStore;
     private readonly Dictionary<int, string> _displayNames = new();
     private readonly Dictionary<int, string> _escapedDisplayNameCache = new();
     

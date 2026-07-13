@@ -42,6 +42,7 @@ internal class GameListManager : IDisposable
 	public GameListManager(
 		GameDataContext ctx,
 		GameListViewModel viewModel,
+		IAppInfoDataStore dataStore,
 		ListView appSelection,
 		ContextMenuStrip filterSelectorMenu,
 		ContextMenuStrip sortSelectorMenu,
@@ -50,7 +51,7 @@ internal class GameListManager : IDisposable
 	{
 		_ctx = ctx;
 		_viewModel = viewModel;
-		_dataStore = _viewModel.DataStore;
+		_dataStore = dataStore;
 		_appSelection = appSelection;
 		_appFilterText = appFilterText;
 

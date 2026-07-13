@@ -103,7 +103,8 @@ internal partial class MainWindow : LocalizableForm
 		};
 
 		_listManager = new GameListManager(
-			_ctx, _gameListViewModel, appSelection, filterSelectorMenu, sortSelectorMenu,
+			_ctx, _gameListViewModel, _steamData.DataStore,
+			appSelection, filterSelectorMenu, sortSelectorMenu,
 			toolTips, appFilterText);
 
 		listEntryType.BeginUpdate();
