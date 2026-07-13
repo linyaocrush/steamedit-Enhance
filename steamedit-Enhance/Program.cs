@@ -173,7 +173,11 @@ internal static class Program
         if (isAutoFix)
         {
             var svc = InitializeSteamData(ref dataInit, tryCurrentPath: true, silent: true);
-            if (svc != null)
+            if (svc == null)
+            {
+                Log.WriteLine("AutoFix: Steam data initialization failed - unable to locate appinfo.vdf");
+            }
+            else
             {
                 bool isForceStart = AppHelper.HasArgument("forcestart", cmdArgs);
                 if (svc.NeedsApply)
