@@ -227,56 +227,6 @@ public class ModsTests
         public void AddEntry(IAppInfoEntry entry) => _entries.Add(entry);
     }
 
-    private class MockFileSystem : IFileSystem
-    {
-        public Dictionary<string, byte[]> Files { get; } = new();
-        public List<string> Operations { get; } = new();
-        public bool FileExists(string path) => Files.ContainsKey(path);
-        public void FileCopy(string source, string dest, bool overwrite)
-        {
-            Operations.Add($"Copy:{source}->{dest}");
-            if (!Files.ContainsKey(source)) throw new FileNotFoundException(source);
-            Files[dest] = (byte[])Files[source].Clone();
-        }
-        public Stream OpenRead(string path)
-        {
-            if (!Files.ContainsKey(path)) throw new FileNotFoundException(path);
-            return new MemoryStream(Files[path]);
-        }
-        public Stream CreateFile(string path)
-        {
-            Operations.Add($"Create:{path}");
-            return new TrackedMemoryStream(data => Files[path] = data);
-        }
-        public void FileMove(string source, string dest, bool overwrite)
-        {
-            Operations.Add($"Move:{source}->{dest}");
-            if (!Files.ContainsKey(source)) throw new FileNotFoundException(source);
-            Files[dest] = Files[source];
-            Files.Remove(source);
-        }
-        public void FileDelete(string path)
-        {
-            Operations.Add($"Delete:{path}");
-            Files.Remove(path);
-        }
-        public void CreateDirectory(string path) { }
-    }
-
-    private class TrackedMemoryStream : MemoryStream
-    {
-        private readonly Action<byte[]> _onClose;
-        public TrackedMemoryStream(Action<byte[]> onClose) { _onClose = onClose; }
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _onClose(GetBuffer().AsSpan(0, (int)Position).ToArray());
-            }
-            base.Dispose(disposing);
-        }
-    }
-
     private class MockAppInfoEntry : IAppInfoEntry
     {
         public int ID { get; }

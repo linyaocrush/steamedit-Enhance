@@ -8,73 +8,91 @@ namespace steamedit_EnhanceTests;
 
 internal sealed class MockFileSystem : IFileSystem
 {
-    private readonly Dictionary<string, byte[]> _files = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, byte[]> Files { get; } = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _lockedFiles = new(StringComparer.OrdinalIgnoreCase);
 
-    public bool FileExists(string path) => _files.ContainsKey(path);
+    public List<(string Op, string Arg1, string? Arg2)> Operations { get; } = new();
+    public bool CopyShouldThrow { get; set; }
+
+    public bool FileExists(string path)
+    {
+        Operations.Add(("Exists", path, null));
+        return Files.ContainsKey(path);
+    }
 
     public Stream OpenRead(string path)
     {
-        if (!_files.TryGetValue(path, out var data))
+        Operations.Add(("OpenRead", path, null));
+        if (!Files.TryGetValue(path, out var data))
             throw new FileNotFoundException($"File not found: {path}");
         return new MemoryStream(data);
     }
 
     public Stream CreateFile(string path)
     {
-        var stream = new TrackedMemoryStream(path, _files);
-        _files[path] = Array.Empty<byte>();
-        return stream;
+        Operations.Add(("Create", path, null));
+        var ms = new TrackedMemoryStream(data => Files[path] = data);
+        Files[path] = Array.Empty<byte>();
+        return ms;
     }
 
-    public void FileDelete(string path) => _files.Remove(path);
+    public void FileDelete(string path)
+    {
+        Operations.Add(("Delete", path, null));
+        Files.Remove(path);
+    }
 
     public void FileCopy(string sourcePath, string destinationPath, bool overwrite)
     {
-        if (!_files.TryGetValue(sourcePath, out var data))
+        Operations.Add(("Copy", sourcePath, destinationPath));
+        if (CopyShouldThrow) throw new IOException("Copy failed");
+        if (!Files.TryGetValue(sourcePath, out var data))
             throw new FileNotFoundException($"File not found: {sourcePath}");
-        if (_files.ContainsKey(destinationPath) && !overwrite)
+        if (Files.ContainsKey(destinationPath) && !overwrite)
             throw new IOException($"File exists: {destinationPath}");
-        _files[destinationPath] = (byte[])data.Clone();
+        Files[destinationPath] = (byte[])data.Clone();
     }
 
     public void FileMove(string sourcePath, string destinationPath, bool overwrite)
     {
-        if (!_files.TryGetValue(sourcePath, out var data))
+        Operations.Add(("Move", sourcePath, destinationPath));
+        if (!Files.TryGetValue(sourcePath, out var data))
             throw new FileNotFoundException($"File not found: {sourcePath}");
-        if (_files.ContainsKey(destinationPath) && !overwrite)
+        if (Files.ContainsKey(destinationPath) && !overwrite)
             throw new IOException($"File exists: {destinationPath}");
-        _files[destinationPath] = data;
-        _files.Remove(sourcePath);
+        Files[destinationPath] = data;
+        Files.Remove(sourcePath);
     }
 
-    public void LockFile(string path) => _lockedFiles.Add(path);
+    public void LockFile(string path)
+    {
+        Operations.Add(("Lock", path, null));
+        _lockedFiles.Add(path);
+    }
 
-    public void CreateDirectory(string path) { }
+    public void CreateDirectory(string path)
+    {
+        Operations.Add(("CreateDir", path, null));
+    }
 
     // 测试辅助方法
-    public void WriteAllBytes(string path, byte[] data) => _files[path] = data;
-    public byte[] ReadAllBytes(string path) => _files.TryGetValue(path, out var data) ? data : throw new FileNotFoundException(path);
-    public int FileCount => _files.Count;
+    public void WriteAllBytes(string path, byte[] data) => Files[path] = data;
+    public byte[] ReadAllBytes(string path) => Files.TryGetValue(path, out var data) ? data : throw new FileNotFoundException(path);
+    public int FileCount => Files.Count;
 
     private sealed class TrackedMemoryStream : MemoryStream
     {
-        private readonly string _path;
-        private readonly Dictionary<string, byte[]> _files;
+        private readonly Action<byte[]> _onClose;
         private bool _disposed;
 
-        public TrackedMemoryStream(string path, Dictionary<string, byte[]> files)
-        {
-            _path = path;
-            _files = files;
-        }
+        public TrackedMemoryStream(Action<byte[]> onClose) => _onClose = onClose;
 
         protected override void Dispose(bool disposing)
         {
             if (!_disposed)
             {
                 _disposed = true;
-                _files[_path] = ToArray();
+                _onClose(GetBuffer().AsSpan(0, (int)Position).ToArray());
             }
             base.Dispose(disposing);
         }
