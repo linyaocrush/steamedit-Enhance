@@ -8,11 +8,16 @@ internal class ModifiedEntry
 	public readonly int ID;
 
 	private byte[]? _originalData;
+	private PropertyTable? _cachedOriginalTable;
 
 	public byte[]? OriginalData
 	{
 		get => _originalData?.Clone() as byte[];
-		set => _originalData = value?.Clone() as byte[];
+		set
+		{
+			_originalData = value?.Clone() as byte[];
+			_cachedOriginalTable = null;
+		}
 	}
 
 	public uint OriginalDataVersion { get; set; }
@@ -40,12 +45,22 @@ internal class ModifiedEntry
 		return Changes.SetPropertyValue(type, value, propertyPath);
 	}
 
+	public PropertyTable GetOriginalTable()
+	{
+		_cachedOriginalTable ??= DeserializeOriginalTable();
+		return _cachedOriginalTable;
+	}
+
 	public string? GetOriginalName()
 	{
 		if (_originalData == null) return null;
-		using var reader = new BinaryReader(new MemoryStream(_originalData));
-		var props = PropertyTableIO.ReadPropertyTable_0x00000000(reader);
-		return props.GetPropertyValue<string>(null!, AppInfoPaths.Name);
+		return GetOriginalTable().GetPropertyValue<string>(null!, AppInfoPaths.Name);
+	}
+
+	private PropertyTable DeserializeOriginalTable()
+	{
+		using var reader = new BinaryReader(new MemoryStream(_originalData!));
+		return PropertyTableIO.ReadPropertyTable_0x00000000(reader);
 	}
 
 	public bool ApplyChanges(PropertyTable entryTable)
