@@ -194,22 +194,22 @@ internal sealed class GameListViewModel : ViewModelBase
 		bool isNumeric = int.TryParse(trimmed, out _);
 		string[]? patternParts = string.IsNullOrEmpty(trimmed) ? null : trimmed.Split(' ', '\t', '　');
 
-		IEnumerable<GameItemViewModel> filtered = AllGames;
-
-		if (!string.IsNullOrEmpty(trimmed))
+		var result = new List<GameItemViewModel>(AllGames.Count);
+		foreach (var g in AllGames)
 		{
-			if (isNumeric)
-				filtered = filtered.Where(g => g.ID.ToString().StartsWith(trimmed));
-			else
-				filtered = filtered.Where(g => IsFuzzyMatchCached(g, trimmed, patternParts!));
+			if (string.IsNullOrEmpty(trimmed) ||
+			    (isNumeric && g.ID.ToString().StartsWith(trimmed)) ||
+			    (!isNumeric && IsFuzzyMatchCached(g, trimmed, patternParts!)))
+			{
+				if ((g.Type & _filterFlags) != 0 &&
+				    (_showMode == ShowEntriesMode.All ||
+				     (_showMode == ShowEntriesMode.OnlyModified ? g.IsModified : !g.IsModified)))
+				{
+					result.Add(g);
+				}
+			}
 		}
 
-		filtered = filtered.Where(g => (g.Type & _filterFlags) != 0);
-
-		if (_showMode != ShowEntriesMode.All)
-			filtered = filtered.Where(g => _showMode == ShowEntriesMode.OnlyModified ? g.IsModified : !g.IsModified);
-
-		var result = filtered.ToList();
 		ApplySortTo(result);
 
 		VisibleGames.Clear();

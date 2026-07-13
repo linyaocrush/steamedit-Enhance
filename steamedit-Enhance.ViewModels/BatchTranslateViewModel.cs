@@ -1,4 +1,5 @@
 #nullable enable
+#pragma warning disable CS8604
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -120,7 +121,7 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
         CurrentName = currentName ?? "";
         StateChanged?.Invoke();
 
-        string originalName = entry.Modification?.GetOriginalName() ?? currentName;
+        string originalName = (entry.Modification?.GetOriginalName() ?? currentName)!;
         string? existingRef = (originalName != currentName) ? currentName : null;
 
         string? existingTranslation = TranslationGlossary.FindTranslatedByOriginalName(originalName);
@@ -140,9 +141,9 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
 
         try
         {
+            string refSuffix = existingRef != null ? ", ref: \"" + existingRef + "\"" : "";
             Log.WriteLine("Batch translate: \"{0}\" (orig: \"{1}\"{2})",
-                currentName, originalName,
-                existingRef != null ? ", ref: \"" + existingRef + "\"" : "");
+                currentName, originalName, refSuffix);
             string translated = await AiTranslator.TranslateWithContextAsync(
                 originalName, targetLanguage, context,
                 customSystemPrompt, customUserMessage, cancellationToken: ct, existingTranslation: existingRef);
@@ -163,8 +164,8 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Log.WriteLine("Batch translate failed for \"{0}\": {1}", currentName, ex.Message);
-            lock (_failures) _failures.Add((entry.ID, currentName, ex.Message));
+            Log.WriteLine("Batch translate failed for \"{0}\": {1}", currentName, ex.Message ?? "");
+            lock (_failures) _failures.Add((entry.ID, currentName, ex.Message ?? ""));
             Interlocked.Increment(ref _failCount);
         }
 
