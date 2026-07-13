@@ -5,15 +5,14 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using Common;
-using Microsoft.Win32;
+
 using steamedit_Enhance.Properties;
 
 namespace steamedit_Enhance;
 
 internal class SettingsDlg : LocalizableForm
 {
-    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string RunValueName = "steamedit_Enhance-Enhance";
+
 
     private IContainer components = null!;
 
@@ -193,13 +192,13 @@ internal class SettingsDlg : LocalizableForm
             Settings.Default.LogLevel = comboLogLevel.SelectedItem as Log.LogLevel? ?? Log.LogLevel.Info;
             // 立即应用新的日志级别
             Log.SetMinimumLevel(Settings.Default.LogLevel);
-            if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+            if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
                 MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             Settings.Default.Save();
         }
         else
         {
-            if (!ApplyAutoStartRegistry(_snapshotAutoStart, _snapshotAutoFix, _snapshotForceStart))
+            if (!AutoStartService.Set(_snapshotAutoStart, _snapshotAutoFix, _snapshotForceStart))
                 MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
@@ -340,7 +339,7 @@ internal class SettingsDlg : LocalizableForm
     {
         if (_loading) return;
         UpdateAutoStartSubEnabled();
-        if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+        if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
             MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
@@ -351,7 +350,7 @@ internal class SettingsDlg : LocalizableForm
         {
             checkAutoStartForceStart.Checked = false;
         }
-        if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+        if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
             MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
@@ -362,7 +361,7 @@ internal class SettingsDlg : LocalizableForm
         {
             checkAutoStartAutoFix.Checked = true;
         }
-        if (!ApplyAutoStartRegistry(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
+        if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
             MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
@@ -378,34 +377,8 @@ internal class SettingsDlg : LocalizableForm
         }
     }
 
-    private static bool ApplyAutoStartRegistry(bool autoStart, bool autoFix, bool forceStart)
-    {
-        try
-        {
-            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
-            if (key == null) return false;
 
-            if (autoStart)
-            {
-                string exePath = Application.ExecutablePath;
-                string args = "";
-                if (autoFix) args += " -autofix";
-                if (forceStart) args += " -forcestart";
-                key.SetValue(RunValueName, $"\"{exePath}\"{args}");
-                key.DeleteValue("steamedit-Enhance", throwOnMissingValue: false);
-            }
-            else
-            {
-                key.DeleteValue(RunValueName, throwOnMissingValue: false);
-            }
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Log.WriteLine("Failed to update auto-start registry: {0}", ex.Message);
-            return false;
-        }
-    }
+
 
     protected override void ApplyLanguage()
     {
