@@ -34,7 +34,6 @@ internal static class I18n
         CultureInfo.CurrentUICulture = CurrentCulture;
         Strings.Culture = CurrentCulture;
         Settings.Default.Language = cultureName;
-        Settings.Default.Save();
         LanguageChanged?.Invoke(null, EventArgs.Empty);
     }
 
