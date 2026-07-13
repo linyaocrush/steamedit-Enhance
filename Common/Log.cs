@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -145,17 +146,20 @@ internal static class Log
 
 	public static string[] GetRecentLines(int count = 100)
 	{
-		lock (_syncObj)
-		{
-			_writer?.Flush();
-		}
 		try
 		{
+			lock (_syncObj) { _writer?.Flush(); }
 			if (!File.Exists(_path)) return [];
-			lock (_syncObj)
+			var recent = new List<string>(count);
+			using var reader = new StreamReader(_path);
+			string? line;
+			while ((line = reader.ReadLine()) != null)
 			{
-				return File.ReadLines(_path).TakeLast(count).ToArray();
+				recent.Add(line);
+				if (recent.Count > count)
+					recent.RemoveRange(0, recent.Count - count);
 			}
+			return recent.ToArray();
 		}
 		catch
 		{

@@ -81,7 +81,39 @@ internal class PropertyTable : IEquatable<PropertyTable>
 		return TraverseToParent(path, createMissing);
 	}
 
+	private PropertyTable? TraverseToParent(ReadOnlySpan<string> path, out string lastName, bool createMissing = false)
+	{
+		lastName = path[^1];
+		if (path.Length == 0) throw new ArgumentException("Path must not be empty.", nameof(path));
+		ValidatePathDepth(path.Length);
+		PropertyTable current = this;
+		for (int i = 0; i < path.Length - 1; i++)
+		{
+			Property? prop = current[path[i]];
+			if (prop != null)
+			{
+				PropertyTable? next = prop.GetValue<PropertyTable>();
+				if (next == null) return null;
+				current = next;
+			}
+			else if (createMissing)
+			{
+				PropertyTable next = new PropertyTable();
+				current.SetPropertyValue(path[i], PropertyType.Table, next);
+				current = next;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		return current;
+	}
+
 	public bool HasProperty(params string[] propertyPath)
+		=> HasProperty(propertyPath.AsSpan());
+
+	public bool HasProperty(ReadOnlySpan<string> propertyPath)
 	{
 		if (propertyPath.Length == 0) return false;
 		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName);
@@ -89,6 +121,9 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	}
 
 	public Property? GetRawProperty(params string[] propertyPath)
+		=> GetRawProperty(propertyPath.AsSpan());
+
+	public Property? GetRawProperty(ReadOnlySpan<string> propertyPath)
 	{
 		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName);
 		return parent?[lastName];
@@ -138,6 +173,12 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	}
 
 	public T GetPropertyValue<T>(T defaultValue, params string[] propertyPath)
+		=> GetPropertyValueCore(defaultValue, propertyPath.AsSpan());
+
+	public T GetPropertyValue<T>(T defaultValue, ReadOnlySpan<string> propertyPath)
+		=> GetPropertyValueCore(defaultValue, propertyPath);
+
+	private T GetPropertyValueCore<T>(T defaultValue, ReadOnlySpan<string> propertyPath)
 	{
 		if (propertyPath.Length == 0) return defaultValue;
 		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName);
@@ -181,6 +222,12 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	}
 
 	public bool SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
+		=> SetPropertyValueCore(type, value, propertyPath.AsSpan());
+
+	public bool SetPropertyValue(PropertyType type, object? value, ReadOnlySpan<string> propertyPath)
+		=> SetPropertyValueCore(type, value, propertyPath);
+
+	private bool SetPropertyValueCore(PropertyType type, object? value, ReadOnlySpan<string> propertyPath)
 	{
 		PropertyTable? parent = TraverseToParent(propertyPath, out var lastName, createMissing: true);
 		if (parent == null) return false;

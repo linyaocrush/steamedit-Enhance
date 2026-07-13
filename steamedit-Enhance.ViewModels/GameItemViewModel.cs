@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using Common;
 using steamedit_Enhance.Data;
 
@@ -13,6 +14,7 @@ internal sealed class GameItemViewModel : ViewModelBase
     {
         _entry = entry;
         _displayName = displayName;
+        _entry.Modified += OnEntryModified;
     }
 
     public int ID => _entry.ID;
@@ -24,6 +26,17 @@ internal sealed class GameItemViewModel : ViewModelBase
     public bool IsModified => _entry.IsModified;
     public bool IsHidden => _entry.IsHidden;
     public bool IsCompleted => _entry.IsCompleted;
+
+    private void OnEntryModified(object? sender, EventArgs e)
+    {
+        RaisePropertyChanged(nameof(Name));
+        RaisePropertyChanged(nameof(SortAs));
+        RaisePropertyChanged(nameof(NormalizedSortAs));
+        RaisePropertyChanged(nameof(Type));
+        RaisePropertyChanged(nameof(IsModified));
+        RaisePropertyChanged(nameof(IsHidden));
+        RaisePropertyChanged(nameof(IsCompleted));
+    }
 
     public string DisplayName
     {
