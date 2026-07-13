@@ -55,9 +55,9 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
             CancellationToken = _cts.Token
         };
 
+        int index = 0;
         try
         {
-            int index = 0;
             await Parallel.ForEachAsync(entries, parallelOptions, async (entry, ct) =>
             {
                 _pauseEvent.Wait(ct);
@@ -75,7 +75,11 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
         }
         catch (OperationCanceledException)
         {
-            // normal exit on cancel
+            // 更新最后一次 TranslateOneAsync 可能已修改但未报告进度的计数器
+            Progress = Volatile.Read(ref index);
+            SuccessCount = Volatile.Read(ref _successCount);
+            SkipCount = Volatile.Read(ref _skipCount);
+            FailCount = Volatile.Read(ref _failCount);
         }
         catch (Exception ex)
         {
