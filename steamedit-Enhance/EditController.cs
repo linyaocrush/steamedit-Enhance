@@ -14,6 +14,8 @@ internal class EditController
 	private readonly GameListManager _listManager;
 	private readonly PropertyEditorViewModel _viewModel;
 
+	public Func<string, string, bool>? ConfirmRemove { get; set; }
+
 	public EditController(
 		GameDataContext ctx,
 		IAppInfoDataStore dataStore,
@@ -80,17 +82,12 @@ internal class EditController
 			_listManager.NotifyEntryReverted(entry);
 			LoadEntry(entry);
 		}
-		else
+		else if (ConfirmRemove?.Invoke(
+			string.Format(Strings.Msg_FailedRevert, entry.ToString()),
+			Strings.Msg_FailedRevertTitle) == true)
 		{
-			if (System.Windows.Forms.MessageBox.Show(null,
-				string.Format(Strings.Msg_FailedRevert, entry.ToString()),
-				Strings.Msg_FailedRevertTitle,
-				System.Windows.Forms.MessageBoxButtons.OKCancel,
-				System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.OK)
-			{
-				_dataStore.AppInfo.RemoveEntry(entry);
-				_listManager.RefreshGameList();
-			}
+			_dataStore.AppInfo.RemoveEntry(entry);
+			_listManager.RefreshGameList();
 		}
 	}
 

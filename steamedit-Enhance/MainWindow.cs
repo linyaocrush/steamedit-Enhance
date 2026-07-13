@@ -174,7 +174,11 @@ internal partial class MainWindow : LocalizableForm
 		_mainViewModel.ShortcutsRequested += (_, _) => OnBtnShortcuts_Click(null, EventArgs.Empty);
 
 		_editController = new EditController(
-			_ctx, _steamData.DataStore, _listManager, _propertyEditorViewModel);
+			_ctx, _steamData.DataStore, _listManager, _propertyEditorViewModel)
+		{
+			ConfirmRemove = (msg, title) =>
+				MessageBox.Show(this, msg, title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK
+		};
 	}
 
 	private void StartSteamMonitor()
