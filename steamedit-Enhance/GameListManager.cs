@@ -19,6 +19,7 @@ internal class GameListManager : IDisposable
 	private readonly ListView _appSelection;
 	private readonly ClearableTextBox _appFilterText;
 	private readonly Timer _filterDebounceTimer = new();
+	private readonly EventHandler _onLanguageChangedHandler;
 	private bool _refreshingGamesListAfterEdit;
 
 	public GameListDrawer Drawer { get; }
@@ -137,8 +138,8 @@ internal class GameListManager : IDisposable
 		};
 
 		// 批处理菜单语言变更
-		var onLanguageChanged = (EventHandler)((_, _) => ApplyBatchLanguage());
-		I18n.LanguageChanged += onLanguageChanged;
+		_onLanguageChangedHandler = (_, _) => ApplyBatchLanguage();
+		I18n.LanguageChanged += _onLanguageChangedHandler;
 
 		_dataStore.AppInfo.Modified += OnEntryModified;
 	}
@@ -313,6 +314,7 @@ internal class GameListManager : IDisposable
 
 	public void Dispose()
 	{
+		I18n.LanguageChanged -= _onLanguageChangedHandler;
 		_filterDebounceTimer?.Dispose();
 		Drawer?.Dispose();
 		InputHandler?.Dispose();

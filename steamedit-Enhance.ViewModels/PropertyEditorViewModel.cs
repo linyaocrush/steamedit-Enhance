@@ -131,7 +131,8 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
 
         EntryType = entry.Type;
 
-        if (entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport) == int.MaxValue)
+        int? openVr = entry.GetPropertyValue<int?>(null, AppInfoPaths.OpenVrSupport);
+        if (openVr == null)
         {
             VREnabled = false;
             VRIndex = -1;
@@ -139,7 +140,8 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
         else
         {
             VREnabled = true;
-            VRIndex = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport) != int.MaxValue ? 1 : 0;
+            int? baseOpenVr = entry.GetPropertyValue<int?>(null, AppInfoPaths.BaseOpenVrSupport);
+            VRIndex = baseOpenVr != null ? 1 : 0;
         }
 
         HasSortAs = entry.HasSortAs;
