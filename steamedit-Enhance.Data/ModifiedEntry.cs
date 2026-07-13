@@ -11,21 +11,8 @@ internal class ModifiedEntry
 
 	public byte[]? OriginalData
 	{
-		get
-		{
-			return _originalData;
-		}
-		set
-		{
-			if (value != null)
-			{
-				_originalData = (byte[])value.Clone();
-			}
-			else
-			{
-				_originalData = null;
-			}
-		}
+		get => _originalData?.Clone() as byte[];
+		set => _originalData = value?.Clone() as byte[];
 	}
 
 	public uint OriginalDataVersion { get; set; }
@@ -55,8 +42,8 @@ internal class ModifiedEntry
 
 	public string? GetOriginalName()
 	{
-		if (OriginalData == null) return null;
-		using var reader = new BinaryReader(new MemoryStream(OriginalData));
+		if (_originalData == null) return null;
+		using var reader = new BinaryReader(new MemoryStream(_originalData));
 		var props = PropertyTableIO.ReadPropertyTable_0x00000000(reader);
 		return props.GetPropertyValue<string>(null!, AppInfoPaths.Name);
 	}
