@@ -230,11 +230,11 @@ internal class SettingsDlg : LocalizableForm
 
 	private async void btnFetchModels_Click(object? sender, EventArgs e)
 	{
-		if (IsDisposed) return;
-		btnFetchModels.Enabled = false;
-		btnFetchModels.Text = "...";
 		try
 		{
+			if (IsDisposed) return;
+			btnFetchModels.Enabled = false;
+			btnFetchModels.Text = "...";
 			var models = await AiTranslator.FetchModelsAsync(textAiApiUrl.Text, textAiApiKey.Text);
 			string current = comboAiModel.Text;
 			comboAiModel.Items.Clear();

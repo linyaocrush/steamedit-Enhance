@@ -520,22 +520,21 @@ internal class MainWindow : LocalizableForm
 
 	private async void OnBtnTranslate_Click(object? sender, EventArgs e)
 	{
-		if (IsDisposed) return;
-		var entry = _listManager.GetSelectedEntry();
-		if (entry == null) return;
-		string currentName = entry.Name;
-		if (string.IsNullOrWhiteSpace(currentName)) return;
-		
-		// Get the original name (pre-modification) for AI translation source
-		string originalName = entry.Modification?.GetOriginalName() ?? currentName;
-		string? existingRef = (originalName != currentName) ? currentName : null;
-
-		string targetLang = Settings.Default.AiTargetLanguage;
-		btnTranslate.Enabled = false;
-		btnTranslate.Text = Strings.Msg_Translating;
-
 		try
 		{
+			if (IsDisposed) return;
+			var entry = _listManager.GetSelectedEntry();
+			if (entry == null) return;
+			string currentName = entry.Name;
+			if (string.IsNullOrWhiteSpace(currentName)) return;
+
+			btnTranslate.Enabled = false;
+			btnTranslate.Text = Strings.Msg_Translating;
+
+			string originalName = entry.Modification?.GetOriginalName() ?? currentName;
+			string? existingRef = (originalName != currentName) ? currentName : null;
+			string targetLang = Settings.Default.AiTargetLanguage;
+
 			Log.WriteLine("AI Translate: Starting for \"{0}\" (original: \"{1}\"{2})",
 				currentName, originalName,
 				existingRef != null ? ", existing translation available: \"" + existingRef + "\"" : "");
@@ -585,8 +584,11 @@ internal class MainWindow : LocalizableForm
 		}
 		finally
 		{
-			btnTranslate.Text = Strings.MainWindow_BtnTranslate;
-			btnTranslate.Enabled = true;
+			if (!IsDisposed)
+			{
+				btnTranslate.Text = Strings.MainWindow_BtnTranslate;
+				btnTranslate.Enabled = true;
+			}
 		}
 	}
 

@@ -138,7 +138,8 @@ internal static class TranslationGlossary
 			if (changed)
 			{
 				Log.WriteLine("Glossary: Synced, now has {0} entries", _data.Entries.Count);
-				Save();
+				try { Save(); }
+				catch (Exception ex) { Log.WriteLine("Glossary: Sync save failed: {0}", ex.Message); }
 			}
 		}
 	}
@@ -174,8 +175,15 @@ internal static class TranslationGlossary
 		{
 			if (_dirty)
 			{
-				Save();
-				_dirty = false;
+				try
+				{
+					Save();
+					_dirty = false;
+				}
+				catch (Exception ex)
+				{
+					Log.WriteLine("Glossary: Flush failed, _dirty kept for retry: {0}", ex.Message);
+				}
 			}
 		}
 	}
@@ -210,21 +218,14 @@ internal static class TranslationGlossary
 
 	private static void Save()
 	{
-		try
-		{
-			string json = JsonSerializer.Serialize(_data, _jsonOptions);
-			if (_filePath == null) return;
-			string tempPath = _filePath + ".tmp";
-			File.WriteAllText(tempPath, json, Encoding.UTF8);
-			if (File.Exists(_filePath))
-				File.Copy(_filePath, _filePath + ".bak", overwrite: true);
-			File.Move(tempPath, _filePath, overwrite: true);
-			Log.WriteLine("Glossary: Saved {0} entries", _data.Entries.Count);
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("Glossary: Failed to save: {0}", ex.Message);
-		}
+		string json = JsonSerializer.Serialize(_data, _jsonOptions);
+		if (_filePath == null) return;
+		string tempPath = _filePath + ".tmp";
+		File.WriteAllText(tempPath, json, Encoding.UTF8);
+		if (File.Exists(_filePath))
+			File.Copy(_filePath, _filePath + ".bak", overwrite: true);
+		File.Move(tempPath, _filePath, overwrite: true);
+		Log.WriteLine("Glossary: Saved {0} entries", _data.Entries.Count);
 	}
 }
 
