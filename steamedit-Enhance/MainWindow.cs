@@ -551,14 +551,15 @@ internal class MainWindow : LocalizableForm
 
 			if (!string.IsNullOrWhiteSpace(translated) && IsHandleCreated && !IsDisposed)
 			{
+				var snapshotEntry = entry;
 				BeginInvoke(() =>
 				{
 					try
 					{
-						var currentEntry = _listManager.GetSelectedEntry();
-						if (currentEntry == null) return;
-						string previousName = currentEntry.Name;
-						_editController.ApplyTranslation(currentEntry, translated, previousName);
+						if (snapshotEntry == null || _editController.ViewModel.CurrentEntry != snapshotEntry)
+							return;
+						string previousName = snapshotEntry.Name;
+						_editController.ApplyTranslation(snapshotEntry, translated, previousName);
 						Log.WriteLine("AI Translate: UI updated to \"{0}\"", translated);
 					}
 					catch (Exception ex)

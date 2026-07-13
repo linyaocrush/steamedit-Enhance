@@ -221,7 +221,33 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
     {
         var entry = _currentEntry;
         if (entry == null) return;
-        bool remove = index != 0;
+        if (index != 0)
+            HandleVRRemove(entry);
+        else
+            HandleVRRestore(entry);
+        EditCommandExecuted?.Invoke(this, entry);
+    }
+
+    private void HandleVRRemove(IAppInfoEntry entry)
+    {
+        int prevVr = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
+        if (prevVr == int.MaxValue) return;
+        PushVrUndo(entry);
+        entry.SetPropertyValue(PropertyType.Int32, prevVr, AppInfoPaths.BaseOpenVrSupport);
+        entry.SetPropertyValue(PropertyType.Int32, 0, AppInfoPaths.OpenVrSupport);
+    }
+
+    private void HandleVRRestore(IAppInfoEntry entry)
+    {
+        int prevBase = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
+        if (prevBase == int.MaxValue) return;
+        PushVrUndo(entry);
+        entry.SetPropertyValue(PropertyType.Int32, prevBase, AppInfoPaths.OpenVrSupport);
+        entry.SetPropertyValue(PropertyType.Int32, int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
+    }
+
+    private void PushVrUndo(IAppInfoEntry entry)
+    {
         int prevVr = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
         int prevVrBase = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
         var vrRecord = new UndoRecord(entry, AppInfoPaths.OpenVrSupport, PropertyType.Int32, prevVr);
@@ -234,26 +260,6 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
         {
             _undoManager.PushCompound(vrRecord);
         }
-
-        if (remove)
-        {
-            int val = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.OpenVrSupport);
-            if (val != int.MaxValue)
-            {
-                entry.SetPropertyValue(PropertyType.Int32, val, AppInfoPaths.BaseOpenVrSupport);
-                entry.SetPropertyValue(PropertyType.Int32, 0, AppInfoPaths.OpenVrSupport);
-            }
-        }
-        else
-        {
-            int val = entry.GetPropertyValue(int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
-            if (val != int.MaxValue)
-            {
-                entry.SetPropertyValue(PropertyType.Int32, val, AppInfoPaths.OpenVrSupport);
-                entry.SetPropertyValue(PropertyType.Int32, int.MaxValue, AppInfoPaths.BaseOpenVrSupport);
-            }
-        }
-        EditCommandExecuted?.Invoke(this, entry);
     }
 
     private void OnEntryTypeChanged(AppInfoEntryType value)

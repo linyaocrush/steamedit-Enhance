@@ -138,8 +138,7 @@ internal static class TranslationGlossary
 			if (changed)
 			{
 				Log.WriteLine("Glossary: Synced, now has {0} entries", _data.Entries.Count);
-				try { Save(); }
-				catch (Exception ex) { Log.WriteLine("Glossary: Sync save failed: {0}", ex.Message); }
+				_dirty = true;
 			}
 		}
 	}
