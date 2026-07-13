@@ -247,35 +247,27 @@ internal class PropertyTable : IEquatable<PropertyTable>
 	public void RemoveProperty(params string[] propertyPath)
 	{
 		ValidatePathDepth(propertyPath.Length);
-		Stack<PropertyTable> stack = new Stack<PropertyTable>();
-		Stack<string> stack2 = new Stack<string>();
-		PropertyTable propertyTable = this;
-		for (int i = 0; i < propertyPath.Length - 1; i++)
+		RemovePropertyRecursive(this, propertyPath.AsSpan(), 0);
+	}
+
+	private static bool RemovePropertyRecursive(PropertyTable table, ReadOnlySpan<string> path, int depth)
+	{
+		if (depth == path.Length - 1)
 		{
-			string item = propertyPath[i];
-			stack.Push(propertyTable);
-			stack2.Push(item);
-			if (propertyTable.HasProperty(item))
-			{
-				propertyTable = propertyTable.GetPropertyValue<PropertyTable>(item);
-				if (propertyTable == null)
-				{
-					return;
-				}
-				continue;
-			}
-			return;
+			table.RemoveProperty(path[depth]);
+			return table.Count == 0;
 		}
-		propertyTable.RemoveProperty(propertyPath[propertyPath.Length - 1]);
-		if (propertyTable.Count == 0)
+		if (!table.HasProperty(path[depth]))
+			return false;
+		var childTable = table.GetPropertyValue<PropertyTable>(path[depth]);
+		if (childTable == null)
+			return false;
+		if (RemovePropertyRecursive(childTable, path, depth + 1))
 		{
-			while (stack.Count > 0)
-			{
-				PropertyTable propertyTable2 = stack.Pop();
-				string name = stack2.Pop();
-				propertyTable2.RemoveProperty(name);
-			}
+			table.RemoveProperty(path[depth]);
+			return table.Count == 0;
 		}
+		return false;
 	}
 
 	public void Clear()
