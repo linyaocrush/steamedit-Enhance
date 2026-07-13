@@ -404,7 +404,7 @@ Page Down           下一個遊戲</value>
     <value>選擇 appinfo.vdf</value>
   </data>
   <data name="Msg_UnknownVersion" xml:space="preserve">
-    <value>未知的 appinfo 版本：{0}</value>
+    <value>無法載入 appinfo.vdf - 檔案格式無法識別。可能是 Steam 已更新（請檢查 steamedit_Enhance 更新），或者選擇了錯誤的檔案。您可以嘗試選擇 appinfo.vdf 的備份副本。</value>
   </data>
   <data name="Msg_LoadFailed" xml:space="preserve">
     <value>載入失敗：{0}</value>

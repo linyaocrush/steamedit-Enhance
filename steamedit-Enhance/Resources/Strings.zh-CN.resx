@@ -398,7 +398,7 @@ Page Down           下一个游戏</value>
     <value>选择 Steam 的 appinfo.vdf 文件</value>
   </data>
   <data name="Msg_UnknownVersion" xml:space="preserve">
-    <value>尝试加载 appinfo.vdf 时发现未知版本。可能是文件选择错误，或者 Steam 已更新，需要修复 steamedit_Enhance</value>
+    <value>无法加载 appinfo.vdf - 文件格式无法识别。可能是 Steam 已更新（请检查 steamedit_Enhance 更新），或者选择了错误的文件。您可以尝试选择 appinfo.vdf 的备份副本。</value>
   </data>
   <data name="Msg_CriticalError" xml:space="preserve">
     <value>steamedit_Enhance：严重错误</value>

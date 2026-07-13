@@ -398,7 +398,7 @@ Page Down           Next game</value>
     <value>Select Steam's appinfo.vdf file</value>
   </data>
   <data name="Msg_UnknownVersion" xml:space="preserve">
-    <value>Unknown version while trying to load appinfo.vdf. Either we're trying to load the wrong file, or maybe Steam has updated something, and a fix is needed for steamedit_Enhance</value>
+    <value>Unable to load appinfo.vdf - the file format is not recognized. This could happen if Steam has updated (check for steamedit_Enhance updates), or if the wrong file was selected. You can try selecting a backup copy of appinfo.vdf.</value>
   </data>
   <data name="Msg_CriticalError" xml:space="preserve">
     <value>steamedit_Enhance: Critical Error</value>
