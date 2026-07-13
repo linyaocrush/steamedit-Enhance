@@ -347,14 +347,8 @@ partial class MainWindow
 		_mainViewModel.IsBusy = true;
 		try
 		{
-			SteamProcessManager.KillSteam(_steamData.SteamDir, Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
-			{
-				using var dlg = new WaitingDialog(msg);
-				dlg.ShowAndWait(() => waitWhile());
-			});
-			_steamData.Save();
-			_steamData.Apply();
-			SteamProcessManager.EnsureSteamRunning(_steamData.SteamDir, focusIfRunning: true);
+			SteamProcessManager.SaveApplyRestart(_steamData, _steamData.SteamDir, Strings.SteamData_WaitingForClose,
+				(msg, waitWhile) => { using var dlg = new WaitingDialog(msg); dlg.ShowAndWait(() => waitWhile()); });
 		}
 		catch (Exception ex) { Log.WriteLine("Save/Apply/Restart failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
 		finally { _mainViewModel.IsBusy = false; }

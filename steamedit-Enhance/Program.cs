@@ -180,16 +180,9 @@ internal static class Program
                 {
                     Log.WriteLine("Changes detected, applying!");
                     bool shouldRestart = isForceStart || SteamProcessManager.IsSteamRunning(svc.SteamDir);
-                    if (shouldRestart)
-                        SteamProcessManager.KillSteam(svc.SteamDir, steamedit_Enhance.Strings.SteamData_WaitingForClose, (msg, waitWhile) =>
-                        {
-                            using var dlg = new WaitingDialog(msg);
-                            dlg.ShowAndWait(() => waitWhile());
-                        });
-                    svc.Save();
-                    svc.Apply();
-                    if (shouldRestart)
-                        SteamProcessManager.EnsureSteamRunning(svc.SteamDir, focusIfRunning: true);
+                    SteamProcessManager.SaveApplyRestart(svc, svc.SteamDir, steamedit_Enhance.Strings.SteamData_WaitingForClose,
+                        (msg, waitWhile) => { using var dlg = new WaitingDialog(msg); dlg.ShowAndWait(() => waitWhile()); },
+                        shouldRestart);
                     Log.WriteLine("Appcache updated");
                 }
                 else if (isForceStart)

@@ -111,6 +111,21 @@ internal static class SteamProcessManager
             Log.WriteLine("No matching Steam processes found to kill");
     }
 
+    public static void SaveApplyRestart(
+        ISteamDataService dataService,
+        string steamDir,
+        string waitingMessage,
+        Action<string, Func<bool>> showAndWait,
+        bool shouldRestart = true)
+    {
+        if (shouldRestart)
+            KillSteam(steamDir, waitingMessage, showAndWait);
+        dataService.Save();
+        dataService.Apply();
+        if (shouldRestart)
+            EnsureSteamRunning(steamDir, focusIfRunning: true);
+    }
+
     public static void EnsureSteamRunning(string steamDir, bool focusIfRunning)
     {
         if (focusIfRunning || !IsSteamRunning(steamDir))
