@@ -49,7 +49,7 @@ internal class EditController
 	{
 		if (_listManager.GetSelectedEntry() != record.Entry)
 		{
-			int idx = _ctx._entries.IndexOf(record.Entry);
+			int idx = _ctx.IndexOf(record.Entry);
 			if (idx >= 0) _listManager.SelectIndex(idx);
 		}
 

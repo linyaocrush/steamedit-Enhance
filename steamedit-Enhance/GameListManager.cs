@@ -209,7 +209,7 @@ internal class GameListManager : IDisposable
 
 	public void InvalidateItem(IAppInfoEntry entry)
 	{
-		int idx = _ctx._entries.IndexOf(entry);
+		int idx = _ctx.IndexOf(entry);
 		if (idx >= 0)
 			Drawer.InvalidateItem(idx);
 	}
@@ -232,7 +232,7 @@ internal class GameListManager : IDisposable
 		ClearDisplayNameCache();
 		_viewModel.Refresh();
 		SyncFromViewModel();
-		int idx = _ctx._entries.IndexOf(entry);
+		int idx = _ctx.IndexOf(entry);
 		if (idx >= 0) SelectIndex(idx);
 	}
 
@@ -240,12 +240,13 @@ internal class GameListManager : IDisposable
 
 	private void SyncFromViewModel()
 	{
-		_ctx._entries = new List<IAppInfoEntry>(_viewModel.VisibleGames.Count);
-		_ctx._baseEntries = new List<IAppInfoEntry>(_viewModel.AllGames.Count);
+		var allEntries = new List<IAppInfoEntry>(_viewModel.AllGames.Count);
+		var visibleEntries = new List<IAppInfoEntry>(_viewModel.VisibleGames.Count);
 		foreach (var g in _viewModel.AllGames)
-			_ctx._baseEntries.Add(g.Entry);
+			allEntries.Add(g.Entry);
 		foreach (var g in _viewModel.VisibleGames)
-			_ctx._entries.Add(g.Entry);
+			visibleEntries.Add(g.Entry);
+		_ctx.ReloadEntries(visibleEntries, allEntries);
 		_ctx.TotalEntryCount = _viewModel.TotalEntryCount;
 		_ctx.CurrentSearchTerm = _viewModel.SearchText;
 		RebuildListBoxItems();
@@ -261,7 +262,7 @@ internal class GameListManager : IDisposable
 	{
 		if (selected != null)
 		{
-			int newIdx = _ctx._entries.IndexOf(selected);
+			int newIdx = _ctx.IndexOf(selected);
 			if (newIdx >= 0) SetSelectedIndex(newIdx);
 		}
 		if (GetSelectedIndex() < 0 && _ctx.Entries.Count > 0)
