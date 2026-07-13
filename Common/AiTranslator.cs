@@ -12,8 +12,15 @@ namespace Common;
 
 internal sealed class AiTranslator
 {
+	private enum CircuitState { Closed, Open, HalfOpen }
+
+	private CircuitState _circuitState = CircuitState.Closed;
 	private int _consecutiveFailures;
-	private readonly object _failureLock = new();
+	private DateTime _lastFailureTime;
+	private readonly object _circuitLock = new();
+	private const int FailureThreshold = 5;
+	private static readonly TimeSpan CircuitOpenTimeout = TimeSpan.FromSeconds(30);
+
 	private readonly HttpClient _httpClient;
 
 	private static readonly SocketsHttpHandler _sharedHandler = new()
@@ -24,6 +31,64 @@ internal sealed class AiTranslator
 	internal AiTranslator(HttpClient? httpClient = null)
 	{
 		_httpClient = httpClient ?? CreateDefaultClient();
+	}
+
+	private void CheckCircuitBreaker(CancellationToken cancellationToken)
+	{
+		lock (_circuitLock)
+		{
+			if (_circuitState == CircuitState.Closed)
+				return;
+
+			switch (_circuitState)
+			{
+				case CircuitState.Open:
+					if (DateTime.UtcNow - _lastFailureTime >= CircuitOpenTimeout)
+					{
+						_circuitState = CircuitState.HalfOpen;
+						Log.WriteLine("Circuit breaker: Closed→HalfOpen, allowing trial request");
+						return;
+					}
+					double remaining = (CircuitOpenTimeout - (DateTime.UtcNow - _lastFailureTime)).TotalSeconds;
+					Log.WriteLine("Circuit breaker: Open, failing fast ({0:F0}s remaining)", Math.Max(0, remaining));
+					throw new AiTranslationException(AiErrorKind.CircuitOpen,
+						$"Circuit breaker is open ({remaining:F0}s remaining). Service may be unavailable.");
+				case CircuitState.HalfOpen:
+					return;
+			}
+		}
+	}
+
+	private void RecordSuccess()
+	{
+		lock (_circuitLock)
+		{
+			_consecutiveFailures = 0;
+			if (_circuitState != CircuitState.Closed)
+			{
+				_circuitState = CircuitState.Closed;
+				Log.WriteLine("Circuit breaker: request succeeded, reset to Closed");
+			}
+		}
+	}
+
+	private void RecordFailure()
+	{
+		lock (_circuitLock)
+		{
+			_consecutiveFailures++;
+			_lastFailureTime = DateTime.UtcNow;
+			if (_consecutiveFailures >= FailureThreshold && _circuitState != CircuitState.Open)
+			{
+				_circuitState = CircuitState.Open;
+				Log.WriteLine("Circuit breaker: {0} consecutive failures, Open", _consecutiveFailures);
+			}
+			else if (_circuitState == CircuitState.HalfOpen)
+			{
+				_circuitState = CircuitState.Open;
+				Log.WriteLine("Circuit breaker: HalfOpen trial failed, back to Open");
+			}
+		}
 	}
 
 	private static HttpClient CreateDefaultClient()
@@ -148,21 +213,11 @@ Rules:
 
 		Log.WriteLine("AI: Requesting {0}", apiUrl);
 
+		CheckCircuitBreaker(cancellationToken);
+
 		const int maxRetries = 3;
 		const int maxBackoffMs = 30_000;
 		string responseBody = null!;
-
-		int circuitDelayMs = 0;
-		lock (_failureLock)
-		{
-			if (_consecutiveFailures >= 5)
-			{
-				circuitDelayMs = Math.Min(60000, _consecutiveFailures * 10000);
-				Log.WriteLine("Circuit breaker: {0} consecutive failures, pausing {1}ms", _consecutiveFailures, circuitDelayMs);
-			}
-		}
-		if (circuitDelayMs > 0)
-			await Task.Delay(circuitDelayMs, cancellationToken);
 
 		for (int attempt = 0; ; attempt++)
 		{
@@ -189,7 +244,7 @@ Rules:
 					continue;
 				}
 				Log.WriteLine("AI: Network error: {0}", ex.Message);
-				lock (_failureLock) _consecutiveFailures++;
+				RecordFailure();
 				throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
 			}
 			responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -206,7 +261,7 @@ Rules:
 					continue;
 				}
 				Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
-				lock (_failureLock) _consecutiveFailures++;
+				RecordFailure();
 				throw new AiTranslationException(AiErrorKind.ApiError, $"API error {statusCode}: {responseBody}", statusCode);
 			}
 
@@ -220,7 +275,7 @@ Rules:
 			break;
 		}
 
-		lock (_failureLock) _consecutiveFailures = 0;
+		RecordSuccess();
 
 		using var doc = JsonDocument.Parse(responseBody);
 		string? result = null;

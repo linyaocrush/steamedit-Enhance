@@ -14,6 +14,8 @@ internal enum AiErrorKind
 	NetworkError,
 	/// <summary>响应解析失败（JSON 格式异常或内容类型不匹配）。</summary>
 	ParseError,
+	/// <summary>熔断器开启，请求被快速拒绝。</summary>
+	CircuitOpen,
 }
 
 /// <summary>
