@@ -339,30 +339,20 @@ internal class SettingsDlg : LocalizableForm
     {
         if (_loading) return;
         UpdateAutoStartSubEnabled();
-        if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
-            MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private void checkAutoStartAutoFix_CheckedChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
         if (!checkAutoStartAutoFix.Checked)
-        {
             checkAutoStartForceStart.Checked = false;
-        }
-        if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
-            MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private void checkAutoStartForceStart_CheckedChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
         if (checkAutoStartForceStart.Checked)
-        {
             checkAutoStartAutoFix.Checked = true;
-        }
-        if (!AutoStartService.Set(checkAutoStart.Checked, checkAutoStartAutoFix.Checked, checkAutoStartForceStart.Checked))
-            MessageBox.Show(this, "Failed to update auto-start registry. Run as administrator?", Strings.Msg_CriticalError, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private void UpdateAutoStartSubEnabled()
