@@ -17,6 +17,11 @@ internal sealed class GameItemViewModel : ViewModelBase
         _entry.Modified += OnEntryModified;
     }
 
+    public void DetachEvents()
+    {
+        _entry.Modified -= OnEntryModified;
+    }
+
     public int ID => _entry.ID;
     public IAppInfoEntry Entry => _entry;
     public string Name => _entry.Name ?? "";

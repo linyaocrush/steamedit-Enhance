@@ -179,6 +179,8 @@ internal sealed class GameListViewModel : ViewModelBase
         TotalEntryCount = totalCount;
         ModifiedCount = modifiedCount;
 
+        foreach (var g in AllGames)
+            g.DetachEvents();
         AllGames.Clear();
         foreach (var ent in all)
             AllGames.Add(new GameItemViewModel(ent, GetDisplayName(ent)));
