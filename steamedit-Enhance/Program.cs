@@ -144,6 +144,10 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        // 强制 Log 静态构造函数在 Settings 之前运行，避免 Settings 构造函数中
+        // 的 Log.WriteLine 调用触发隐式静态初始化顺序依赖
+        _ = Log.FilePath;
+
         // 配置日志级别
 #if DEBUG
         if (Settings.Default.EnableDebugLogging)
