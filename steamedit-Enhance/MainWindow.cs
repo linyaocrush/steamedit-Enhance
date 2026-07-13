@@ -401,6 +401,7 @@ internal class MainWindow : LocalizableForm
 		foreach (var (control, text) in _tooltipMappings)
 			toolTips.SetToolTip(control, text());
 		btnBatchTranslate.Text = Strings.MainWindow_BatchTranslate;
+		btnBatchReplace.Text = Strings.MainWindow_BatchReplace;
 
 		UpdateStatusBar();
 		UpdateSteamStatus();
@@ -1265,6 +1266,7 @@ internal class MainWindow : LocalizableForm
 		this.appSelection.View = System.Windows.Forms.View.Details;
 		this.appSelection.VirtualMode = true;
 		this.appSelection.FullRowSelect = true;
+		this.appSelection.HideSelection = false;
 		this.appSelection.OwnerDraw = true;
 		this.appSelection.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
 		this.appSelection.Location = new System.Drawing.Point(2, 29);

@@ -147,6 +147,7 @@ internal sealed class GameListDrawer : IDisposable
 
 	private void OnListViewDrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
 	{
+		e.DrawDefault = false;
 		var entries = _ctx.Entries;
 		if (e.ItemIndex < 0 || e.ItemIndex >= entries.Count) return;
 

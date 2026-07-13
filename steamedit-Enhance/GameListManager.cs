@@ -121,7 +121,12 @@ internal class GameListManager : IDisposable
 
 		// 列表事件
 		appSelection.SelectedIndexChanged += OnAppSelection_SelectedIndexChanged;
-		appSelection.SizeChanged += (_, _) => _appSelection.Invalidate();
+		appSelection.SizeChanged += (_, _) =>
+		{
+			if (appSelection.Columns.Count > 0)
+				appSelection.Columns[0].Width = appSelection.ClientSize.Width - 4;
+			_appSelection.Invalidate();
+		};
 		appSelection.RetrieveVirtualItem += (_, e) => e.Item = new ListViewItem();
 
 		// 搜索文本
