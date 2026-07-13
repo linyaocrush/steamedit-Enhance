@@ -20,7 +20,8 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
     private bool _isPaused;
 
     private CancellationTokenSource? _cts;
-    private volatile bool _isPausedFlag;
+    private readonly ManualResetEventSlim _pauseEvent = new(true);
+
 
     public int Progress { get => _progress; private set => SetProperty(ref _progress, value); }
     public int Total { get => _total; private set => SetProperty(ref _total, value); }
@@ -39,7 +40,7 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
     public async Task RunAsync(List<IAppInfoEntry> entries, string targetLanguage)
     {
         _cts = new CancellationTokenSource();
-        var uiContext = SynchronizationContext.Current ?? new SynchronizationContext();
+        var progress = new Progress<int>(val => Progress = val);
         IsRunning = true;
         Total = entries.Count;
 
@@ -58,12 +59,11 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
             int index = 0;
             await Parallel.ForEachAsync(entries, parallelOptions, async (entry, ct) =>
             {
-                while (_isPausedFlag && !ct.IsCancellationRequested)
-                    await Task.Delay(100, ct);
+                _pauseEvent.Wait(ct);
                 ct.ThrowIfCancellationRequested();
                 int current = Interlocked.Increment(ref index);
                 if (current % 5 == 0)
-                    uiContext.Post(_ => Progress = current, null);
+                    ((IProgress<int>)progress).Report(current);
                 await TranslateOneAsync(entry, targetLanguage, customSystemPrompt, customUserMessage, ct);
                 // 每 50 条刷新一次，减少批量翻译中数据丢失风险
                 if (current % 50 == 0)
@@ -101,12 +101,14 @@ internal sealed class BatchTranslateViewModel : ViewModelBase
 
     public void Dispose()
     {
-        try { _cts?.Dispose(); } catch (ObjectDisposedException) { }
+        _pauseEvent.Dispose();
+        Interlocked.Exchange(ref _cts, null)?.Dispose();
     }
 
     private void OnPausedChanged()
     {
-        _isPausedFlag = _isPaused;
+        if (_isPaused) _pauseEvent.Reset();
+        else _pauseEvent.Set();
     }
 
     private async Task TranslateOneAsync(
