@@ -38,7 +38,7 @@ internal sealed class DisplaySettingsData
     public bool EnableDebugLogging { get; set; }
     public string SortField { get; set; } = "Name";
     public bool SortDescending { get; set; }
-    public string SearchEngine { get; set; } = "Google";
+	public string SearchEngine { get; set; } = "Google";
 }
 
 internal sealed class WindowSettingsData

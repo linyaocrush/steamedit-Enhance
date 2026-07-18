@@ -21,9 +21,11 @@ internal static class EnumMappings
 
 	private static readonly Dictionary<string, string> SearchEngineUrls = new()
 	{
+		["Google"] = "https://www.google.com/search?q=",
 		["Bing"] = "https://www.bing.com/search?q=",
 		["Baidu"] = "https://www.baidu.com/s?wd=",
 		["DuckDuckGo"] = "https://duckduckgo.com/?q=",
+		["StartPage"] = "https://www.startpage.com/do/dsearch?query=",
 	};
 
 	private static readonly Dictionary<int, string> LanguageCodeByIndex = new()
