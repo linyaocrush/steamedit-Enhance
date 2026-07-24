@@ -93,6 +93,9 @@ internal partial class MainWindow : LocalizableForm
 				case nameof(MainViewModel.AppIdText):
 					lblAppId.Text = _mainViewModel.AppIdText;
 					break;
+				case nameof(MainViewModel.IsBusy):
+					btnSaveApplyRestart.Enabled = !_mainViewModel.IsBusy;
+					break;
 			}
 		};
 
