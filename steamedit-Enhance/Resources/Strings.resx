@@ -644,6 +644,12 @@ Page Down           Next game</value>
   <data name="SteamStatus_NotRunning" xml:space="preserve">
     <value>Steam: Not Running</value>
   </data>
+  <data name="SteamStatus_Restarting" xml:space="preserve">
+    <value>Steam: Restarting...</value>
+  </data>
+  <data name="SteamStatus_RestartComplete" xml:space="preserve">
+    <value>Steam: Restart Complete</value>
+  </data>
   <data name="SteamLaunch_ConfirmTitle" xml:space="preserve">
     <value>Launch Steam</value>
   </data>

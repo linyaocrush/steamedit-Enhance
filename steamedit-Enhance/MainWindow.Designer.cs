@@ -428,7 +428,7 @@ partial class MainWindow
 		this.lblSteamVersion.Location = new System.Drawing.Point(0, 18);
 		this.lblSteamVersion.Name = "lblSteamVersion";
 		this.lblSteamVersion.Text = "";
-		this.steamStatusTimer.Interval = 10000;
+		this.steamStatusTimer.Interval = 2000;
 		this.steamStatusTimer.Tick += (_, _) => UpdateSteamStatus();
 		this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
 		this.flowLayoutPanel3.AutoSize = true;

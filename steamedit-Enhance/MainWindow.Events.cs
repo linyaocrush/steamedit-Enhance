@@ -347,10 +347,24 @@ partial class MainWindow
 		_mainViewModel.IsBusy = true;
 		try
 		{
+			_steamStatusOverride = Strings.SteamStatus_Restarting;
+			UpdateSteamStatus();
+
 			SteamProcessManager.SaveApplyRestart(_steamData, _steamData.SteamDir, Strings.SteamData_WaitingForClose,
 				(msg, waitWhile) => { using var dlg = new WaitingDialog(msg); dlg.ShowAndWait(() => waitWhile()); });
+
+			_steamStatusOverride = Strings.SteamStatus_RestartComplete;
+			UpdateSteamStatus();
+			_statusOverrideTimer.Interval = 2000;
+			_statusOverrideTimer.Start();
 		}
-		catch (Exception ex) { Log.WriteLine("Save/Apply/Restart failed: {0}", ex); MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message)); }
+		catch (Exception ex)
+		{
+			Log.WriteLine("Save/Apply/Restart failed: {0}", ex);
+			MessageBox.Show(string.Format(Strings.Msg_SaveFailed, ex.Message));
+			_steamStatusOverride = null;
+			UpdateSteamStatus();
+		}
 		finally { _mainViewModel.IsBusy = false; }
 	}
 

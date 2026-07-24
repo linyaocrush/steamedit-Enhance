@@ -24,6 +24,9 @@ internal partial class MainWindow : LocalizableForm
 	private readonly ShortcutHandler _shortcutHandler;
 	private readonly List<(Control Control, Func<string> Text)> _tooltipMappings = new();
 
+	private string? _steamStatusOverride;
+	private readonly System.Windows.Forms.Timer _statusOverrideTimer = new();
+
 	public MainWindow(ISteamDataService steamData)
 	{
 		_steamData = steamData;
@@ -187,6 +190,12 @@ internal partial class MainWindow : LocalizableForm
 
 	private void StartSteamMonitor()
 	{
+		_statusOverrideTimer.Tick += (_, _) =>
+		{
+			_statusOverrideTimer.Stop();
+			_steamStatusOverride = null;
+			UpdateSteamStatus();
+		};
 		UpdateSteamStatus();
 		steamStatusTimer.Start();
 	}
@@ -238,6 +247,13 @@ internal partial class MainWindow : LocalizableForm
 
 	private void UpdateSteamStatus()
 	{
+		if (_steamStatusOverride != null)
+		{
+			lblSteamStatus.Text = _steamStatusOverride;
+			lblSteamStatus.ForeColor = System.Drawing.Color.FromArgb(56, 163, 82);
+			return;
+		}
+
 		bool running = SteamProcessManager.IsSteamRunning(_steamData.SteamDir);
 		lblSteamStatus.Text = running ? Strings.SteamStatus_Running : Strings.SteamStatus_NotRunning;
 		lblSteamStatus.ForeColor = running ? System.Drawing.Color.FromArgb(56, 163, 82) : System.Drawing.Color.Gray;
@@ -257,8 +273,15 @@ internal partial class MainWindow : LocalizableForm
 		}
 		else
 		{
-			bool running = SteamProcessManager.IsSteamRunning(_steamData.SteamDir);
-			lblSteamStatus.ForeColor = running ? System.Drawing.Color.FromArgb(56, 163, 82) : System.Drawing.Color.Gray;
+			if (_steamStatusOverride != null)
+			{
+				lblSteamStatus.ForeColor = System.Drawing.Color.FromArgb(56, 163, 82);
+			}
+			else
+			{
+				bool running = SteamProcessManager.IsSteamRunning(_steamData.SteamDir);
+				lblSteamStatus.ForeColor = running ? System.Drawing.Color.FromArgb(56, 163, 82) : System.Drawing.Color.Gray;
+			}
 			lblSteamStatus.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular);
 			lblSteamStatus.Cursor = System.Windows.Forms.Cursors.Default;
 		}

@@ -624,6 +624,12 @@ Page Down           下一個遊戲</value>
   <data name="SteamStatus_NotRunning" xml:space="preserve">
     <value>Steam：未運行</value>
   </data>
+  <data name="SteamStatus_Restarting" xml:space="preserve">
+    <value>Steam：重啟中...</value>
+  </data>
+  <data name="SteamStatus_RestartComplete" xml:space="preserve">
+    <value>Steam：重啟完成</value>
+  </data>
   <data name="SteamLaunch_ConfirmTitle" xml:space="preserve">
     <value>啟動 Steam</value>
   </data>
