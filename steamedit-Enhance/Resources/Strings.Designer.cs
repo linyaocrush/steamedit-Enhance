@@ -77,6 +77,8 @@ namespace steamedit_Enhance {
         internal static string Tooltip_Settings => ResourceManager.GetString("Tooltip_Settings", resourceCulture);
         internal static string Tooltip_About => ResourceManager.GetString("Tooltip_About", resourceCulture);
         internal static string Settings_Title => ResourceManager.GetString("Settings_Title", resourceCulture);
+        internal static string Settings_BtnOK => ResourceManager.GetString("Settings_BtnOK", resourceCulture);
+        internal static string Settings_BtnCancel => ResourceManager.GetString("Settings_BtnCancel", resourceCulture);
         internal static string Settings_EnableCompleted => ResourceManager.GetString("Settings_EnableCompleted", resourceCulture);
         internal static string Settings_EnableHidden => ResourceManager.GetString("Settings_EnableHidden", resourceCulture);
         internal static string Settings_Language => ResourceManager.GetString("Settings_Language", resourceCulture);

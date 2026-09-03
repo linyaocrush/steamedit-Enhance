@@ -92,6 +92,8 @@ internal class SettingsDlg : LocalizableForm
     private TabControl tabSettings = null!;
     private TabPage tabGeneral = null!;
     private TabPage tabAi = null!;
+    private Button btnOK = null!;
+    private Button btnCancel = null!;
 
     private bool _loading;
     private bool _snapshotAutoStart;
@@ -335,6 +337,12 @@ internal class SettingsDlg : LocalizableForm
         I18n.SetLanguage(cultureCode);
     }
 
+    private void tabSettings_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        btnOK.Invalidate();
+        btnCancel.Invalidate();
+    }
+
     private void checkAutoStart_CheckedChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
@@ -373,6 +381,8 @@ internal class SettingsDlg : LocalizableForm
     protected override void ApplyLanguage()
     {
         Text = Strings.Settings_Title;
+        btnOK.Text = Strings.Settings_BtnOK;
+        btnCancel.Text = Strings.Settings_BtnCancel;
         tabGeneral.Text = Strings.Settings_TabGeneral;
         tabAi.Text = Strings.Settings_TabAi;
         label1.Text = Strings.Settings_EnableCompleted;
@@ -442,7 +452,7 @@ internal class SettingsDlg : LocalizableForm
         this.comboLanguage = new System.Windows.Forms.ComboBox();
         this.lblLanguage = new System.Windows.Forms.Label();
         this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-        System.Windows.Forms.Button button = new System.Windows.Forms.Button();
+        this.btnOK = new NoDefaultPushButton();
         this.label1 = new System.Windows.Forms.Label();
         this.label2 = new System.Windows.Forms.Label();
         this.label4 = new System.Windows.Forms.Label();
@@ -482,7 +492,7 @@ internal class SettingsDlg : LocalizableForm
         System.Windows.Forms.Panel panelModel = new System.Windows.Forms.Panel();
         this.lblLogLevel = new System.Windows.Forms.Label();
         this.comboLogLevel = new System.Windows.Forms.ComboBox();
-        System.Windows.Forms.Button button3 = new System.Windows.Forms.Button();
+        this.btnCancel = new System.Windows.Forms.Button();
         this.tabSettings = new System.Windows.Forms.TabControl();
         this.tabGeneral = new System.Windows.Forms.TabPage();
         this.tabAi = new System.Windows.Forms.TabPage();
@@ -501,14 +511,14 @@ internal class SettingsDlg : LocalizableForm
         this.tabAi.SuspendLayout();
         base.SuspendLayout();
         // btnOK
-        button.DialogResult = System.Windows.Forms.DialogResult.OK;
-        button.Location = new System.Drawing.Point(12, 495);
-        button.Name = "btnOK";
-        button.Size = new System.Drawing.Size(88, 30);
-        button.TabIndex = 3;
-        button.Text = "OK";
-        button.UseVisualStyleBackColor = true;
-        button.Click += new System.EventHandler(btnOK_Click);
+        this.btnOK.DialogResult = System.Windows.Forms.DialogResult.OK;
+        this.btnOK.Location = new System.Drawing.Point(12, 495);
+        this.btnOK.Name = "btnOK";
+        this.btnOK.Size = new System.Drawing.Size(88, 30);
+        this.btnOK.TabIndex = 3;
+        this.btnOK.Text = "OK";
+        this.btnOK.UseVisualStyleBackColor = true;
+        this.btnOK.Click += new System.EventHandler(btnOK_Click);
         // label1 (Completed)
         this.label1.AutoSize = true;
         this.label1.Margin = new System.Windows.Forms.Padding(6);
@@ -960,24 +970,25 @@ internal class SettingsDlg : LocalizableForm
         this.tabSettings.SelectedIndex = 0;
         this.tabSettings.Size = new System.Drawing.Size(397, 480);
         this.tabSettings.TabIndex = 7;
+        this.tabSettings.SelectedIndexChanged += new System.EventHandler(tabSettings_SelectedIndexChanged);
         // btnCancel
-        button3.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-        button3.Location = new System.Drawing.Point(106, 495);
-        button3.Name = "btnCancel";
-        button3.Size = new System.Drawing.Size(88, 30);
-        button3.TabIndex = 8;
-        button3.Text = "Cancel";
-        button3.UseVisualStyleBackColor = true;
-        button3.Click += new System.EventHandler(btnCancel_Click);
+        this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+        this.btnCancel.Location = new System.Drawing.Point(106, 495);
+        this.btnCancel.Name = "btnCancel";
+        this.btnCancel.Size = new System.Drawing.Size(88, 30);
+        this.btnCancel.TabIndex = 8;
+        this.btnCancel.Text = "Cancel";
+        this.btnCancel.UseVisualStyleBackColor = true;
+        this.btnCancel.Click += new System.EventHandler(btnCancel_Click);
         // Form
-        base.AcceptButton = button;
+        base.AcceptButton = this.btnOK;
         base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-        base.CancelButton = button3;
+        base.CancelButton = this.btnCancel;
         base.ClientSize = new System.Drawing.Size(413, 530);
         base.ControlBox = false;
-        base.Controls.Add(button3);
+        base.Controls.Add(this.btnCancel);
         base.Controls.Add(this.tabSettings);
-        base.Controls.Add(button);
+        base.Controls.Add(this.btnOK);
         base.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
         base.Margin = new System.Windows.Forms.Padding(6);
         base.MaximizeBox = false;
@@ -1007,5 +1018,24 @@ internal class SettingsDlg : LocalizableForm
         panelRules.PerformLayout();
         this.tabSettings.ResumeLayout(false);
         base.ResumeLayout(false);
+    }
+
+    // Windows keeps rendering the native "default push button" (BS_DEFPUSHBUTTON) visual
+    // around the themed flat OK button, and on Win11 that ring can get stuck looking
+    // pressed/sunken. We strip the native default style on OK (a visual cue only) and rely
+    // on Form.AcceptButton, which still triggers OK on Enter.
+    private sealed class NoDefaultPushButton : Button
+    {
+        private const int BS_DEFPUSHBUTTON = 0x0001;
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.Style &= ~BS_DEFPUSHBUTTON;
+                return cp;
+            }
+        }
     }
 }
