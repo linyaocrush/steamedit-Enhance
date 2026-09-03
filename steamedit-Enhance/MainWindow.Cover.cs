@@ -19,6 +19,7 @@ partial class MainWindow
 
 	private SteamCoverResolver _coverResolver = null!;
 	private readonly Dictionary<int, Image> _coverImageCache = new();
+	private readonly Dictionary<int, string> _coverSources = new();
 	private readonly List<int> _coverOrder = new();
 	private const int CoverCacheLimit = 16;
 	private const int CoverLeft = 14;
@@ -109,9 +110,21 @@ partial class MainWindow
 
 		if (_coverImageCache.TryGetValue(appId.Value, out Image? cached))
 		{
-			TouchCache(appId.Value);
-			SetCover(cached, _coverResolver.GetPortraitPath(appId.Value) ?? CoverCacheFileIfExists(appId.Value));
-			return;
+			string? desired = _coverResolver.GetPortraitPath(appId.Value) ?? CoverCacheFileIfExists(appId.Value);
+			string? source = _coverSources.TryGetValue(appId.Value, out string? s) ? s : null;
+
+			// 缓存的是较早的横版，现在竖版已可用(在线下载完成/后补) → 丢弃缓存重载竖版
+			if (desired != null && source != null &&
+				!string.Equals(desired, source, StringComparison.OrdinalIgnoreCase))
+			{
+				DropCoverFromCache(appId.Value);
+			}
+			else
+			{
+				TouchCache(appId.Value);
+				SetCover(cached, desired ?? source);
+				return;
+			}
 		}
 
 		// 1) 本地竖版封面
@@ -176,9 +189,13 @@ partial class MainWindow
 			{
 				_coverConsecutiveFailures = 0;
 				_coverOnlineDisabled = false;
-				// 下载完成且用户仍停留在此条目 → 重新求值（此时竖版缓存已存在）
+				// 下载完成且用户仍停留在此条目 → 丢弃内存中已有的(横版)缓存，
+				// 重新求值，让刚下载好的竖版能立刻替换显示（否则会被缓存短路，需重启才生效）
 				if (_coverCurrentAppId == appId)
+				{
+					DropCoverFromCache(appId);
 					UpdateCoverForSelection(appId, AppInfoEntryType.Unknown);
+				}
 			}
 			else if (!ok && !token.IsCancellationRequested && !IsDisposed)
 			{
@@ -230,7 +247,7 @@ partial class MainWindow
 				return;
 			}
 
-			CacheCover(appId, image);
+			CacheCover(appId, image, path);
 			image = null; // 图片已交由缓存管理
 			SetCover(_coverImageCache[appId], path);
 		}
@@ -252,11 +269,12 @@ partial class MainWindow
 		}
 	}
 
-	private void CacheCover(int appId, Image image)
+	private void CacheCover(int appId, Image image, string sourcePath)
 	{
 		if (_coverImageCache.ContainsKey(appId))
 			return;
 		_coverImageCache[appId] = image;
+		_coverSources[appId] = sourcePath;
 		_coverOrder.Add(appId);
 
 		while (_coverOrder.Count > CoverCacheLimit)
@@ -265,6 +283,7 @@ partial class MainWindow
 			_coverOrder.RemoveAt(0);
 			if (_coverImageCache.Remove(oldest, out Image? evicted))
 			{
+				_coverSources.Remove(oldest);
 				// 正在显示的图片不释放，避免画面上出现已销毁对象
 				if (!ReferenceEquals(picPreview.Image, evicted))
 					evicted.Dispose();
@@ -278,15 +297,30 @@ partial class MainWindow
 			_coverOrder.Add(appId);
 	}
 
+	/// <summary>
+	/// 从内存缓存移除某 App 的图片（使其可被重新求值）。
+	/// 不在此处 Dispose：若该图正被显示，交给 SetCover 在替换时释放。
+	/// </summary>
+	private void DropCoverFromCache(int appId)
+	{
+		_coverOrder.Remove(appId);
+		_coverSources.Remove(appId);
+		_coverImageCache.Remove(appId);
+	}
+
 	private void SetCover(Image? image, string? path)
 	{
 		if (IsDisposed)
 			return;
+		Image? old = picPreview.Image;
 		picPreview.Image = image;
 		_coverPath = path;
 		toolTips.SetToolTip(picPreview, path ?? "");
 		LayoutCoverPreview();
 		picPreview.Invalidate();
+		// 被替换且已不在缓存中的旧图立即释放（DropCoverFromCache 移除的显示中图片等这里回收）
+		if (old != null && old != image && !_coverImageCache.ContainsValue(old))
+			old.Dispose();
 	}
 
 	private void picPreview_Paint(object? sender, PaintEventArgs e)
