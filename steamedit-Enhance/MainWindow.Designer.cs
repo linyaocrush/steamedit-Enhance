@@ -36,6 +36,7 @@ partial class MainWindow
 	private ListView appSelection = null!;
 	private ClearableTextBox appFilterText = null!;
 	private Panel panel1 = null!;
+	private PictureBox picPreview = null!;
 	private FlowLayoutPanel flowLayoutPanel3 = null!;
 	private ComboBox listEntryType = null!;
 	private ToolStripStatusLabel lblNumAppsShown = null!;
@@ -75,6 +76,7 @@ partial class MainWindow
 		this.appSelection = new System.Windows.Forms.ListView();
 		this.appFilterText = new steamedit_Enhance.ClearableTextBox();
 		this.panel1 = new System.Windows.Forms.Panel();
+		this.picPreview = new System.Windows.Forms.PictureBox();
 		this.listEntryType = new System.Windows.Forms.ComboBox();
 		this.textGameName = new steamedit_Enhance.ClearableTextBox();
 		this.textSortAs = new steamedit_Enhance.ClearableTextBox();
@@ -380,6 +382,7 @@ partial class MainWindow
 		this.panel1.Controls.Add(this.listControllerSupport);
 		this.panel1.Controls.Add(this.lblVRCategory);
 		this.panel1.Controls.Add(this.lblSortAs);
+		this.panel1.Controls.Add(this.picPreview);
 		this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
 		this.panel1.Location = new System.Drawing.Point(0, 0);
 		this.panel1.Margin = new System.Windows.Forms.Padding(0);
@@ -387,6 +390,13 @@ partial class MainWindow
 		this.panel1.Size = new System.Drawing.Size(455, 328);
 		this.panel1.TabIndex = 26;
 		this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(panel1_Paint);
+		this.picPreview.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left;
+		this.picPreview.Location = new System.Drawing.Point(14, 195);
+		this.picPreview.Name = "picPreview";
+		this.picPreview.Size = new System.Drawing.Size(427, 128);
+		this.picPreview.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+		this.picPreview.TabIndex = 27;
+		this.picPreview.TabStop = false;
 		this.listEntryType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 		this.listEntryType.FormattingEnabled = true;
 		this.listEntryType.Location = new System.Drawing.Point(232, 57);

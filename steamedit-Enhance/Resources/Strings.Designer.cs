@@ -61,6 +61,7 @@ namespace steamedit_Enhance {
         internal static string MainWindow_LabelVRCategory => ResourceManager.GetString("MainWindow_LabelVRCategory", resourceCulture);
         internal static string MainWindow_CheckHidden => ResourceManager.GetString("MainWindow_CheckHidden", resourceCulture);
         internal static string MainWindow_CheckCompleted => ResourceManager.GetString("MainWindow_CheckCompleted", resourceCulture);
+        internal static string MainWindow_NoCover => ResourceManager.GetString("MainWindow_NoCover", resourceCulture);
         internal static string MainWindow_StatusShown => ResourceManager.GetString("MainWindow_StatusShown", resourceCulture);
         internal static string MainWindow_StatusModified => ResourceManager.GetString("MainWindow_StatusModified", resourceCulture);
         internal static string MainWindow_Filter_All => ResourceManager.GetString("MainWindow_Filter_All", resourceCulture);

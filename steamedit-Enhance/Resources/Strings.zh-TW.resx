@@ -92,6 +92,9 @@
   <data name="MainWindow_CheckCompleted" xml:space="preserve">
     <value>已完成</value>
   </data>
+  <data name="MainWindow_NoCover" xml:space="preserve">
+    <value>無封面</value>
+  </data>
   <data name="MainWindow_StatusShown" xml:space="preserve">
     <value>顯示：({0}/{1})</value>
   </data>

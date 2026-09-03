@@ -57,6 +57,8 @@ internal partial class MainWindow : LocalizableForm
 		base.Icon = Resources.logo;
 
 		_ctx = new GameDataContext();
+		_coverResolver = new SteamCoverResolver(_steamData.SteamDir);
+		panel1.Resize += (_, _) => LayoutCoverPreview();
 		_gameListViewModel = new GameListViewModel(_steamData.DataStore);
 		_propertyEditorViewModel = new PropertyEditorViewModel();
 		_mainViewModel = new MainViewModel(_steamData, _gameListViewModel, _propertyEditorViewModel);
@@ -129,6 +131,7 @@ internal partial class MainWindow : LocalizableForm
 			btnTranslate.Enabled = entry != null && !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 			btnBatchTranslate.Enabled = !string.IsNullOrWhiteSpace(Settings.Default.AiApiKey);
 			_mainViewModel.UpdateAppId(entry?.ID ?? 0);
+			UpdateCoverForSelection(entry?.ID, entry?.Type ?? AppInfoEntryType.Unknown);
 		};
 
 		appSelection.DoubleClick += (_, _) => textGameName.Focus();
@@ -234,6 +237,7 @@ internal partial class MainWindow : LocalizableForm
 			base.Size = size;
 		if (Settings.Default.MainWindowSplitter != int.MaxValue)
 			splitContainer1.SplitterDistance = Settings.Default.MainWindowSplitter;
+		LayoutCoverPreview();
 		_mainViewModel.RefreshTitle();
 		_listManager.RefreshGameList();
 		appSelection.Select();
@@ -457,12 +461,22 @@ internal partial class MainWindow : LocalizableForm
 
 		ThemeManager.StyleCheckBox(checkHidden);
 		ThemeManager.StyleCheckBox(checkCompleted);
+
+		picPreview.BackColor = ThemeManager.PanelBackColor;
+		picPreview.BorderStyle = BorderStyle.None;
+		picPreview.Paint += picPreview_Paint;
+		picPreview.DoubleClick += picPreview_DoubleClick;
 	}
 
 	protected override void Dispose(bool disposing)
 	{
 		if (disposing)
 		{
+			_coverLoadCts?.Cancel();
+			_coverLoadCts?.Dispose();
+			foreach (Image img in _coverImageCache.Values)
+				img.Dispose();
+			_coverImageCache.Clear();
 			_listManager?.Dispose();
 			components?.Dispose();
 		}

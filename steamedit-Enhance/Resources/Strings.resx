@@ -92,6 +92,9 @@
   <data name="MainWindow_CheckCompleted" xml:space="preserve">
     <value>Completed</value>
   </data>
+  <data name="MainWindow_NoCover" xml:space="preserve">
+    <value>No cover</value>
+  </data>
   <data name="MainWindow_StatusShown" xml:space="preserve">
     <value>Shown: ({0}/{1})</value>
   </data>

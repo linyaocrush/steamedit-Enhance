@@ -420,6 +420,8 @@ partial class MainWindow
 		Size size = new Size((int)(150f * num), (int)(150f * num));
 		Point location = new Point(panel1.ClientSize - size);
 		Rectangle destRect = new Rectangle(location, size);
+		if (picPreview.Image != null || destRect.IntersectsWith(picPreview.Bounds))
+			return;
 		e.Graphics.DrawImage(Resources.logo1, destRect, 0, 0, logo.Width, logo.Height, GraphicsUnit.Pixel, _listManager.BgLogoAttributes);
 	}
 

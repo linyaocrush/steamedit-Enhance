@@ -1,0 +1,328 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Common;
+using steamedit_Enhance.Data;
+using steamedit_Enhance.Properties;
+
+namespace steamedit_Enhance;
+
+partial class MainWindow
+{
+	private static readonly string CoverCacheDir = Path.Combine(AppHelper.GetAppDirectory(), "cache");
+
+	private SteamCoverResolver _coverResolver = null!;
+	private readonly Dictionary<int, Image> _coverImageCache = new();
+	private readonly List<int> _coverOrder = new();
+	private const int CoverCacheLimit = 16;
+	private const int CoverLeft = 14;
+	private const int CoverTop = 195;
+	private const int CoverBottomMargin = 10;
+	private const int CoverMaxHeight = 128;
+	private CancellationTokenSource? _coverLoadCts;
+	private string? _coverPath;
+	private int? _coverCurrentAppId;
+
+	private readonly HashSet<int> _coverDownloading = new();
+	private readonly HashSet<int> _coverDownloadFailed = new();
+	private int _coverConsecutiveFailures;
+	private const int CoverDownloadFailLimit = 5;
+	private bool _coverOnlineDisabled;
+	private CoverDownloader? _coverDownloader;
+
+	private static string CoverCacheFile(int appId) => Path.Combine(CoverCacheDir, appId + ".jpg");
+
+	private static bool IsCoverDownloadCandidate(AppInfoEntryType type)
+		=> type is AppInfoEntryType.Game or AppInfoEntryType.Demo
+			or AppInfoEntryType.DLC or AppInfoEntryType.Application;
+
+	/// <summary>
+	/// 根据宽高比动态调整预览框：横图 → 宽矮，竖图 → 高窄，
+	/// 在右侧面板空白区(按钮行下方)内尽量放大并水平居中。
+	/// </summary>
+	private void LayoutCoverPreview()
+	{
+		if (IsDisposed || panel1.ClientSize.Width <= 0 || panel1.ClientSize.Height <= 0)
+			return;
+
+		int availW = Math.Max(40, panel1.ClientSize.Width - CoverLeft * 2);
+		int availH = Math.Max(40, panel1.ClientSize.Height - CoverTop - CoverBottomMargin);
+
+		Size size;
+		Image? img = picPreview.Image;
+		if (img == null)
+		{
+			size = new Size(availW, Math.Min(availH, CoverMaxHeight));
+		}
+		else
+		{
+			size = FitCoverSize(img.Width, img.Height, availW, availH);
+		}
+
+		int x = CoverLeft + Math.Max(0, (availW - size.Width) / 2);
+		picPreview.SetBounds(x, CoverTop, size.Width, size.Height);
+	}
+
+	/// <summary>
+	/// 在 (availW, availH) 内按原宽高比放大封面，返回不超过可用空间的最大尺寸。
+	/// 纯计算，便于单元测试。
+	/// </summary>
+	internal static Size FitCoverSize(int imgW, int imgH, int availW, int availH)
+	{
+		float aspect = (float)imgW / imgH;
+		int w = availW;
+		int h = (int)Math.Round(w / aspect);
+		if (h > availH)
+		{
+			h = availH;
+			w = Math.Max(24, (int)Math.Round(h * aspect));
+		}
+		return new Size(Math.Max(24, w), Math.Max(24, h));
+	}
+
+	/// <summary>
+	/// 选中条目变化时刷新封面预览。id 为 null 表示没有选中条目。
+	/// 策略：本地竖版 → 在线缓存竖版 → 本地横版(临时) → 在线下载竖版兜底。
+	/// </summary>
+	private void UpdateCoverForSelection(int? appId, AppInfoEntryType entryType = AppInfoEntryType.Unknown)
+	{
+		_coverCurrentAppId = appId;
+
+		if (_coverLoadCts != null)
+		{
+			_coverLoadCts.Cancel();
+			_coverLoadCts.Dispose();
+			_coverLoadCts = null;
+		}
+
+		if (appId == null)
+		{
+			SetCover(null, null);
+			return;
+		}
+
+		if (_coverImageCache.TryGetValue(appId.Value, out Image? cached))
+		{
+			TouchCache(appId.Value);
+			SetCover(cached, _coverResolver.GetPortraitPath(appId.Value) ?? CoverCacheFileIfExists(appId.Value));
+			return;
+		}
+
+		// 1) 本地竖版封面
+		string? portrait = _coverResolver.GetPortraitPath(appId.Value);
+		if (portrait != null)
+		{
+			SetCover(null, portrait);
+			_ = LoadCoverAsync(appId.Value, portrait, Token());
+			return;
+		}
+
+		// 2) 在线缓存（之前下载好的竖版）
+		string? cachedOnline = CoverCacheFileIfExists(appId.Value);
+		if (cachedOnline != null)
+		{
+			SetCover(null, cachedOnline);
+			_ = LoadCoverAsync(appId.Value, cachedOnline, Token());
+			return;
+		}
+
+		bool candidate = IsCoverDownloadCandidate(entryType);
+
+		// 3) 本地横版临时显示，同时后台下载竖版
+		string? wide = _coverResolver.GetWidePath(appId.Value);
+		if (wide != null)
+		{
+			SetCover(null, wide);
+			_ = LoadCoverAsync(appId.Value, wide, Token());
+			if (candidate)
+				StartCoverDownload(appId.Value);
+			return;
+		}
+
+		// 4) 本地无图 → 占位 + 在线下载
+		SetCover(null, null);
+		if (candidate)
+			StartCoverDownload(appId.Value);
+	}
+
+	private CancellationToken Token() => (_coverLoadCts ??= new CancellationTokenSource()).Token;
+
+	private void StartCoverDownload(int appId)
+	{
+		if (_coverOnlineDisabled || _coverDownloading.Contains(appId) || _coverDownloadFailed.Contains(appId))
+			return;
+		if (File.Exists(CoverCacheFile(appId)))
+			return;
+
+		_coverDownloading.Add(appId);
+		_ = DownloadCoverAsync(appId);
+	}
+
+	private async Task DownloadCoverAsync(int appId)
+	{
+		CancellationToken token = Token();
+		try
+		{
+			_coverDownloader ??= new CoverDownloader();
+			bool ok = await Task.Run(() => _coverDownloader.DownloadPortraitAsync(appId, CoverCacheFile(appId), token), token).ConfigureAwait(true);
+
+			if (ok && !token.IsCancellationRequested && !IsDisposed)
+			{
+				_coverConsecutiveFailures = 0;
+				_coverOnlineDisabled = false;
+				// 下载完成且用户仍停留在此条目 → 重新求值（此时竖版缓存已存在）
+				if (_coverCurrentAppId == appId)
+					UpdateCoverForSelection(appId, AppInfoEntryType.Unknown);
+			}
+			else if (!ok && !token.IsCancellationRequested && !IsDisposed)
+			{
+				_coverDownloadFailed.Add(appId);
+				_coverConsecutiveFailures++;
+				if (_coverConsecutiveFailures >= CoverDownloadFailLimit)
+				{
+					_coverOnlineDisabled = true;
+					Log.WriteLine("CoverDownloader: {0} consecutive failures, disabled auto download for this session", _coverConsecutiveFailures);
+				}
+			}
+		}
+		catch (OperationCanceledException)
+		{
+		}
+		finally
+		{
+			_coverDownloading.Remove(appId);
+		}
+	}
+
+	private string? CoverCacheFileIfExists(int appId)
+	{
+		string file = CoverCacheFile(appId);
+		try
+		{
+			return File.Exists(file) ? file : null;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			return null;
+		}
+	}
+
+	private async Task LoadCoverAsync(int appId, string path, CancellationToken token)
+	{
+		Image? image = null;
+		try
+		{
+			image = await Task.Run(() => Image.FromFile(path), token).ConfigureAwait(true);
+			if (token.IsCancellationRequested || IsDisposed)
+				return;
+
+			if (_coverImageCache.ContainsKey(appId))
+			{
+				// 并发加载中另一路已先完成并缓存
+				TouchCache(appId);
+				SetCover(_coverImageCache[appId], path);
+				return;
+			}
+
+			CacheCover(appId, image);
+			image = null; // 图片已交由缓存管理
+			SetCover(_coverImageCache[appId], path);
+		}
+		catch (OperationCanceledException)
+		{
+		}
+		catch (Exception ex)
+		{
+			// 文件损坏 / 非图片 / 读取失败等，仅记录，不打断界面
+			if (!token.IsCancellationRequested && !IsDisposed)
+			{
+				Log.WriteLine("Cover preview failed to load '{0}': {1}", path, ex.Message);
+				SetCover(null, path);
+			}
+		}
+		finally
+		{
+			image?.Dispose();
+		}
+	}
+
+	private void CacheCover(int appId, Image image)
+	{
+		if (_coverImageCache.ContainsKey(appId))
+			return;
+		_coverImageCache[appId] = image;
+		_coverOrder.Add(appId);
+
+		while (_coverOrder.Count > CoverCacheLimit)
+		{
+			int oldest = _coverOrder[0];
+			_coverOrder.RemoveAt(0);
+			if (_coverImageCache.Remove(oldest, out Image? evicted))
+			{
+				// 正在显示的图片不释放，避免画面上出现已销毁对象
+				if (!ReferenceEquals(picPreview.Image, evicted))
+					evicted.Dispose();
+			}
+		}
+	}
+
+	private void TouchCache(int appId)
+	{
+		if (_coverOrder.Remove(appId))
+			_coverOrder.Add(appId);
+	}
+
+	private void SetCover(Image? image, string? path)
+	{
+		if (IsDisposed)
+			return;
+		picPreview.Image = image;
+		_coverPath = path;
+		toolTips.SetToolTip(picPreview, path ?? "");
+		LayoutCoverPreview();
+		picPreview.Invalidate();
+	}
+
+	private void picPreview_Paint(object? sender, PaintEventArgs e)
+	{
+		var pb = (PictureBox)sender!;
+		Graphics g = e.Graphics;
+
+		using (var pen = new Pen(ThemeManager.BorderColor))
+			g.DrawRectangle(pen, 0, 0, pb.Width - 1, pb.Height - 1);
+
+		if (pb.Image == null)
+		{
+			using var back = new SolidBrush(ThemeManager.ListAlternateBackColor);
+			g.FillRectangle(back, 1, 1, pb.Width - 2, pb.Height - 2);
+			Rectangle textRect = new(0, 0, pb.Width, pb.Height);
+			TextRenderer.DrawText(g, Strings.MainWindow_NoCover, pb.Font, textRect,
+				ThemeManager.SecondaryText,
+				TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+		}
+	}
+
+	private void picPreview_DoubleClick(object? sender, EventArgs e)
+	{
+		if (string.IsNullOrEmpty(_coverPath) || !File.Exists(_coverPath))
+			return;
+		try
+		{
+			Process.Start(new ProcessStartInfo("explorer.exe")
+			{
+				Arguments = $"/select,\"{_coverPath}\"",
+				UseShellExecute = true
+			})?.Dispose();
+		}
+		catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+		{
+			Log.WriteLine("Failed to open cover folder: {0}", ex.Message);
+		}
+	}
+}
