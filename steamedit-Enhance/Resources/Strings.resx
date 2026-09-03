@@ -153,6 +153,33 @@
   <data name="Settings_BtnCancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Settings_DownloadCovers" xml:space="preserve">
+    <value>Download Missing Covers</value>
+  </data>
+  <data name="Tooltip_DownloadCovers" xml:space="preserve">
+    <value>Scan the currently listed games and download their missing portrait covers from Steam.</value>
+  </data>
+  <data name="CoverDlg_Title" xml:space="preserve">
+    <value>Download Covers</value>
+  </data>
+  <data name="CoverDlg_Progress" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="CoverDlg_Current" xml:space="preserve">
+    <value>Current: {0}</value>
+  </data>
+  <data name="CoverDlg_Stats" xml:space="preserve">
+    <value>Already: {0}   Downloaded: {1}   Failed: {2}</value>
+  </data>
+  <data name="CoverDlg_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CoverDlg_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="CoverDlg_Result" xml:space="preserve">
+    <value>Done. Total {0}: already have {1}, downloaded {2}, failed {3}.</value>
+  </data>
   <data name="Settings_EnableCompleted" xml:space="preserve">
     <value>Enable "Completed"</value>
   </data>

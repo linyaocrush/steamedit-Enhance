@@ -80,6 +80,15 @@ namespace steamedit_Enhance {
         internal static string Settings_Title => ResourceManager.GetString("Settings_Title", resourceCulture);
         internal static string Settings_BtnOK => ResourceManager.GetString("Settings_BtnOK", resourceCulture);
         internal static string Settings_BtnCancel => ResourceManager.GetString("Settings_BtnCancel", resourceCulture);
+        internal static string Settings_DownloadCovers => ResourceManager.GetString("Settings_DownloadCovers", resourceCulture);
+        internal static string Tooltip_DownloadCovers => ResourceManager.GetString("Tooltip_DownloadCovers", resourceCulture);
+        internal static string CoverDlg_Title => ResourceManager.GetString("CoverDlg_Title", resourceCulture);
+        internal static string CoverDlg_Progress => ResourceManager.GetString("CoverDlg_Progress", resourceCulture);
+        internal static string CoverDlg_Current => ResourceManager.GetString("CoverDlg_Current", resourceCulture);
+        internal static string CoverDlg_Stats => ResourceManager.GetString("CoverDlg_Stats", resourceCulture);
+        internal static string CoverDlg_Cancel => ResourceManager.GetString("CoverDlg_Cancel", resourceCulture);
+        internal static string CoverDlg_Close => ResourceManager.GetString("CoverDlg_Close", resourceCulture);
+        internal static string CoverDlg_Result => ResourceManager.GetString("CoverDlg_Result", resourceCulture);
         internal static string Settings_EnableCompleted => ResourceManager.GetString("Settings_EnableCompleted", resourceCulture);
         internal static string Settings_EnableHidden => ResourceManager.GetString("Settings_EnableHidden", resourceCulture);
         internal static string Settings_Language => ResourceManager.GetString("Settings_Language", resourceCulture);

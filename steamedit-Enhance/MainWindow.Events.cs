@@ -50,11 +50,15 @@ partial class MainWindow
 
 	private void OnBtnSettings_Click(object? sender, EventArgs e)
 	{
-		using var dlg = new SettingsDlg();
+		using var dlg = new SettingsDlg(_ctx.Entries, _steamData.SteamDir);
 		ThemeManager.StyleDialog(dlg);
 		dlg.ShowDialog(this);
 		_steamData.UseCompleted = Settings.Default.EnableCompleted;
 		_steamData.UseHidden = Settings.Default.EnableHidden;
+
+		// 设置对话框内可能批量下载了封面，关闭后刷新当前选中项的预览
+		var sel = _listManager.GetSelectedEntry();
+		UpdateCoverForSelection(sel?.ID, sel?.Type ?? AppInfoEntryType.Unknown);
 	}
 
 	private void OnBtnRevert_Click(object? sender, EventArgs e)

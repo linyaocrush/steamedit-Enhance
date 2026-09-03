@@ -1,10 +1,12 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using Common;
+using steamedit_Enhance.Data;
 
 using steamedit_Enhance.Properties;
 
@@ -94,14 +96,20 @@ internal class SettingsDlg : LocalizableForm
     private TabPage tabAi = null!;
     private Button btnOK = null!;
     private Button btnCancel = null!;
+    private Button btnDownloadCovers = null!;
+
+    private readonly IEnumerable<IAppInfoEntry>? _entries;
+    private readonly string? _steamDir;
 
     private bool _loading;
     private bool _snapshotAutoStart;
     private bool _snapshotAutoFix;
     private bool _snapshotForceStart;
 
-    public SettingsDlg()
+    public SettingsDlg(IEnumerable<IAppInfoEntry>? entries = null, string? steamDir = null)
     {
+        _entries = entries;
+        _steamDir = steamDir;
         InitializeComponent();
     }
 
@@ -167,6 +175,8 @@ internal class SettingsDlg : LocalizableForm
             comboLogLevel.Items.Add(level);
         comboLogLevel.SelectedItem = Settings.Default.LogLevel;
 
+        btnDownloadCovers.Enabled = _entries != null && !string.IsNullOrWhiteSpace(_steamDir);
+
         ApplyLanguage();
     }
 
@@ -213,6 +223,31 @@ internal class SettingsDlg : LocalizableForm
     private void btnCancel_Click(object? sender, EventArgs e)
     {
         base.DialogResult = DialogResult.Cancel;
+    }
+
+    private void btnDownloadCovers_Click(object? sender, EventArgs e)
+    {
+        if (_entries == null || string.IsNullOrWhiteSpace(_steamDir))
+            return;
+
+        var targets = new List<CoverTarget>();
+        foreach (var entry in _entries)
+        {
+            if (entry.ID <= 0 || !CoverEligibility.IsGameLike(entry.Type))
+                continue;
+            targets.Add(new CoverTarget(entry.ID, entry.Name ?? "", entry.Type));
+        }
+        if (targets.Count == 0)
+            return;
+
+        using var dlg = new CoverDownloadDialog(_steamDir, targets);
+        dlg.ShowDialog(this);
+        if (dlg.Result is CoverPreloadResult r)
+        {
+            MessageBox.Show(this,
+                string.Format(Strings.CoverDlg_Result, r.Total, r.Already, r.Downloaded, r.Failed),
+                Strings.CoverDlg_Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 
     private void btnSelectAppInfo_Click(object? sender, EventArgs e)
@@ -412,6 +447,8 @@ internal class SettingsDlg : LocalizableForm
         btnResetUserMessage.Text = Strings.Settings_ResetPrompt;
         btnAnalyzeRules.Text = Strings.Settings_AnalyzeRules;
         btnClearRules.Text = Strings.Settings_ClearRules;
+        btnDownloadCovers.Text = Strings.Settings_DownloadCovers;
+        toolTip.SetToolTip(btnDownloadCovers, Strings.Tooltip_DownloadCovers);
         toolTip.SetToolTip(textCustomSystemPrompt, Strings.Tooltip_CustomSystemPrompt);
         toolTip.SetToolTip(textCustomUserMessage, Strings.Tooltip_CustomUserMessage);
         toolTip.SetToolTip(textTranslationRules, Strings.Tooltip_TranslationRules);
@@ -493,6 +530,7 @@ internal class SettingsDlg : LocalizableForm
         this.lblLogLevel = new System.Windows.Forms.Label();
         this.comboLogLevel = new System.Windows.Forms.ComboBox();
         this.btnCancel = new System.Windows.Forms.Button();
+        this.btnDownloadCovers = new System.Windows.Forms.Button();
         this.tabSettings = new System.Windows.Forms.TabControl();
         this.tabGeneral = new System.Windows.Forms.TabPage();
         this.tabAi = new System.Windows.Forms.TabPage();
@@ -869,6 +907,15 @@ internal class SettingsDlg : LocalizableForm
         this.comboSearchEngine.Name = "comboSearchEngine";
         this.comboSearchEngine.Size = new System.Drawing.Size(121, 21);
         this.comboSearchEngine.TabIndex = 29;
+        // btnDownloadCovers
+        this.btnDownloadCovers.Location = new System.Drawing.Point(6, 3);
+        this.btnDownloadCovers.Name = "btnDownloadCovers";
+        this.btnDownloadCovers.Size = new System.Drawing.Size(180, 30);
+        this.btnDownloadCovers.TabIndex = 45;
+        this.btnDownloadCovers.Text = "Download Missing Covers";
+        this.toolTip.SetToolTip(this.btnDownloadCovers, "Scan the currently listed games and download their missing portrait covers from Steam.");
+        this.btnDownloadCovers.UseVisualStyleBackColor = true;
+        this.btnDownloadCovers.Click += new System.EventHandler(btnDownloadCovers_Click);
         // tableGeneral
         tableGeneral.ColumnCount = 2;
         tableGeneral.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 44f));
@@ -891,11 +938,13 @@ internal class SettingsDlg : LocalizableForm
 	tableGeneral.Controls.Add(this.comboLogLevel, 1, 7);
 	tableGeneral.Controls.Add(this.lblSearchEngine, 0, 8);
 	tableGeneral.Controls.Add(this.comboSearchEngine, 1, 8);
+	tableGeneral.Controls.Add(this.btnDownloadCovers, 0, 9);
+	tableGeneral.SetColumnSpan(this.btnDownloadCovers, 2);
         tableGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
         tableGeneral.Location = new System.Drawing.Point(0, 0);
         tableGeneral.Margin = new System.Windows.Forms.Padding(0);
         tableGeneral.Name = "tableGeneral";
-	tableGeneral.RowCount = 9;
+	tableGeneral.RowCount = 10;
 	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
 	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
 	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -905,6 +954,7 @@ internal class SettingsDlg : LocalizableForm
 	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
 	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
 	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
+	tableGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36f));
         tableGeneral.Size = new System.Drawing.Size(389, 430);
         tableGeneral.TabIndex = 0;
         // tableAi

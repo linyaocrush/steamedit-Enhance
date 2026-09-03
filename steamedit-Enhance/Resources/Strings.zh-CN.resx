@@ -153,6 +153,33 @@
   <data name="Settings_BtnCancel" xml:space="preserve">
     <value>取消</value>
   </data>
+  <data name="Settings_DownloadCovers" xml:space="preserve">
+    <value>下载缺失封面</value>
+  </data>
+  <data name="Tooltip_DownloadCovers" xml:space="preserve">
+    <value>扫描当前筛选出的游戏并从 Steam 下载缺失的竖版封面。</value>
+  </data>
+  <data name="CoverDlg_Title" xml:space="preserve">
+    <value>下载封面</value>
+  </data>
+  <data name="CoverDlg_Progress" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="CoverDlg_Current" xml:space="preserve">
+    <value>正在处理：{0}</value>
+  </data>
+  <data name="CoverDlg_Stats" xml:space="preserve">
+    <value>已有：{0}    已下载：{1}    失败：{2}</value>
+  </data>
+  <data name="CoverDlg_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="CoverDlg_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="CoverDlg_Result" xml:space="preserve">
+    <value>完成。共 {0} 个：已有 {1}，已下载 {2}，失败 {3}。</value>
+  </data>
   <data name="Settings_EnableCompleted" xml:space="preserve">
     <value>启用"已完成"</value>
   </data>
