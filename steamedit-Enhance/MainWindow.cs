@@ -474,6 +474,8 @@ internal partial class MainWindow : LocalizableForm
 		{
 			_coverLoadCts?.Cancel();
 			_coverLoadCts?.Dispose();
+			_coverDisplay?.Dispose();
+			_coverDisplay = null;
 			foreach (Image img in _coverImageCache.Values)
 				img.Dispose();
 			_coverImageCache.Clear();

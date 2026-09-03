@@ -30,6 +30,12 @@ partial class MainWindow
 	private string? _coverPath;
 	private int? _coverCurrentAppId;
 
+	// 封面渲染管线：_coverSource 为缓存里的原始图，_coverDisplay 为按上屏尺寸预渲染的副本(本类持有并负责 Dispose)。
+	// 放大用 Lanczos-3、缩小时高质量双三次，避免 PictureBox Zoom 的低质量插值。
+	private Image? _coverSource;
+	private Image? _coverDisplay;
+	private Size _coverDisplaySize;
+
 	private readonly HashSet<int> _coverDownloading = new();
 	private readonly HashSet<int> _coverDownloadFailed = new();
 	private int _coverConsecutiveFailures;
@@ -56,18 +62,90 @@ partial class MainWindow
 		int availH = Math.Max(40, panel1.ClientSize.Height - CoverTop - CoverBottomMargin);
 
 		Size size;
-		Image? img = picPreview.Image;
-		if (img == null)
+		if (_coverSource == null)
 		{
 			size = new Size(availW, Math.Min(availH, CoverMaxHeight));
+			EnsureDisplayReady(Size.Empty);
 		}
 		else
 		{
-			size = FitCoverSize(img.Width, img.Height, availW, availH);
+			size = FitCoverSize(_coverSource.Width, _coverSource.Height, availW, availH);
+			EnsureDisplayReady(size);
 		}
 
 		int x = CoverLeft + Math.Max(0, (availW - size.Width) / 2);
 		picPreview.SetBounds(x, CoverTop, size.Width, size.Height);
+	}
+
+	/// <summary>
+	/// 把当前原始图预渲染为指定显示尺寸并挂到 picPreview（无图 target 传 Size.Empty 清空）。
+	/// 放大 → Lanczos-3；缩小/等大 → 高质量双三次/拷贝。仅在目标尺寸变化时重建，避免缩放拖拽时反复重渲。
+	/// </summary>
+	private void EnsureDisplayReady(Size target)
+	{
+		if (_coverSource == null)
+		{
+			if (_coverDisplay != null)
+			{
+				_coverDisplay.Dispose();
+				_coverDisplay = null;
+			}
+			_coverDisplaySize = Size.Empty;
+			if (picPreview.Image != null)
+				picPreview.Image = null;
+			return;
+		}
+
+		// 有图但尺寸未变 → 无需重建；仅确保上屏引用正确
+		if (_coverDisplay != null && _coverDisplaySize == target)
+		{
+			if (!ReferenceEquals(picPreview.Image, _coverDisplay))
+				picPreview.Image = _coverDisplay;
+			return;
+		}
+
+		// 与上次渲染相差很小(拖拽缩放过程)时沿用旧渲染，避免逐帧重建
+		if (_coverDisplay != null && _coverDisplaySize.Width > 0 &&
+			Math.Abs(target.Width - _coverDisplaySize.Width) < 4 &&
+			Math.Abs(target.Height - _coverDisplaySize.Height) < 4)
+		{
+			if (!ReferenceEquals(picPreview.Image, _coverDisplay))
+				picPreview.Image = _coverDisplay;
+			return;
+		}
+
+		Bitmap? rendered = null;
+		try
+		{
+			rendered = ImageScaler.Resize(_coverSource, target.Width, target.Height);
+		}
+		catch (Exception ex) when (ex is ArgumentException or OutOfMemoryException or InvalidOperationException)
+		{
+			Log.WriteLine("Cover preview resize failed: {0}", ex.Message);
+		}
+
+		if (rendered != null)
+		{
+			Image? old = _coverDisplay;
+			_coverDisplay = rendered;
+			_coverDisplaySize = target;
+			picPreview.Image = rendered;
+			old?.Dispose();
+		}
+		else
+		{
+			// 渲染失败时退回原图（由缓存管理生命周期，本类不释放）
+			if (!ReferenceEquals(picPreview.Image, _coverSource))
+			{
+				if (_coverDisplay != null)
+				{
+					_coverDisplay.Dispose();
+					_coverDisplay = null;
+				}
+				_coverDisplaySize = Size.Empty;
+				picPreview.Image = _coverSource;
+			}
+		}
 	}
 
 	/// <summary>
@@ -284,8 +362,8 @@ partial class MainWindow
 			if (_coverImageCache.Remove(oldest, out Image? evicted))
 			{
 				_coverSources.Remove(oldest);
-				// 正在显示的图片不释放，避免画面上出现已销毁对象
-				if (!ReferenceEquals(picPreview.Image, evicted))
+				// 当前展示的原始图正被预览引用(渲染失败时的兜底路径)，暂不释放，等 SetCover 换源时回收
+				if (!ReferenceEquals(_coverSource, evicted))
 					evicted.Dispose();
 			}
 		}
@@ -312,15 +390,19 @@ partial class MainWindow
 	{
 		if (IsDisposed)
 			return;
-		Image? old = picPreview.Image;
-		picPreview.Image = image;
 		_coverPath = path;
 		toolTips.SetToolTip(picPreview, path ?? "");
+		if (!ReferenceEquals(image, _coverSource))
+		{
+			Image? oldSource = _coverSource;
+			_coverSource = image;
+			_coverDisplaySize = Size.Empty; // 强制按当前框尺寸重建
+			// 被替换的原始图若已不在缓存(DropCoverFromCache 移除)则由本处回收
+			if (oldSource != null && oldSource != image && !_coverImageCache.ContainsValue(oldSource))
+				oldSource.Dispose();
+		}
 		LayoutCoverPreview();
 		picPreview.Invalidate();
-		// 被替换且已不在缓存中的旧图立即释放（DropCoverFromCache 移除的显示中图片等这里回收）
-		if (old != null && old != image && !_coverImageCache.ContainsValue(old))
-			old.Dispose();
 	}
 
 	private void picPreview_Paint(object? sender, PaintEventArgs e)
