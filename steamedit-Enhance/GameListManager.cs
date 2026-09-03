@@ -100,10 +100,10 @@ internal class GameListManager : IDisposable
 			SyncFromViewModel();
 		};
 
-		MenuBuilder.CopyNameRequested = () => ContextMenuCopyName?.Invoke(this, EventArgs.Empty);
-		MenuBuilder.CopyAppIdRequested = () => ContextMenuCopyAppId?.Invoke(this, EventArgs.Empty);
-		MenuBuilder.OpenInSteamRequested = () => ContextMenuOpenInSteam?.Invoke(this, EventArgs.Empty);
-		MenuBuilder.OpenInSteamDBRequested = () => ContextMenuOpenInSteamDB?.Invoke(this, EventArgs.Empty);
+		MenuBuilder.CopyNameMenuItem.Click += (_, _) => ContextMenuCopyName?.Invoke(this, EventArgs.Empty);
+		MenuBuilder.CopyAppIdMenuItem.Click += (_, _) => ContextMenuCopyAppId?.Invoke(this, EventArgs.Empty);
+		MenuBuilder.OpenInSteamMenuItem.Click += (_, _) => ContextMenuOpenInSteam?.Invoke(this, EventArgs.Empty);
+		MenuBuilder.OpenInSteamDBMenuItem.Click += (_, _) => ContextMenuOpenInSteamDB?.Invoke(this, EventArgs.Empty);
 
 		MenuBuilder.BatchRenameMenuItem.Click += (_, _) => BatchRename?.Invoke(this, EventArgs.Empty);
 		MenuBuilder.BatchChangeTypeMenuItem.Click += (_, _) => BatchChangeType?.Invoke(this, EventArgs.Empty);

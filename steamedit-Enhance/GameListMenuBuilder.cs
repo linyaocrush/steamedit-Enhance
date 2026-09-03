@@ -16,6 +16,10 @@ internal sealed class GameListMenuBuilder
 	private readonly ContextMenuStrip _sortSelectorMenu;
 	private readonly ContextMenuStrip _contextMenu;
 
+	public ToolStripMenuItem CopyNameMenuItem { get; }
+	public ToolStripMenuItem CopyAppIdMenuItem { get; }
+	public ToolStripMenuItem OpenInSteamMenuItem { get; }
+	public ToolStripMenuItem OpenInSteamDBMenuItem { get; }
 	public ToolStripMenuItem BatchRenameMenuItem { get; }
 	public ToolStripMenuItem BatchChangeTypeMenuItem { get; }
 	public ToolStripMenuItem BatchMarkHiddenMenuItem { get; }
@@ -73,21 +77,16 @@ internal sealed class GameListMenuBuilder
 		}
 
 		// 右键上下文菜单
-		var miCopyName = new ToolStripMenuItem(Strings.ContextMenu_CopyName);
-		var miCopyAppId = new ToolStripMenuItem(Strings.ContextMenu_CopyAppId);
-		var miOpenSteam = new ToolStripMenuItem(Strings.ContextMenu_OpenInSteam);
-		var miOpenSteamDB = new ToolStripMenuItem(Strings.ContextMenu_OpenInSteamDB);
+		CopyNameMenuItem = new ToolStripMenuItem(Strings.ContextMenu_CopyName);
+		CopyAppIdMenuItem = new ToolStripMenuItem(Strings.ContextMenu_CopyAppId);
+		OpenInSteamMenuItem = new ToolStripMenuItem(Strings.ContextMenu_OpenInSteam);
+		OpenInSteamDBMenuItem = new ToolStripMenuItem(Strings.ContextMenu_OpenInSteamDB);
 
-		CopyNameRequested = () => miCopyName.PerformClick();
-		CopyAppIdRequested = () => miCopyAppId.PerformClick();
-		OpenInSteamRequested = () => miOpenSteam.PerformClick();
-		OpenInSteamDBRequested = () => miOpenSteamDB.PerformClick();
-
-		_contextMenu.Items.Add(miCopyName);
-		_contextMenu.Items.Add(miCopyAppId);
+		_contextMenu.Items.Add(CopyNameMenuItem);
+		_contextMenu.Items.Add(CopyAppIdMenuItem);
 		_contextMenu.Items.Add(new ToolStripSeparator());
-		_contextMenu.Items.Add(miOpenSteam);
-		_contextMenu.Items.Add(miOpenSteamDB);
+		_contextMenu.Items.Add(OpenInSteamMenuItem);
+		_contextMenu.Items.Add(OpenInSteamDBMenuItem);
 		_contextMenu.Items.Add(new ToolStripSeparator());
 
 		BatchRenameMenuItem = new ToolStripMenuItem(Strings.ContextMenu_BatchRename);
@@ -120,11 +119,6 @@ internal sealed class GameListMenuBuilder
 		ThemeManager.StyleContextMenuStrip(_sortSelectorMenu);
 		ThemeManager.StyleContextMenuStrip(_contextMenu);
 	}
-
-	public Action? CopyNameRequested { get; set; }
-	public Action? CopyAppIdRequested { get; set; }
-	public Action? OpenInSteamRequested { get; set; }
-	public Action? OpenInSteamDBRequested { get; set; }
 
 	private static ToolStripMenuItem CreateMenuItem<T>(string text, T tag, bool isChecked, Image? icon = null)
 	{
