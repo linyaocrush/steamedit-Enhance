@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -166,22 +167,23 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		}
 	}
 
-	private static readonly Dictionary<string, AppInfoEntryType> StringToType = new(StringComparer.OrdinalIgnoreCase)
-	{
-		["game"] = AppInfoEntryType.Game,
-		["config"] = AppInfoEntryType.Config,
-		["tool"] = AppInfoEntryType.Tool,
-		["demo"] = AppInfoEntryType.Demo,
-		["dlc"] = AppInfoEntryType.DLC,
-		["application"] = AppInfoEntryType.Application,
-		["video"] = AppInfoEntryType.Video,
-		["guide"] = AppInfoEntryType.Guide,
-		["music"] = AppInfoEntryType.Music,
-		["beta"] = AppInfoEntryType.Beta,
-	};
+	private static readonly FrozenDictionary<string, AppInfoEntryType> StringToType =
+		new Dictionary<string, AppInfoEntryType>(StringComparer.OrdinalIgnoreCase)
+		{
+			["game"] = AppInfoEntryType.Game,
+			["config"] = AppInfoEntryType.Config,
+			["tool"] = AppInfoEntryType.Tool,
+			["demo"] = AppInfoEntryType.Demo,
+			["dlc"] = AppInfoEntryType.DLC,
+			["application"] = AppInfoEntryType.Application,
+			["video"] = AppInfoEntryType.Video,
+			["guide"] = AppInfoEntryType.Guide,
+			["music"] = AppInfoEntryType.Music,
+			["beta"] = AppInfoEntryType.Beta,
+		}.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
-	private static readonly Dictionary<AppInfoEntryType, string> TypeToString = StringToType
-		.ToDictionary(kv => kv.Value, kv => kv.Key);
+	private static readonly FrozenDictionary<AppInfoEntryType, string> TypeToString =
+		StringToType.ToFrozenDictionary(kv => kv.Value, kv => kv.Key);
 
 	public AppInfoEntryType Type
 	{

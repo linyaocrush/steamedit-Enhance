@@ -16,42 +16,64 @@ internal static class PropertyTableIO
 	{
 		Span<byte> stackBuf = stackalloc byte[256];
 		byte[]? heapBuf = null;
+		byte[] scan = ArrayPool<byte>.Shared.Rent(4096);
 		int len = 0;
+		bool foundNull = false;
 		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
 		try
 		{
-			byte value;
-			while (len < remaining && (value = reader.ReadByte()) != 0)
+			while (remaining > 0)
 			{
-				if (len == (heapBuf?.Length ?? stackBuf.Length))
+				int toRead = (int)Math.Min(scan.Length, remaining);
+				int n = reader.Read(scan, 0, toRead);
+				if (n <= 0) break;
+				int nullIdx = Array.IndexOf(scan, (byte)0, 0, n);
+				int consume = nullIdx >= 0 ? nullIdx : n;
+				if (consume > 0)
 				{
-					int oldCapacity = heapBuf?.Length ?? stackBuf.Length;
-					int newSize = oldCapacity * 2;
-					if (newSize > MaxZStringBuffer)
+					if (len + consume > MaxZStringBuffer)
 						throw new InvalidDataException("ReadZString: string exceeds maximum buffer size. File may be corrupted.");
-					byte[] newBuf = ArrayPool<byte>.Shared.Rent(newSize);
+					if (len + consume > (heapBuf?.Length ?? stackBuf.Length))
+					{
+						int oldCapacity = heapBuf?.Length ?? stackBuf.Length;
+						int newSize = Math.Max(oldCapacity * 2, len + consume);
+						if (newSize > MaxZStringBuffer)
+							newSize = MaxZStringBuffer;
+						byte[] newBuf = ArrayPool<byte>.Shared.Rent(newSize);
+						if (heapBuf != null)
+							heapBuf.AsSpan(0, len).CopyTo(newBuf);
+						else
+							stackBuf[..len].CopyTo(newBuf);
+						if (heapBuf != null)
+							ArrayPool<byte>.Shared.Return(heapBuf);
+						heapBuf = newBuf;
+					}
 					if (heapBuf != null)
-						heapBuf.CopyTo(newBuf.AsSpan());
+						scan.AsSpan(0, consume).CopyTo(heapBuf.AsSpan(len));
 					else
-						stackBuf[..oldCapacity].CopyTo(newBuf);
-					if (heapBuf != null)
-						ArrayPool<byte>.Shared.Return(heapBuf);
-					heapBuf = newBuf;
+						scan.AsSpan(0, consume).CopyTo(stackBuf[len..]);
+					len += consume;
 				}
-				if (heapBuf != null)
-					heapBuf[len] = value;
-				else
-					stackBuf[len] = value;
-				len++;
+				if (nullIdx >= 0)
+				{
+					// 把多读的字节退回，保证流位置停在 NUL 之后
+					int overshoot = n - (nullIdx + 1);
+					if (overshoot > 0)
+						reader.BaseStream.Position -= overshoot;
+					foundNull = true;
+					break;
+				}
+				remaining -= n;
 			}
-			if (len >= remaining)
+			if (!foundNull)
 				throw new InvalidDataException("ReadZString: null terminator not found before end of stream");
 			if (heapBuf != null)
-			return Encoding.UTF8.GetString(heapBuf, 0, len);
-		return Encoding.UTF8.GetString(stackBuf[..len]);
+				return Encoding.UTF8.GetString(heapBuf, 0, len);
+			return Encoding.UTF8.GetString(stackBuf[..len]);
 		}
 		finally
 		{
+			ArrayPool<byte>.Shared.Return(scan);
 			if (heapBuf != null)
 				ArrayPool<byte>.Shared.Return(heapBuf);
 		}
@@ -59,9 +81,26 @@ internal static class PropertyTableIO
 
 	internal static void WriteZString(BinaryWriter writer, string str)
 	{
-		byte[] bytes = Encoding.UTF8.GetBytes(str);
-		writer.Write(bytes);
-		writer.Write((byte)0);
+		int byteCount = Encoding.UTF8.GetByteCount(str);
+		if (byteCount < 256)
+		{
+			Span<byte> buf = stackalloc byte[byteCount + 1];
+			Encoding.UTF8.GetBytes(str, buf);
+			buf[byteCount] = 0;
+			writer.Write(buf);
+			return;
+		}
+		byte[] rented = ArrayPool<byte>.Shared.Rent(byteCount + 1);
+		try
+		{
+			Encoding.UTF8.GetBytes(str, rented.AsSpan(0, byteCount));
+			rented[byteCount] = 0;
+			writer.Write(rented, 0, byteCount + 1);
+		}
+		finally
+		{
+			ArrayPool<byte>.Shared.Return(rented);
+		}
 	}
 
 	private static string ReadString_0x00000000(BinaryReader reader) => ReadZString(reader);

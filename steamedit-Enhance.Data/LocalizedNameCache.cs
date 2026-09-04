@@ -36,7 +36,7 @@ internal sealed class LocalizedNameCache
 	private static string DefaultFilePath()
 		=> Path.Combine(AppHelper.GetAppDirectory(), "cache", FileName);
 
-	private readonly object _lock = new();
+	private readonly System.Threading.Lock _lock = new();
 	private readonly string _filePath;
 	private Dictionary<string, Dictionary<int, string>> _byLocale = new(StringComparer.OrdinalIgnoreCase);
 	private bool _loaded;

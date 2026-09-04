@@ -14,9 +14,20 @@ internal static class SteamLanguages
 	public const string SimplifiedChinese = "schinese";
 	public const string TraditionalChinese = "tchinese";
 
-	/// <summary>返回当前界面语言对应的 Steam 语言码，永远不为 null（非中文一律 english）。</summary>
+	private static string? _cachedCultureName;
+	private static string? _cachedLocale;
+
+	/// <summary>返回当前界面语言对应的 Steam 语言码，永远不为 null（非中文一律 english）。结果按 culture 名缓存。</summary>
 	public static string ForCurrentUiCulture()
-		=> FromCultureName(CultureInfo.CurrentUICulture.Name) ?? English;
+	{
+		string name = CultureInfo.CurrentUICulture.Name;
+		if (_cachedCultureName == name)
+			return _cachedLocale!;
+		string? locale = FromCultureName(name);
+		_cachedCultureName = name;
+		_cachedLocale = locale ?? English;
+		return _cachedLocale;
+	}
 
 	/// <summary>把形如 "zh-CN"/"zh-TW"/"en-US" 的 culture 名映射到 Steam 语言码；不支持时返回 null。</summary>
 	public static string? FromCultureName(string? cultureName)
