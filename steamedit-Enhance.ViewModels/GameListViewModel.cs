@@ -133,26 +133,35 @@ internal sealed class GameListViewModel : ViewModelBase
     {
         if (_escapedDisplayNameCache.TryGetValue(entry.ID, out var escaped))
             return escaped;
-        if (!_displayNames.TryGetValue(entry.ID, out var name))
-        {
-            name = entry.ToString() ?? "";
-            _displayNames[entry.ID] = name;
-        }
+        string name = GetRawDisplayName(entry);
         escaped = name.Replace("&", "&&");
         _escapedDisplayNameCache[entry.ID] = escaped;
         return escaped;
+    }
+
+    /// <summary>返回列表显示的原始（未做 & 转义）名称，供复制/提示框使用。</summary>
+    public string GetRawDisplayName(IAppInfoEntry entry)
+    {
+        if (!_displayNames.TryGetValue(entry.ID, out var name))
+        {
+            name = LocalizedNameResolver.ResolveListName(entry);
+            _displayNames[entry.ID] = name;
+        }
+        return name;
     }
 
     public void InvalidateDisplayName(IAppInfoEntry entry)
     {
         _displayNames.Remove(entry.ID);
         _escapedDisplayNameCache.Remove(entry.ID);
+        _tooltipCachedId = -1;
     }
 
     public void ClearDisplayNameCache()
     {
         _displayNames.Clear();
         _escapedDisplayNameCache.Clear();
+        _tooltipCachedId = -1;
     }
 
     public GameItemViewModel? FindByEntry(IAppInfoEntry entry) =>
@@ -163,6 +172,7 @@ internal sealed class GameListViewModel : ViewModelBase
     public void Refresh()
     {
         ClearDisplayNameCache();
+        ClearSearchCache();
 
         int totalCount = 0;
         int modifiedCount = 0;
@@ -279,7 +289,7 @@ internal sealed class GameListViewModel : ViewModelBase
     {
         if (entry.ID == _tooltipCachedId) return _tooltipCachedText;
         var sb = new System.Text.StringBuilder();
-        sb.AppendFormat("{0}: {1}", entry.ID, entry.Name);
+        sb.AppendFormat("{0}: {1}", entry.ID, GetRawDisplayName(entry));
         string? oslist = entry.GetPropertyValue<string>(null!, AppInfoPaths.OsList);
         if (oslist != null) sb.AppendFormat(" [{0}]", oslist);
         _tooltipCachedId = entry.ID;

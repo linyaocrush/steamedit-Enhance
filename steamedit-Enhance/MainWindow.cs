@@ -139,7 +139,7 @@ internal partial class MainWindow : LocalizableForm
 		_listManager.ContextMenuCopyName += (_, _) =>
 		{
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { }
+			if (entry != null) try { Clipboard.SetText(_listManager.GetCopyableDisplayName(entry)); } catch (System.Runtime.InteropServices.ExternalException) { }
 		};
 		_listManager.ContextMenuCopyAppId += (_, _) =>
 		{
@@ -168,6 +168,8 @@ internal partial class MainWindow : LocalizableForm
 		_listManager.BatchMarkAsCompleted += OnBatchMarkAsCompleted;
 		_listManager.BatchMarkAsIncomplete += OnBatchMarkAsIncomplete;
 		_listManager.BatchReset += OnBatchReset;
+		_listManager.FetchOfficialNames += OnFetchOfficialNames;
+		_listManager.ClearOfficialNameCache += OnClearOfficialNameCache;
 
 		_mainViewModel.SaveRequested += (_, _) => OnBtnSave_Click(null, EventArgs.Empty);
 		_mainViewModel.SaveApplyRequested += (_, _) => OnBtnSaveApply_Click(null, EventArgs.Empty);
@@ -340,6 +342,7 @@ internal partial class MainWindow : LocalizableForm
 		UpdateStatusBar();
 		UpdateSteamStatus();
 		_listManager.ClearDisplayNameCache();
+		_listManager.RefreshGameList();
 		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
 

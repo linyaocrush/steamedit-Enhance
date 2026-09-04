@@ -377,12 +377,14 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 					table.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.BaseNameLocalized);
 					HandleNameLocalizedRemoval(common, nameLocalized);
 				}
+				// 自动写入官方本地化默认名（界面为中文且条目未被手动改名时）。base_name 仍保留原名。
+				string writtenName = GetAutoOfficialWriteName() ?? text;
 				table.SetPropertyValue(PropertyType.String, text, AppInfoPaths.BaseName);
 				if (DisplaySettings!.UseCompleted && IsCompleted)
 				{
-					text += DisplaySettings.CompletedSuffix;
+					writtenName += DisplaySettings.CompletedSuffix;
 				}
-				common.SetPropertyValue("name", PropertyType.String, text);
+				common.SetPropertyValue("name", PropertyType.String, writtenName);
 			}
 			else
 			{
@@ -409,6 +411,26 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected virtual void HandleNameLocalizedRemoval(PropertyTable common, PropertyTable nameLocalized)
 	{
 		common.RemoveProperty("name_localized");
+	}
+
+	/// <summary>
+	/// 保存 appinfo 时自动把“官方本地化默认名”写入 common/name（不产生修改记录，不计为已编辑）。
+	/// 仅当：界面语言为中文、该条目的 name 未被用户手动修改、且存在不同于当前名的官方本地化名时返回该名。
+	/// </summary>
+	private string? GetAutoOfficialWriteName()
+	{
+		try
+		{
+			string? official = LocalizedNameResolver.TryGetLocalizedOfficialName(this);
+			if (string.IsNullOrEmpty(official)) return null;
+			string current = Name ?? "";
+			return official == current ? null : official;
+		}
+		catch (Exception ex)
+		{
+			Log.WriteLine("AppEntry {0:X8}: auto official-name resolve failed: {1}", ID, ex.Message);
+			return null;
+		}
 	}
 
 	protected virtual int HashBlockCount => 1;

@@ -38,6 +38,8 @@ internal class GameListManager : IDisposable
 	public event EventHandler? BatchMarkAsCompleted;
 	public event EventHandler? BatchMarkAsIncomplete;
 	public event EventHandler? BatchReset;
+	public event EventHandler? FetchOfficialNames;
+	public event EventHandler? ClearOfficialNameCache;
 
 	public GameListManager(
 		GameDataContext ctx,
@@ -112,6 +114,8 @@ internal class GameListManager : IDisposable
 		MenuBuilder.BatchMarkCompletedMenuItem.Click += (_, _) => BatchMarkAsCompleted?.Invoke(this, EventArgs.Empty);
 		MenuBuilder.BatchMarkIncompleteMenuItem.Click += (_, _) => BatchMarkAsIncomplete?.Invoke(this, EventArgs.Empty);
 		MenuBuilder.BatchResetMenuItem.Click += (_, _) => BatchReset?.Invoke(this, EventArgs.Empty);
+		MenuBuilder.FetchOfficialNamesMenuItem.Click += (_, _) => FetchOfficialNames?.Invoke(this, EventArgs.Empty);
+		MenuBuilder.ClearOfficialNameCacheMenuItem.Click += (_, _) => ClearOfficialNameCache?.Invoke(this, EventArgs.Empty);
 
 		// 定时器
 		_filterDebounceTimer.Interval = 500;
@@ -171,6 +175,7 @@ internal class GameListManager : IDisposable
 	}
 
 	public string GetDisplayName(IAppInfoEntry entry) => _viewModel.GetDisplayName(entry);
+	public string GetCopyableDisplayName(IAppInfoEntry entry) => _viewModel.GetRawDisplayName(entry);
 	public void InvalidateDisplayName(IAppInfoEntry entry) => _viewModel.InvalidateDisplayName(entry);
 	public void ClearDisplayNameCache() => _viewModel.ClearDisplayNameCache();
 
@@ -311,6 +316,9 @@ internal class GameListManager : IDisposable
 		MenuBuilder.BatchMarkCompletedMenuItem.Text = Strings.ContextMenu_BatchMarkCompleted;
 		MenuBuilder.BatchMarkIncompleteMenuItem.Text = Strings.ContextMenu_BatchMarkIncomplete;
 		MenuBuilder.BatchResetMenuItem.Text = Strings.ContextMenu_BatchReset;
+		MenuBuilder.OfficialNamesMenu.Text = Strings.ContextMenu_OfficialNames;
+		MenuBuilder.FetchOfficialNamesMenuItem.Text = Strings.ContextMenu_FetchOfficialNames;
+		MenuBuilder.ClearOfficialNameCacheMenuItem.Text = Strings.ContextMenu_ClearOfficialNameCache;
 	}
 
 	private void OnEntryModified(object? sender, EventArgs e)

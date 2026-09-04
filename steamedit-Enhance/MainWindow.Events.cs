@@ -22,7 +22,7 @@ partial class MainWindow
 		{
 			if (appFilterText.Focused) return;
 			var entry = _listManager.GetSelectedEntry();
-			if (entry != null) try { Clipboard.SetText(entry.Name); } catch (System.Runtime.InteropServices.ExternalException) { }
+			if (entry != null) try { Clipboard.SetText(_listManager.GetCopyableDisplayName(entry)); } catch (System.Runtime.InteropServices.ExternalException) { }
 		});
 		_shortcutHandler.Register((Keys.F, true, false), () =>
 		{
@@ -266,6 +266,59 @@ partial class MainWindow
 			entry.Revert();
 			_listManager.NotifyEntryReverted(entry);
 		}
+	}
+
+	// --- Official (display-only) localized names ---
+
+	private void OnFetchOfficialNames(object? sender, EventArgs e)
+	{
+		string locale = LocalizedNameResolver.SteamLocaleForCurrentUi();
+		if (locale == SteamLanguages.English)
+		{
+			MessageBox.Show(this, Strings.OfficialNameDlg_MsgSwitchToChinese, Strings.OfficialNameDlg_Title,
+				MessageBoxButtons.OK, MessageBoxIcon.Information);
+			return;
+		}
+		if (_ctx.Entries.Count == 0) return;
+
+		var cache = LocalizedNameCache.Default;
+		bool hasTask = false;
+		foreach (var ent in _ctx.Entries)
+		{
+			if (ent.ID <= 0 || string.IsNullOrWhiteSpace(ent.Name)) continue;
+			if (LocalizedNameResolver.IsUserRenamed(ent)) continue;
+			if (LocalizedNameResolver.TryGetLocalizedFromAppInfo(ent, locale) != null) continue;
+			if (cache.Contains(ent.ID, locale)) continue;
+			hasTask = true;
+			break;
+		}
+		if (!hasTask)
+		{
+			MessageBox.Show(this, Strings.OfficialNameDlg_NoTask, Strings.OfficialNameDlg_Title,
+				MessageBoxButtons.OK, MessageBoxIcon.Information);
+			return;
+		}
+
+		var entries = new List<IAppInfoEntry>(_ctx.Entries);
+		using var dlg = new OfficialNameDialog(entries, locale);
+		dlg.ShowDialog(this);
+
+		_listManager.RefreshGameList();
+		_editController.LoadEntry(_listManager.GetSelectedEntry());
+	}
+
+	private void OnClearOfficialNameCache(object? sender, EventArgs e)
+	{
+		var result = MessageBox.Show(this,
+			Strings.OfficialNameDlg_ClearMessage,
+			Strings.OfficialNameDlg_ClearTitle,
+			MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+		if (result != DialogResult.Yes) return;
+
+		LocalizedNameCache.Default.Clear();
+		LocalizedNameCache.Default.Save();
+		_listManager.RefreshGameList();
+		_editController.LoadEntry(_listManager.GetSelectedEntry());
 	}
 
 	// --- Batch translate / replace ---

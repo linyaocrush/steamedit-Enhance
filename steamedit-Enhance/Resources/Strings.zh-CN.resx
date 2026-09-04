@@ -752,4 +752,44 @@ Page Down           下一个游戏</value>
   <data name="BatchReset_ConfirmMessage" xml:space="preserve">
     <value>确定要重置 {0} 个选中的条目吗？</value>
   </data>
+  <data name="ContextMenu_OfficialNames" xml:space="preserve">
+    <value>官方名称</value>
+  </data>
+  <data name="ContextMenu_FetchOfficialNames" xml:space="preserve">
+    <value>批量获取官方本地化名称（跟随界面语言，仅显示）…</value>
+  </data>
+  <data name="ContextMenu_ClearOfficialNameCache" xml:space="preserve">
+    <value>清空已下载的官方名称缓存（仅显示）</value>
+  </data>
+
+  <data name="OfficialNameDlg_Title" xml:space="preserve">
+    <value>获取官方本地化名称</value>
+  </data>
+  <data name="OfficialNameDlg_Progress" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="OfficialNameDlg_Current" xml:space="preserve">
+    <value>正在处理：{0}</value>
+  </data>
+  <data name="OfficialNameDlg_Stats" xml:space="preserve">
+    <value>已有：{0}    获取：{1}    失败：{2}</value>
+  </data>
+  <data name="OfficialNameDlg_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="OfficialNameDlg_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="OfficialNameDlg_NoTask" xml:space="preserve">
+    <value>当前列表中的游戏都已拥有该语言的官方名称，无需联网获取。</value>
+  </data>
+  <data name="OfficialNameDlg_MsgSwitchToChinese" xml:space="preserve">
+    <value>官方本地化名称按界面语言显示。请在“设置”中把界面语言切换为简体/繁体中文后重试。</value>
+  </data>
+  <data name="OfficialNameDlg_ClearTitle" xml:space="preserve">
+    <value>清空官方名称</value>
+  </data>
+  <data name="OfficialNameDlg_ClearMessage" xml:space="preserve">
+    <value>确定清空官方本地化名称缓存（仅影响显示）？缺失的名称将在下次获取时重新下载。</value>
+  </data>
 </root>

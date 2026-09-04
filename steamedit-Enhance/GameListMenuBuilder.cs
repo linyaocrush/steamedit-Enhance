@@ -27,6 +27,9 @@ internal sealed class GameListMenuBuilder
 	public ToolStripMenuItem BatchMarkCompletedMenuItem { get; }
 	public ToolStripMenuItem BatchMarkIncompleteMenuItem { get; }
 	public ToolStripMenuItem BatchResetMenuItem { get; }
+	public ToolStripMenuItem OfficialNamesMenu { get; }
+	public ToolStripMenuItem FetchOfficialNamesMenuItem { get; }
+	public ToolStripMenuItem ClearOfficialNameCacheMenuItem { get; }
 
 	public event Action<AppInfoEntryType>? FilterTypeChanged;
 	public event Action<ShowEntriesMode>? ShowModeChanged;
@@ -109,6 +112,14 @@ internal sealed class GameListMenuBuilder
 		batchMenu.DropDownItems.Add(markMenu);
 		batchMenu.DropDownItems.Add(BatchResetMenuItem);
 		_contextMenu.Items.Add(batchMenu);
+		_contextMenu.Items.Add(new ToolStripSeparator());
+
+		FetchOfficialNamesMenuItem = new ToolStripMenuItem(Strings.ContextMenu_FetchOfficialNames);
+		ClearOfficialNameCacheMenuItem = new ToolStripMenuItem(Strings.ContextMenu_ClearOfficialNameCache);
+		OfficialNamesMenu = new ToolStripMenuItem(Strings.ContextMenu_OfficialNames);
+		OfficialNamesMenu.DropDownItems.Add(FetchOfficialNamesMenuItem);
+		OfficialNamesMenu.DropDownItems.Add(ClearOfficialNameCacheMenuItem);
+		_contextMenu.Items.Add(OfficialNamesMenu);
 
 		_filterSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
 		_sortSelectorMenu.Closing += (_, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };

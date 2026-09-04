@@ -281,5 +281,19 @@ namespace steamedit_Enhance {
         internal static string LogLevel_Warning => ResourceManager.GetString("LogLevel_Warning", resourceCulture);
         internal static string LogLevel_Error => ResourceManager.GetString("LogLevel_Error", resourceCulture);
         internal static string Tooltip_LogLevel => ResourceManager.GetString("Tooltip_LogLevel", resourceCulture);
+
+        internal static string ContextMenu_OfficialNames => ResourceManager.GetString("ContextMenu_OfficialNames", resourceCulture);
+        internal static string ContextMenu_FetchOfficialNames => ResourceManager.GetString("ContextMenu_FetchOfficialNames", resourceCulture);
+        internal static string ContextMenu_ClearOfficialNameCache => ResourceManager.GetString("ContextMenu_ClearOfficialNameCache", resourceCulture);
+        internal static string OfficialNameDlg_Title => ResourceManager.GetString("OfficialNameDlg_Title", resourceCulture);
+        internal static string OfficialNameDlg_Progress => ResourceManager.GetString("OfficialNameDlg_Progress", resourceCulture);
+        internal static string OfficialNameDlg_Current => ResourceManager.GetString("OfficialNameDlg_Current", resourceCulture);
+        internal static string OfficialNameDlg_Stats => ResourceManager.GetString("OfficialNameDlg_Stats", resourceCulture);
+        internal static string OfficialNameDlg_Cancel => ResourceManager.GetString("OfficialNameDlg_Cancel", resourceCulture);
+        internal static string OfficialNameDlg_Close => ResourceManager.GetString("OfficialNameDlg_Close", resourceCulture);
+        internal static string OfficialNameDlg_NoTask => ResourceManager.GetString("OfficialNameDlg_NoTask", resourceCulture);
+        internal static string OfficialNameDlg_MsgSwitchToChinese => ResourceManager.GetString("OfficialNameDlg_MsgSwitchToChinese", resourceCulture);
+        internal static string OfficialNameDlg_ClearTitle => ResourceManager.GetString("OfficialNameDlg_ClearTitle", resourceCulture);
+        internal static string OfficialNameDlg_ClearMessage => ResourceManager.GetString("OfficialNameDlg_ClearMessage", resourceCulture);
     }
 }
