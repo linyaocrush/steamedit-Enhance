@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,6 +31,7 @@ public class PropertyEditorViewModelTests
         public string InstallPath => "";
         public AppInfoEntryType Type { get; set; } = AppInfoEntryType.Game;
         public LaunchTable Launches { get; set; } = new LaunchTable();
+        public PropertyTable? NameLocalized { get; set; }
 
         public event EventHandler? Modified;
 
@@ -37,6 +39,12 @@ public class PropertyEditorViewModelTests
 
         public T GetPropertyValue<T>(T def, params string[] PropertyPath)
         {
+            if (PropertyPath.Length == 3 && PropertyPath[0] == "appinfo" && PropertyPath[1] == "common" && PropertyPath[2] == "name_localized")
+            {
+                if (NameLocalized != null && typeof(T) == typeof(PropertyTable))
+                    return (T)(object)NameLocalized;
+                return def;
+            }
             var key = string.Join("/", PropertyPath);
             if (_properties.TryGetValue(key, out var v) && v is T typed) return typed;
             return def;
@@ -108,6 +116,68 @@ public class PropertyEditorViewModelTests
         Assert.AreEqual("Game A", vm.GameName);
         Assert.IsNotNull(vm.CurrentEntry);
         Assert.AreEqual(entry, vm.CurrentEntry);
+    }
+
+    private static PropertyTable LocalizedTable(params (string Lang, string Name)[] entries)
+    {
+        var t = new PropertyTable();
+        foreach (var (lang, name) in entries)
+            t.AddPropertyValue(lang, PropertyType.String, name);
+        return t;
+    }
+
+    private static void WithUi(string culture, Action action)
+    {
+        CultureInfo old = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = new CultureInfo(culture);
+            action();
+        }
+        finally { CultureInfo.CurrentUICulture = old; }
+    }
+
+    [TestMethod]
+    public void LoadEntry_ChineseUi_Unmodified_GameNameShowsLocalizedOfficialName()
+    {
+        var vm = new PropertyEditorViewModel();
+        var entry = new FakeEntry
+        {
+            Name = "Cyberpunk 2077",
+            NameLocalized = LocalizedTable(("english", "Cyberpunk 2077"), ("schinese", "赛博朋克2077")),
+        };
+        WithUi("zh-CN", () => vm.LoadEntry(entry));
+        Assert.AreEqual("赛博朋克2077", vm.GameName);
+    }
+
+    [TestMethod]
+    public void LoadEntry_EnglishUi_GameNameKeepsStoredEnglishName()
+    {
+        var vm = new PropertyEditorViewModel();
+        var entry = new FakeEntry
+        {
+            Name = "Cyberpunk 2077",
+            NameLocalized = LocalizedTable(("schinese", "赛博朋克2077")),
+        };
+        WithUi("en-US", () => vm.LoadEntry(entry));
+        Assert.AreEqual("Cyberpunk 2077", vm.GameName);
+    }
+
+    [TestMethod]
+    public void LoadEntry_ChineseUi_UserRenamed_GameNameShowsCustomName()
+    {
+        var vm = new PropertyEditorViewModel();
+        var entry = new FakeEntry
+        {
+            Name = "My Custom Name",
+            NameLocalized = LocalizedTable(("schinese", "赛博朋克2077")),
+        };
+        var mod = new ModifiedEntry(entry);
+        mod.AddChange(PropertyType.String, "My Custom Name", AppInfoPaths.Name);
+        entry.Modification = mod;
+
+        WithUi("zh-CN", () => vm.LoadEntry(entry));
+        Assert.AreEqual("My Custom Name", vm.GameName);
     }
 
     [TestMethod]

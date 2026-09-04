@@ -120,7 +120,7 @@ internal sealed class PropertyEditorViewModel : ViewModelBase
 
         _isSettingUp = true;
 
-        GameName = entry.Name ?? "";
+        GameName = LocalizedNameResolver.ResolveListName(entry);
         SortAs = entry.SortAs;
         IsHidden = entry.IsHidden;
         IsCompleted = entry.IsCompleted;

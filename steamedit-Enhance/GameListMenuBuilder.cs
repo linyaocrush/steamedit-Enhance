@@ -15,6 +15,11 @@ internal sealed class GameListMenuBuilder
 	private readonly ContextMenuStrip _filterSelectorMenu;
 	private readonly ContextMenuStrip _sortSelectorMenu;
 	private readonly ContextMenuStrip _contextMenu;
+	private readonly List<ToolStripMenuItem> _showModeItems = new();
+	private ToolStripMenuItem? _sortByNameItem;
+	private ToolStripMenuItem? _sortByIdItem;
+	private ToolStripMenuItem? _sortAscItem;
+	private ToolStripMenuItem? _sortDescItem;
 
 	public ToolStripMenuItem CopyNameMenuItem { get; }
 	public ToolStripMenuItem CopyAppIdMenuItem { get; }
@@ -62,21 +67,21 @@ internal sealed class GameListMenuBuilder
 
 		// 排序菜单
 		{
-			var sortByName = CreateMenuItem(Strings.Sort_ByName, "Name", _viewModel.SortField == "Name");
-			sortByName.Click += OnSortFieldClick;
-			_sortSelectorMenu.Items.Add(sortByName);
-			var sortById = CreateMenuItem(Strings.Sort_ById, "AppId", _viewModel.SortField == "AppId");
-			sortById.Click += OnSortFieldClick;
-			_sortSelectorMenu.Items.Add(sortById);
+			_sortByNameItem = CreateMenuItem(Strings.Sort_ByName, "Name", _viewModel.SortField == "Name");
+			_sortByNameItem.Click += OnSortFieldClick;
+			_sortSelectorMenu.Items.Add(_sortByNameItem);
+			_sortByIdItem = CreateMenuItem(Strings.Sort_ById, "AppId", _viewModel.SortField == "AppId");
+			_sortByIdItem.Click += OnSortFieldClick;
+			_sortSelectorMenu.Items.Add(_sortByIdItem);
 		}
 		_sortSelectorMenu.Items.Add(new ToolStripSeparator());
 		{
-			var sortAsc = CreateMenuItem(Strings.Sort_Ascending, false, !_viewModel.SortDescending);
-			sortAsc.Click += OnSortDirectionClick;
-			_sortSelectorMenu.Items.Add(sortAsc);
-			var sortDesc = CreateMenuItem(Strings.Sort_Descending, true, _viewModel.SortDescending);
-			sortDesc.Click += OnSortDirectionClick;
-			_sortSelectorMenu.Items.Add(sortDesc);
+			_sortAscItem = CreateMenuItem(Strings.Sort_Ascending, false, !_viewModel.SortDescending);
+			_sortAscItem.Click += OnSortDirectionClick;
+			_sortSelectorMenu.Items.Add(_sortAscItem);
+			_sortDescItem = CreateMenuItem(Strings.Sort_Descending, true, _viewModel.SortDescending);
+			_sortDescItem.Click += OnSortDirectionClick;
+			_sortSelectorMenu.Items.Add(_sortDescItem);
 		}
 
 		// 右键上下文菜单
@@ -147,6 +152,7 @@ internal sealed class GameListMenuBuilder
 		var mi = CreateMenuItem(name, mode, _viewModel.ShowMode == mode);
 		mi.Click += OnShowEntriesModeClick;
 		_filterSelectorMenu.Items.Add(mi);
+		_showModeItems.Add(mi);
 	}
 
 	public void ApplyLanguage()
@@ -180,18 +186,24 @@ internal sealed class GameListMenuBuilder
 	{
 		if (sender is not ToolStripMenuItem item) return;
 		var mode = (ShowEntriesMode)item.Tag!;
+		foreach (var mi in _showModeItems)
+			mi.Checked = ReferenceEquals(mi, item);
 		ShowModeChanged?.Invoke(mode);
 	}
 
 	private void OnSortFieldClick(object? sender, EventArgs e)
 	{
 		if (sender is not ToolStripMenuItem item || item.Tag is not string field) return;
+		if (_sortByNameItem != null) _sortByNameItem.Checked = field == "Name";
+		if (_sortByIdItem != null) _sortByIdItem.Checked = field == "AppId";
 		SortFieldChanged?.Invoke(field);
 	}
 
 	private void OnSortDirectionClick(object? sender, EventArgs e)
 	{
 		if (sender is not ToolStripMenuItem item || item.Tag is not bool descending) return;
+		if (_sortAscItem != null) _sortAscItem.Checked = !descending;
+		if (_sortDescItem != null) _sortDescItem.Checked = descending;
 		SortDirectionChanged?.Invoke(descending);
 	}
 }
