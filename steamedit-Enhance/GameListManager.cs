@@ -228,7 +228,6 @@ internal class GameListManager : IDisposable
 		_refreshingGamesListAfterEdit = true;
 		try
 		{
-			ResortEntry(entry);
 		}
 		finally
 		{
