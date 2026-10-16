@@ -31,14 +31,58 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected ModifiedEntry? _modifications;
 
 	/// <summary>
-	/// 原始属性表（未执行 base_name/base_type 还原前）在文件中的字节。
-	/// 用于惰性生成 <see cref="_originalData"/>，避免加载时对每个条目做
-	/// “深拷贝 + 全量序列化”。
+	/// 加载时预取的“摘要表”：只包含列表/筛选/排序需要的热路径子树
+	/// （见 <see cref="AppInfoPaths.HotPaths"/>）。其余属性在首次访问完整表时才物化。
 	/// </summary>
-	private byte[]? _rawTableData;
+	private PropertyTable? _summary;
+
+	/// <summary>加载时预取的摘要表（热路径子树），仅供子类/测试诊断使用。</summary>
+	protected PropertyTable? Summary => _summary;
+
+	/// <summary>
+	/// 条目在文件中的原始字节（含 40 字节条头 + 属性表）。保留整段以避免为属性表再做一次拷贝；
+	/// 用于惰性生成完整属性表与 <see cref="_originalData"/>。
+	/// </summary>
+	private byte[]? _rawEntryData;
+	private int _tableOffset;
+	private int _tableLength;
+
+	/// <summary>在条目原始字节上打开仅覆盖属性表区域的只读流（零拷贝）。</summary>
+	private MemoryStream OpenTableStream()
+		=> new MemoryStream(_rawEntryData!, _tableOffset, _tableLength, writable: false);
 
 	/// <summary>惰性缓存：归一化为 0x00000000 格式的原始属性表字节。</summary>
 	protected byte[]? _originalData;
+
+	/// <summary>
+	/// 满足“热路径”访问的表。若完整表已物化则用完整表；否则用摘要表；
+	/// 两者皆无（例如测试直接构造、或原生不可用时应由调用方先物化）→ 物化完整表。
+	/// </summary>
+	private PropertyTable HotTable
+	{
+		get
+		{
+			if (_properties != null) return _properties;
+			if (_summary != null) return _summary;
+			return EnsureProperties();
+		}
+	}
+
+	/// <summary>完整属性表，首次访问时从原始字节物化（含 base_name/base_type 还原与子类后处理）。</summary>
+	protected PropertyTable Properties => EnsureProperties();
+
+	/// <summary>惰性物化完整属性表；已物化（或被测试直接赋值）则原样返回。</summary>
+	private PropertyTable EnsureProperties()
+	{
+		if (_properties != null) return _properties;
+		if (_rawEntryData == null)
+			throw new InvalidOperationException($"Entry {ID:X8} has no property data to materialize.");
+		_properties = ReadPropertyTableFrom(new BinaryReader(OpenTableStream()));
+		RestoreBaseProperties(_properties);
+		OnReadCompleted(_properties);
+		ClearCachedProps();
+		return _properties;
+	}
 
 	public abstract uint AppInfoVersion { get; }
 
@@ -69,7 +113,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			ClearCachedProps();
 			_modifications = value;
 			_cachedOriginalData = null;
-			if (_modifications?.ApplyChanges(_properties) == true)
+			if (_modifications?.ApplyChanges(Properties) == true)
 			{
 				RaiseModified();
 			}
@@ -80,10 +124,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	public bool IsHidden
 	{
-		get => _properties.GetPropertyValue(0, AppInfoPaths.IsHidden) != 0;
+		get => HotTable.GetPropertyValue(0, AppInfoPaths.IsHidden) != 0;
 		set
 		{
-			if (value || _properties.HasProperty(AppInfoPaths.IsHidden))
+			if (value || Properties.HasProperty(AppInfoPaths.IsHidden))
 			{
 				SetPropertyValue(PropertyType.Int32, value ? 1 : 0, AppInfoPaths.IsHidden);
 			}
@@ -92,10 +136,10 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	public bool IsCompleted
 	{
-		get => _properties.GetPropertyValue(0, AppInfoPaths.IsCompleted) != 0;
+		get => HotTable.GetPropertyValue(0, AppInfoPaths.IsCompleted) != 0;
 		set
 		{
-			if (value || _properties.HasProperty(AppInfoPaths.IsCompleted))
+			if (value || Properties.HasProperty(AppInfoPaths.IsCompleted))
 			{
 				SetPropertyValue(PropertyType.Int32, value ? 1 : 0, AppInfoPaths.IsCompleted);
 			}
@@ -108,7 +152,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (!_nameCached)
 			{
-				_cachedName = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Name);
+				_cachedName = HotTable.GetPropertyValue<string>(null!, AppInfoPaths.Name);
 				_nameCached = true;
 			}
 			return _cachedName!;
@@ -126,7 +170,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (!_cachedHasSortAs.HasValue)
 			{
-				var sortAs = _properties.HasProperty(AppInfoPaths.SortAs) ? _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs) : null;
+				var sortAs = HotTable.HasProperty(AppInfoPaths.SortAs) ? HotTable.GetPropertyValue<string>(Name, AppInfoPaths.SortAs) : null;
 				_cachedHasSortAs = sortAs != null && sortAs.Length > 0;
 			}
 			return _cachedHasSortAs.Value;
@@ -139,7 +183,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		{
 			if (!_sortAsCached)
 			{
-				_cachedSortAs = _properties.GetPropertyValue<string>(Name, AppInfoPaths.SortAs);
+				_cachedSortAs = HotTable.GetPropertyValue<string>(Name, AppInfoPaths.SortAs);
 				if (_cachedSortAs == null || _cachedSortAs.Length == 0)
 				{
 					_cachedSortAs = Name;
@@ -171,7 +215,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		get
 		{
-			string propertyValue = _properties.GetPropertyValue<string>("", AppInfoPaths.InstallDir);
+			string propertyValue = HotTable.GetPropertyValue<string>("", AppInfoPaths.InstallDir);
 			return Path.Combine(DisplaySettings!.SteamDir, "steamapps", "common", propertyValue);
 		}
 	}
@@ -199,7 +243,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		get
 		{
 			if (_cachedType.HasValue) return _cachedType.Value;
-			string? propertyValue = _properties.GetPropertyValue<string>(null!, AppInfoPaths.Type);
+			string? propertyValue = HotTable.GetPropertyValue<string>(null!, AppInfoPaths.Type);
 			if (propertyValue == null) return AppInfoEntryType.Unknown;
 			if (!StringToType.TryGetValue(propertyValue, out var result))
 			{
@@ -257,21 +301,26 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	{
 		if (_originalData != null)
 			return _originalData;
-		if (_rawTableData == null)
+		if (_rawEntryData == null)
 			throw new InvalidOperationException($"GetOriginalDataCopy called on entry {ID:X8} before original data was initialized.");
-		PropertyTable parsed = ReadPropertyTableFrom(new BinaryReader(new MemoryStream(_rawTableData, writable: false)));
+		PropertyTable parsed = ReadPropertyTableFrom(new BinaryReader(OpenTableStream()));
 		_originalData = PropertyTableIO.WritePropertyTable_0x00000000(parsed);
 		return _originalData;
 	}
 
 	public T GetPropertyValue<T>(T defaultValue, params string[] propertyPath)
 	{
-		return _properties.GetPropertyValue(defaultValue, propertyPath);
+		// 热路径可直接由摘要表满足，无需物化完整属性表。
+		if (_properties == null && _summary != null && AppInfoPaths.IsHotPath(propertyPath))
+		{
+			return _summary.GetPropertyValue(defaultValue, propertyPath);
+		}
+		return Properties.GetPropertyValue(defaultValue, propertyPath);
 	}
 
 	public void SetPropertyValue(PropertyType type, object? value, params string[] propertyPath)
 	{
-		_properties.SetPropertyValue(type, value, propertyPath);
+		Properties.SetPropertyValue(type, value, propertyPath);
 		if (ModificationsCreate().AddChange(type, value, propertyPath))
 		{
 			RaiseModified();
@@ -289,7 +338,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		if (_modifications.OriginalData != null)
 		{
 			Property? rawProperty = DeserializeOriginalData().GetRawProperty(propertyPath);
-			_properties.SetRawProperty(rawProperty!, propertyPath);
+			Properties.SetRawProperty(rawProperty!, propertyPath);
 		}
 		if (_modifications.Changes.Count == 0)
 		{
@@ -346,7 +395,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	private PropertyTable GetLaunchPropertyTable()
 	{
-		PropertyTable? propertyTable = _properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.Launch);
+		PropertyTable? propertyTable = Properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.Launch);
 		return propertyTable ?? new PropertyTable();
 	}
 
@@ -372,24 +421,26 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		return false;
 	}
 
-	protected void RestoreBaseProperties()
+	protected void RestoreBaseProperties() => RestoreBaseProperties(_properties ?? _summary!);
+
+	private void RestoreBaseProperties(PropertyTable table)
 	{
-		string? baseName = _properties.GetPropertyValue<string>(null!, AppInfoPaths.BaseName);
+		string? baseName = table.GetPropertyValue<string>(null!, AppInfoPaths.BaseName);
 		if (baseName != null)
 		{
-			_properties.SetPropertyValue(PropertyType.String, baseName, AppInfoPaths.Name);
+			table.SetPropertyValue(PropertyType.String, baseName, AppInfoPaths.Name);
 		}
-		string? baseType = _properties.GetPropertyValue<string>(null!, AppInfoPaths.BaseType);
+		string? baseType = table.GetPropertyValue<string>(null!, AppInfoPaths.BaseType);
 		if (baseType != null)
 		{
-			_properties.SetPropertyValue(PropertyType.String, baseType, AppInfoPaths.Type);
+			table.SetPropertyValue(PropertyType.String, baseType, AppInfoPaths.Type);
 		}
 	}
 
 	protected PropertyTable PrepareWriteTable(out PropertyTable common)
 	{
 		ClearCachedProps();
-		PropertyTable table = new PropertyTable(_properties);
+		PropertyTable table = new PropertyTable(Properties);
 		common = table.GetPropertyValue<PropertyTable>(null!, "appinfo", "common")!;
 		if (common != null)
 		{
@@ -463,7 +514,14 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 	protected virtual PropertyTable ReadPropertyTableFrom(BinaryReader reader)
 		=> PropertyTableIO.ReadPropertyTable_0x00000000(reader);
 
-	protected virtual void OnReadCompleted() { }
+	/// <summary>
+	/// 加载时读取“摘要表”：默认走原生稀疏解码，只保留热路径子树；
+	/// 原生不可用时退化为完整读取（仍正确，只是不再省内存/时间）。
+	/// </summary>
+	protected virtual PropertyTable ReadSummaryFrom(BinaryReader reader)
+		=> PropertyTableIO.ReadPropertyTableSparse_0x00000000(reader);
+
+	protected virtual void OnReadCompleted(PropertyTable table) { }
 
 	protected virtual void WritePropertyTableTo(BinaryWriter writer, PropertyTable table)
 	{
@@ -515,16 +573,18 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 			for (int i = 1; i < HashBlockCount; i++)
 				subReader.ReadBytes(Sha1HashSize);
 
-			// 保留原始属性表字节（0x00000000 归一化数据在需要时惰性生成）。
+			// 保留整个条目的原始字节（含条头），属性表区域按偏移零拷贝访问。
 			long tableStart = subReader.BaseStream.Position;
-			int tableLength = (int)(subReader.BaseStream.Length - tableStart);
-			_rawTableData = new byte[tableLength];
-			Array.Copy(entryData, tableStart, _rawTableData, 0, tableLength);
+			_rawEntryData = entryData;
+			_tableOffset = (int)tableStart;
+			_tableLength = (int)(subReader.BaseStream.Length - tableStart);
 
-			_properties = ReadPropertyTableFrom(new BinaryReader(new MemoryStream(_rawTableData, writable: false)));
-			RestoreBaseProperties();
+			// 只解析热路径子树（摘要表），完整属性表延迟到首次访问时物化。
+			_summary = ReadSummaryFrom(new BinaryReader(OpenTableStream()));
+			RestoreBaseProperties(_summary);
+			OnReadCompleted(_summary);
+			_properties = null!;
 		}
-		OnReadCompleted();
 		ClearCachedProps();
 	}
 

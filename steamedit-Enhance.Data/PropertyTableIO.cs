@@ -29,6 +29,29 @@ internal static class PropertyTableIO
 	/// <summary>缓存 <c>IList&lt;string&gt;</c> 字符串表对应的原生句柄，避免每个条目重复构建（O(n²)）。</summary>
 	private static readonly ConditionalWeakTable<object, NativeStringTable> s_nativeStringTables = new();
 
+	/// <summary>全局热路径句柄（进程生命周期内复用）。</summary>
+	private static readonly IntPtr s_hotPathSet = SteameditNative.Available ? BuildHotPathSet() : IntPtr.Zero;
+
+	private static IntPtr BuildHotPathSet()
+	{
+		string[][] paths = AppInfoPaths.HotPaths;
+		using var ms = new MemoryStream();
+		using var w = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true);
+		w.Write((uint)paths.Length);
+		foreach (string[] path in paths)
+		{
+			w.Write((uint)path.Length);
+			foreach (string segment in path)
+			{
+				byte[] bytes = Encoding.UTF8.GetBytes(segment);
+				w.Write((uint)bytes.Length);
+				w.Write(bytes);
+			}
+		}
+		w.Flush();
+		return SteameditNative.PathSetNew(ms.ToArray());
+	}
+
 	private static NativeStringTable GetNativeStringTable(IList<string> stringTable)
 	{
 		byte[] dump = GetStringTableDump(stringTable);
@@ -412,5 +435,43 @@ internal static class PropertyTableIO
 		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
 		WritePropertyTable_0x07564429(binaryWriter, table, stringTable, stringLookup);
 		return ((MemoryStream)binaryWriter.BaseStream).ToArray();
+	}
+
+	// ── Sparse (hot-path) reads: emit only the paths the list UI needs; the rest of
+	//    the entry is materialized later on demand from the retained raw bytes. ──
+
+	public static PropertyTable ReadPropertyTableSparse_0x00000000(BinaryReader reader)
+	{
+		if (Native && s_hotPathSet != IntPtr.Zero)
+		{
+			long start = reader.BaseStream.Position;
+			if (TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
+			{
+				byte[]? flat = SteameditNative.VdfToFlatSparse(src, format29: false, IntPtr.Zero, s_hotPathSet, out int consumed);
+				if (flat == null)
+					throw new InvalidDataException(SteameditNative.LastError);
+				reader.BaseStream.Position = start + consumed;
+				return FlatTableCodec.FromFlat(flat);
+			}
+		}
+		return ReadPropertyTable_0x00000000(reader);
+	}
+
+	public static PropertyTable ReadPropertyTableSparse_0x07564429(BinaryReader reader, IList<string> stringTable)
+	{
+		if (Native && s_hotPathSet != IntPtr.Zero)
+		{
+			long start = reader.BaseStream.Position;
+			if (TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
+			{
+				NativeStringTable nativeTable = GetNativeStringTable(stringTable);
+				byte[]? flat = SteameditNative.VdfToFlatSparse(src, format29: true, nativeTable.Handle, s_hotPathSet, out int consumed);
+				if (flat == null)
+					throw new InvalidDataException(SteameditNative.LastError);
+				reader.BaseStream.Position = start + consumed;
+				return FlatTableCodec.FromFlat(flat, stringTable);
+			}
+		}
+		return ReadPropertyTable_0x07564429(reader, stringTable);
 	}
 }

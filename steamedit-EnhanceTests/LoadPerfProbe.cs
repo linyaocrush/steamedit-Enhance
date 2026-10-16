@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -49,15 +50,30 @@ public class LoadPerfProbe
         {
             PropertyTableIO.UseNative = native;
             Console.WriteLine($"--- UseNative={native} (active={PropertyTableIO.Native}) ---");
-            for (int i = 0; i < 3; i++)
+            var times = new List<long>();
+            long checksum = 0;
+            int count = 0;
+            for (int i = 0; i < 8; i++)
             {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
                 var sw = Stopwatch.StartNew();
                 var data = AppInfoFactory.Load(path);
-                sw.Stop();
                 var entries = data.Entries.ToList();
-                Console.WriteLine($"  Load#{i}: {sw.ElapsedMilliseconds} ms, entries={entries.Count}");
-                if (i == 0) Assert.IsTrue(entries.Count > 0);
+                foreach (var e in entries)
+                {
+                    string name = e.Name ?? "";
+                    checksum += name.Length + (int)e.Type + (e.IsHidden ? 1 : 0) + (e.IsCompleted ? 1 : 0);
+                    checksum += e.NormalizedSortAs.Length;
+                }
+                sw.Stop();
+                count = entries.Count;
+                if (i > 0) times.Add(sw.ElapsedMilliseconds);
             }
+            times.Sort();
+            double avg = times.Sum() / (double)times.Count;
+            Console.WriteLine($"  best={times[0]} ms  avg={avg:F0} ms  min2={times[1]} ms  entries={count}  checksum={checksum}");
+            Assert.IsTrue(count > 0);
         }
         PropertyTableIO.UseNative = true;
     }

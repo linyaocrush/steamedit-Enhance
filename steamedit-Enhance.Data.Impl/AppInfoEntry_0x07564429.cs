@@ -16,14 +16,17 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 	protected override PropertyTable ReadPropertyTableFrom(BinaryReader reader)
 		=> PropertyTableIO.ReadPropertyTable_0x07564429(reader, _stringTable!);
 
-	protected override void OnReadCompleted()
+	protected override PropertyTable ReadSummaryFrom(BinaryReader reader)
+		=> PropertyTableIO.ReadPropertyTableSparse_0x07564429(reader, _stringTable!);
+
+	protected override void OnReadCompleted(PropertyTable table)
 	{
-		if (!_properties.HasProperty(AppInfoPaths.NameLocalized))
+		if (!table.HasProperty(AppInfoPaths.NameLocalized))
 		{
-			PropertyTable? nameLocalized = _properties.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.BaseNameLocalized);
+			PropertyTable? nameLocalized = table.GetPropertyValue<PropertyTable>(null!, AppInfoPaths.BaseNameLocalized);
 			if (nameLocalized != null)
 			{
-				_properties.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.NameLocalized);
+				table.SetPropertyValue(PropertyType.Table, nameLocalized, AppInfoPaths.NameLocalized);
 			}
 		}
 	}

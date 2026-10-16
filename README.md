@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Windows-10%2F11-blue?style=flat-square&logo=windows" alt="Platform" />
   <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 10" />
-  <img src="https://img.shields.io/badge/Tests-342%20passing-2ea043?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-348%20passing-2ea043?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/UI-EN%20%7C%20ZH--CN%20%7C%20ZH--TW-orange?style=flat-square" alt="Languages" />
   <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
 </p>
@@ -58,8 +58,9 @@
 
 | 优化 | 说明 |
 |:---|:---|
-| **原生 Rust 内核** | `appinfo.vdf` 属性表编解码由 Rust 实现（`native/steamedit-core`，cdylib + P/Invoke）。旧版 `0x00000000` 格式解码 **约 1.8×** 于托管实现；原生库缺失时自动回退到托管实现 |
-| **惰性 originalData** | 加载时不再对每个条目做“深拷贝 + 全量序列化”，只保留原始字节，首次修改时才惰性生成 → **加载快约 25–30%** |
+| **原生 Rust 内核** | `appinfo.vdf` 属性表编解码由 Rust 实现（`native/steamedit-core`，cdylib + P/Invoke）。旧版 `0x00000000` 格式解码 **约 1.8×** 于托管实现；解码零分配、零拷贝读取流缓冲区；原生库缺失时自动回退到托管实现 |
+| **摘要表 + 惰性物化** | 加载时原生解码器只提取「热路径」子树（`appinfo.common` / `appinfo.steam_edit` / `appinfo.config.installdir`）构建摘要表；完整属性表与 `originalData` 在首次查看/修改该条目时才物化。列表/筛选/排序/批量操作全部命中热路径，因此无需物化 |
+| **惰性 originalData** | 加载时不再对每个条目做“深拷贝 + 全量序列化”，只保留原始字节，首次修改时才惰性生成。综合：5.8 MB / 2576 条目加载约 **660 ms → 280 ms（约 2.3×）** |
 | Memory-Mapped I/O | appinfo.vdf 通过内存映射文件加载，降低内存占用与启动延迟 |
 | 异步排序 | 搜索/筛选/排序在后台线程执行，UI 不卡顿 |
 | 防抖筛选 | 输入 500ms 防抖 + 200ms 状态栏防抖，避免频繁刷新 |
@@ -136,7 +137,7 @@ steamedit-Enhance.exe -autofix -forcestart
 # 构建
 dotnet build steamedit-Enhance.csproj
 
-# 测试（342 个）
+# 测试（348 个）
 dotnet test steamedit-EnhanceTests/steamedit-EnhanceTests.csproj
 
 # 只跑性能探针（会读取真实 appinfo.vdf，缺失则跳过）
@@ -212,7 +213,7 @@ steamedit-Enhance/
         │   ├── TranslationGlossary.cs       # 术语缓存
         │   ├── StringTitleComparer.cs       # 自然排序
         │   └── Log.cs                       # 日志系统（多级别过滤）
-└── steamedit-EnhanceTests/          # ✅ MSTest 单元测试（342 个）
+└── steamedit-EnhanceTests/          # ✅ MSTest 单元测试（348 个）
 └── native/steamedit-core/           # 🦀 原生 Rust 内核（appinfo 属性表编解码，cdylib）
 
  ```
@@ -228,7 +229,7 @@ steamedit-Enhance/
 | UI | Windows Forms + PerMonitorV2 DPI |
 | 目标 | `win-x64` |
 | 发布 | 单文件 EXE（独立或依赖框架） |
-| 测试 | MSTest（342 通过，0 失败） |
+| 测试 | MSTest（348 通过，0 失败） |
 
 ---
 

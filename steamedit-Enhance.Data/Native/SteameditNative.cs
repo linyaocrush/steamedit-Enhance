@@ -48,6 +48,17 @@ internal static unsafe class SteameditNative
         byte* src, nuint srcLen, IntPtr strtab, out nuint outLen, out nuint outUsed);
 
     [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+    private static extern byte* ste_vdf_to_flat_sparse(
+        byte* src, nuint srcLen, uint format29, IntPtr strtab, IntPtr pathset,
+        out nuint outLen, out nuint outUsed);
+
+    [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr ste_pathset_new(byte* paths, nuint len);
+
+    [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+    private static extern void ste_pathset_free(IntPtr pathset);
+
+    [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
     private static extern byte* ste_flat_to_vdf(byte* flat, nuint flatLen, out nuint outLen);
 
     [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
@@ -123,8 +134,21 @@ internal static unsafe class SteameditNative
         }
     }
 
-    public static IntPtr StrTabNew() => ste_strtab_new();
+    public static byte[]? VdfToFlatSparse(
+        ReadOnlySpan<byte> src, bool format29, IntPtr strtab, IntPtr pathset, out int consumed)
+    {
+        consumed = 0;
+        fixed (byte* p = src)
+        {
+            byte* outPtr = ste_vdf_to_flat_sparse(
+                p, (nuint)src.Length, format29 ? 1u : 0u, strtab, pathset, out nuint len, out nuint used);
+            if (outPtr == null) return null;
+            consumed = (int)used;
+            return CopyAndFree(outPtr, len);
+        }
+    }
 
+    public static IntPtr StrTabNew() => ste_strtab_new();
     public static IntPtr StrTabParse(ReadOnlySpan<byte> dump)
     {
         fixed (byte* p = dump)
@@ -143,6 +167,19 @@ internal static unsafe class SteameditNative
         if (strtab == IntPtr.Zero) return null;
         byte* outPtr = ste_strtab_dump(strtab, out nuint len);
         return outPtr == null ? null : CopyAndFree(outPtr, len);
+    }
+
+    public static IntPtr PathSetNew(ReadOnlySpan<byte> paths)
+    {
+        fixed (byte* p = paths)
+        {
+            return ste_pathset_new(p, (nuint)paths.Length);
+        }
+    }
+
+    public static void PathSetFree(IntPtr pathset)
+    {
+        if (pathset != IntPtr.Zero) ste_pathset_free(pathset);
     }
 
     private static byte[] CopyAndFree(byte* ptr, nuint len)

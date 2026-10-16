@@ -1,18 +1,22 @@
 //! steamedit-core: native (Rust) kernels for Steamedit Enhance.
 //!
-//! This crate exposes a small C ABI used by the C# WinForms application via P/Invoke.
-//! It implements the binary `appinfo.vdf` property-table codec (read + write) for the
-//! two on-disk property encodings used by Steam:
+//! This crate exposes a small C ABI used by the C# WinForms application via P/Invoke,
+//! implementing the binary `appinfo.vdf` property-table codec for the two on-disk
+//! property encodings used by Steam:
 //!
 //! * `0x00000000` — classic inline format: UTF-8 NUL-terminated names (`ZString`),
 //!   `WString` values stored as NUL-terminated UTF-16LE.
 //! * `0x07564429` — string-table format: names and `WString` values are `u32` indices
 //!   into a shared string table.
 //!
-//! Trees are exchanged with the managed side through a compact, self-describing
-//! "flat" byte stream (see [`flat`]) so the FFI boundary stays bulk and cheap. The
-//! decoder is written to be allocation-free: it copies raw bytes through, and the
-//! managed side performs the single `UTF-8 -> string` allocation per value.
+//! Trees cross the FFI boundary through a compact, self-describing "flat" byte stream
+//! (see [`flat`]). Two decode modes are provided:
+//!
+//! * **full** — every property is emitted (used to materialize an entry on demand);
+//! * **sparse** — only properties whose key path is selected by a [`PathSet`] are
+//!   emitted, everything else is skipped without allocation. This lets the managed
+//!   side load an entire `appinfo.vdf` while building small "summary" trees for the
+//!   list UI, deferring full trees until an entry is actually viewed or edited.
 
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -28,10 +32,11 @@ const MAX_STRING: usize = 1024 * 1024;
 // ── flat wire format ────────────────────────────────────────────────────────
 //
 // A flat stream is a depth-first sequence of tokens:
-//   kind:u8 [key:"utf8 len-prefixed" value]
+//   kind:u8 [key:StrRef value]
 // where `kind` reuses the on-disk PropertyType values. A `Table` token (0) has no
 // value; its children follow until an `EndOfTable` token (8). All integers are
-// little-endian. `len-prefixed` strings are `u32 len` followed by `len` UTF-8 bytes.
+// little-endian. A `StrRef` is a mode byte followed by either length-prefixed UTF-8
+// bytes (`INLINE`) or a `u32` string-table index (`INDEX`).
 mod flat {
     pub const TABLE: u8 = 0;
     pub const STRING: u8 = 1;
@@ -42,9 +47,6 @@ mod flat {
     pub const UINT64: u8 = 7;
     pub const END: u8 = 8;
 
-    /// String reference modes. `INLINE` carries UTF-8 bytes; `INDEX` refers into the
-    /// shared `0x07564429` string table (which lets the managed side reuse the same
-    /// `string` instance instead of allocating a copy per occurrence).
     pub const STR_INLINE: u8 = 0;
     pub const STR_INDEX: u8 = 1;
 }
@@ -126,6 +128,25 @@ impl<'a> Reader<'a> {
         }
         self.pos = start + rel + 1;
         Ok(&self.buf[start..start + rel])
+    }
+
+    /// Advances past a NUL-terminated UTF-16LE string without decoding it.
+    fn skip_wstring(&mut self) -> Result<(), String> {
+        let start = self.pos;
+        let mut i = 0usize;
+        while start + i + 1 < self.buf.len() {
+            if self.buf[start + i] == 0 && self.buf[start + i + 1] == 0 {
+                self.pos = start + i + 2;
+                return Ok(());
+            }
+            i += 2;
+            if i > MAX_STRING {
+                return Err(
+                    "wide string exceeds maximum buffer size. File may be corrupted.".into(),
+                );
+            }
+        }
+        Err("null terminator not found".into())
     }
 
     /// Reads a NUL-terminated UTF-16LE string and appends its length-prefixed UTF-8
@@ -225,7 +246,6 @@ fn put_utf16_as_utf8_lp(out: &mut Vec<u8>, src: &[u8]) {
         }
         let mut buf = [0u8; 4];
         let encoded: Option<&str> = if (0xD800..=0xDBFF).contains(&u) {
-            // High surrogate: try to pair with a following low surrogate.
             if i + 1 < src.len() {
                 let lo = u16::from_le_bytes([src[i], src[i + 1]]);
                 if (0xDC00..=0xDFFF).contains(&lo) {
@@ -313,8 +333,137 @@ impl StringTable {
     }
 }
 
+// ── hot-path selection (sparse decode) ──────────────────────────────────────
+
+/// A prefix trie of key paths. A terminal node means "include this whole subtree".
+pub struct PathSet {
+    root: TrieNode,
+}
+
+struct TrieNode {
+    terminal: bool,
+    children: HashMap<Vec<u8>, TrieNode>,
+}
+
+impl TrieNode {
+    fn new() -> Self {
+        TrieNode {
+            terminal: false,
+            children: HashMap::new(),
+        }
+    }
+}
+
+impl PathSet {
+    /// Parses `[u32 pathCount][ [u32 segCount][ (u32 len)(utf8 bytes) ]* ]*`.
+    fn parse(buf: &[u8]) -> Result<Self, String> {
+        let mut r = Reader::new(buf);
+        let count = r.u32()? as usize;
+        if count > 10_000 {
+            return Err("too many hot paths".into());
+        }
+        let mut root = TrieNode::new();
+        for _ in 0..count {
+            let segments = r.u32()? as usize;
+            if segments == 0 || segments > MAX_DEPTH {
+                return Err("invalid hot path segment count".into());
+            }
+            let mut node = &mut root;
+            for _ in 0..segments {
+                let len = r.u32()? as usize;
+                if len > MAX_STRING {
+                    return Err("hot path segment too long".into());
+                }
+                let key = r.take(len)?.to_vec();
+                node = node.children.entry(key).or_insert_with(TrieNode::new);
+            }
+            node.terminal = true;
+        }
+        Ok(PathSet { root })
+    }
+}
+
 // ── decode: on-disk VDF -> flat ─────────────────────────────────────────────
 
+fn out_of_range(idx: u32, st: &[String]) -> String {
+    format!(
+        "string table index {idx} out of range (table size={})",
+        st.len()
+    )
+}
+
+/// Emits a property name as a `StrRef` (index for the string-table format).
+fn emit_name(
+    r: &mut Reader,
+    out: &mut Vec<u8>,
+    format29: bool,
+    st: &[String],
+) -> Result<(), String> {
+    if format29 {
+        let idx = r.u32()?;
+        if st.get(idx as usize).is_none() {
+            return Err(out_of_range(idx, st));
+        }
+        put_strref_index(out, idx);
+    } else {
+        let name = r.zstring_bytes()?;
+        put_strref_inline(out, name);
+    }
+    Ok(())
+}
+
+/// Emits the value of a property of `kind` (a table recurses into `decode_table`).
+fn emit_value(
+    r: &mut Reader,
+    out: &mut Vec<u8>,
+    kind: u8,
+    format29: bool,
+    st: &[String],
+    depth: usize,
+) -> Result<(), String> {
+    match kind {
+        flat::TABLE => decode_table(r, out, depth + 1, format29, st),
+        flat::STRING => {
+            let v = r.zstring_bytes()?;
+            put_strref_inline(out, v);
+            Ok(())
+        }
+        flat::WSTRING => {
+            if format29 {
+                let idx = r.u32()?;
+                if st.get(idx as usize).is_none() {
+                    return Err(out_of_range(idx, st));
+                }
+                put_strref_index(out, idx);
+            } else {
+                r.wstring_lp_into(out)?;
+            }
+            Ok(())
+        }
+        flat::INT32 => {
+            out.extend_from_slice(&r.i32()?.to_le_bytes());
+            Ok(())
+        }
+        flat::FLOAT => {
+            out.extend_from_slice(&r.f32()?.to_le_bytes());
+            Ok(())
+        }
+        flat::UINT64 => {
+            out.extend_from_slice(&r.u64()?.to_le_bytes());
+            Ok(())
+        }
+        flat::COLOR => {
+            out.extend_from_slice(r.take(3)?);
+            Ok(())
+        }
+        other => Err(format!(
+            "Unknown property type {other} at position {}. File may be corrupted.",
+            r.pos
+        )),
+    }
+}
+
+/// Full decode of one table: emits each property (name + value) and a trailing `END`.
 fn decode_table(
     r: &mut Reader,
     out: &mut Vec<u8>,
@@ -332,48 +481,111 @@ fn decode_table(
             return Ok(());
         }
         out.push(kind);
+        emit_name(r, out, format29, st)?;
+        emit_value(r, out, kind, format29, st, depth)?;
+    }
+}
+
+fn skip_name(r: &mut Reader, format29: bool) -> Result<(), String> {
+    if format29 {
+        r.u32()?;
+    } else {
+        r.zstring_bytes()?;
+    }
+    Ok(())
+}
+
+/// Consumes a property value without emitting anything.
+fn skip_value(r: &mut Reader, kind: u8, format29: bool) -> Result<(), String> {
+    match kind {
+        flat::TABLE => loop {
+            let k = r.u8()?;
+            if k == flat::END {
+                return Ok(());
+            }
+            skip_name(r, format29)?;
+            skip_value(r, k, format29)?;
+        },
+        flat::STRING => {
+            r.zstring_bytes()?;
+            Ok(())
+        }
+        flat::WSTRING => {
+            if format29 {
+                r.u32()?;
+            } else {
+                r.skip_wstring()?;
+            }
+            Ok(())
+        }
+        flat::INT32 | flat::FLOAT => {
+            r.take(4)?;
+            Ok(())
+        }
+        flat::UINT64 => {
+            r.take(8)?;
+            Ok(())
+        }
+        flat::COLOR => {
+            r.take(3)?;
+            Ok(())
+        }
+        other => Err(format!(
+            "Unknown property type {other} at position {}. File may be corrupted.",
+            r.pos
+        )),
+    }
+}
+
+/// Sparse decode: emits only properties selected by `node`; anything else is skipped.
+fn decode_table_sparse(
+    r: &mut Reader,
+    out: &mut Vec<u8>,
+    depth: usize,
+    format29: bool,
+    st: &[String],
+    node: &TrieNode,
+) -> Result<(), String> {
+    if depth > MAX_DEPTH {
+        return Err(format!("nesting depth {depth} exceeds maximum {MAX_DEPTH}"));
+    }
+    loop {
+        let kind = r.u8()?;
+        if kind == flat::END {
+            out.push(flat::END);
+            return Ok(());
+        }
         if format29 {
             let idx = r.u32()?;
-            if st.get(idx as usize).is_none() {
-                return Err(format!(
-                    "string table index {idx} out of range (table size={})",
-                    st.len()
-                ));
+            let name = match st.get(idx as usize) {
+                Some(n) => n,
+                None => return Err(out_of_range(idx, st)),
+            };
+            match node.children.get(name.as_bytes()) {
+                Some(child) => {
+                    out.push(kind);
+                    put_strref_index(out, idx);
+                    if child.terminal || kind != flat::TABLE {
+                        emit_value(r, out, kind, format29, st, depth)?;
+                    } else {
+                        decode_table_sparse(r, out, depth + 1, format29, st, child)?;
+                    }
+                }
+                None => skip_value(r, kind, format29)?,
             }
-            put_strref_index(out, idx);
         } else {
             let name = r.zstring_bytes()?;
-            put_strref_inline(out, name);
-        }
-        match kind {
-            flat::TABLE => decode_table(r, out, depth + 1, format29, st)?,
-            flat::STRING => {
-                let v = r.zstring_bytes()?;
-                put_strref_inline(out, v);
-            }
-            flat::WSTRING => {
-                if format29 {
-                    let idx = r.u32()?;
-                    if st.get(idx as usize).is_none() {
-                        return Err(format!(
-                            "string table index {idx} out of range (table size={})",
-                            st.len()
-                        ));
+            match node.children.get(name) {
+                Some(child) => {
+                    out.push(kind);
+                    put_strref_inline(out, name);
+                    if child.terminal || kind != flat::TABLE {
+                        emit_value(r, out, kind, format29, st, depth)?;
+                    } else {
+                        decode_table_sparse(r, out, depth + 1, format29, st, child)?;
                     }
-                    put_strref_index(out, idx);
-                } else {
-                    r.wstring_lp_into(out)?;
                 }
-            }
-            flat::INT32 => out.extend_from_slice(&r.i32()?.to_le_bytes()),
-            flat::FLOAT => out.extend_from_slice(&r.f32()?.to_le_bytes()),
-            flat::UINT64 => out.extend_from_slice(&r.u64()?.to_le_bytes()),
-            flat::COLOR => out.extend_from_slice(r.take(3)?),
-            other => {
-                return Err(format!(
-                    "Unknown property type {other} at position {}. File may be corrupted.",
-                    r.pos
-                ))
+                None => skip_value(r, kind, format29)?,
             }
         }
     }
@@ -398,8 +610,7 @@ fn encode_table(
             return Ok(());
         }
         out.push(kind);
-        let name = r.strref()?;
-        let name_inline: &[u8] = match name {
+        let name_inline: &[u8] = match r.strref()? {
             StrRef::Inline(b) => b,
             StrRef::Index(_) => {
                 return Err("flat string index refs are not supported while encoding".into())
@@ -539,7 +750,7 @@ unsafe fn slice<'a>(ptr: *const u8, len: usize) -> &'a [u8] {
 
 // ── public C ABI ────────────────────────────────────────────────────────────
 
-/// Decodes an inline (`0x00000000`) property table into a flat stream.
+/// Decodes an entire inline (`0x00000000`) property table into a flat stream.
 /// `out_used` receives the number of source bytes the table occupied.
 ///
 /// # Safety
@@ -564,8 +775,7 @@ pub unsafe extern "C" fn ste_vdf_to_flat(
     )
 }
 
-/// Decodes a string-table (`0x07564429`) property table into a flat stream, using a
-/// string-table handle created by [`ste_strtab_parse`].
+/// Decodes an entire string-table (`0x07564429`) property table into a flat stream.
 ///
 /// # Safety
 /// `src`/`src_len` must describe a readable buffer and `strtab` must be a valid handle.
@@ -587,6 +797,49 @@ pub unsafe extern "C" fn ste_vdf_to_flat_07564429(
             let mut r = Reader::new(bytes);
             let mut out = Vec::with_capacity(bytes.len());
             decode_table(&mut r, &mut out, 0, true, &st.list)?;
+            Ok((out, r.pos))
+        },
+        out_len,
+        out_used,
+    )
+}
+
+/// Sparse decode: emits only the properties selected by `pathset` (a handle from
+/// [`ste_pathset_new`]). A null `pathset` behaves like [`ste_vdf_to_flat`].
+///
+/// # Safety
+/// Pointers must describe readable buffers / valid handles.
+#[no_mangle]
+pub unsafe extern "C" fn ste_vdf_to_flat_sparse(
+    src: *const u8,
+    src_len: usize,
+    format29: u32,
+    strtab: *mut StringTable,
+    pathset: *const PathSet,
+    out_len: *mut usize,
+    out_used: *mut usize,
+) -> *mut u8 {
+    let bytes = slice(src, src_len);
+    run(
+        || {
+            let format29 = format29 != 0;
+            let mut r = Reader::new(bytes);
+            let mut out = Vec::with_capacity(bytes.len());
+            if format29 {
+                if strtab.is_null() {
+                    return Err("string table handle is null".into());
+                }
+                let st = &*strtab;
+                if pathset.is_null() {
+                    decode_table(&mut r, &mut out, 0, true, &st.list)?;
+                } else {
+                    decode_table_sparse(&mut r, &mut out, 0, true, &st.list, &(*pathset).root)?;
+                }
+            } else if pathset.is_null() {
+                decode_table(&mut r, &mut out, 0, false, &[])?;
+            } else {
+                decode_table_sparse(&mut r, &mut out, 0, false, &[], &(*pathset).root)?;
+            }
             Ok((out, r.pos))
         },
         out_len,
@@ -619,7 +872,7 @@ pub unsafe extern "C" fn ste_flat_to_vdf(
 }
 
 /// Encodes a flat stream into a string-table (`0x07564429`) property table, adding
-/// any new names/wide-strings to `strtab` (a pointer from [`ste_strtab_new`]).
+/// any new names/wide-strings to `strtab`.
 ///
 /// # Safety
 /// `flat`/`flat_len` must describe a readable buffer and `strtab` must be a valid handle.
@@ -701,4 +954,36 @@ pub unsafe extern "C" fn ste_strtab_dump(st: *mut StringTable, out_len: *mut usi
         out_len,
         std::ptr::null_mut(),
     )
+}
+
+/// Builds a hot-path set from `[u32 pathCount][ [u32 segCount][ (u32 len)(utf8) ]* ]*`.
+/// Returns null on failure (see [`ste_last_error`]).
+///
+/// # Safety
+/// `paths`/`len` must describe a readable buffer.
+#[no_mangle]
+pub unsafe extern "C" fn ste_pathset_new(paths: *const u8, len: usize) -> *mut PathSet {
+    let bytes = slice(paths, len);
+    match catch_unwind(AssertUnwindSafe(|| PathSet::parse(bytes))) {
+        Ok(Ok(p)) => Box::into_raw(Box::new(p)),
+        Ok(Err(e)) => {
+            set_err(&e);
+            std::ptr::null_mut()
+        }
+        Err(_) => {
+            set_err("native panic crossed the FFI boundary");
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Frees a hot-path set handle.
+///
+/// # Safety
+/// `p` must be a handle from [`ste_pathset_new`] not yet freed.
+#[no_mangle]
+pub unsafe extern "C" fn ste_pathset_free(p: *mut PathSet) {
+    if !p.is_null() {
+        drop(Box::from_raw(p));
+    }
 }
