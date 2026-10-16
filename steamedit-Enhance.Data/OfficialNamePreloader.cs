@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Common;
@@ -21,14 +20,14 @@ internal readonly record struct OfficialNamePreloadResult(
 /// </summary>
 internal sealed class OfficialNamePreloader
 {
-	private readonly OfficialNameFetcher _fetcher;
+	private readonly IOfficialNameFetcher _fetcher;
 	private readonly LocalizedNameCache _cache;
 	private readonly int _concurrency;
 
-	public OfficialNamePreloader(LocalizedNameCache cache, int concurrency = 6, HttpClient? httpClient = null)
+	public OfficialNamePreloader(LocalizedNameCache cache, int concurrency = 6, IOfficialNameFetcher? fetcher = null)
 	{
 		_cache = cache;
-		_fetcher = new OfficialNameFetcher(httpClient);
+		_fetcher = fetcher ?? new OfficialNameFetcher();
 		_concurrency = Math.Max(1, concurrency);
 	}
 

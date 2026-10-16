@@ -1,29 +1,23 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using steamedit_Enhance.Data.Native;
 
 namespace Common;
 
+/// <summary>
+/// 文件日志的薄封装：文件句柄、级别过滤、行格式化与“最近若干行”读取全部由
+/// Rust 内核 (<c>ste_log_*</c>) 负责；托管侧只做界面/调试台回显与本地时间串。
+/// </summary>
 internal static class Log
 {
-	private static readonly object _syncObj;
 	private static readonly string _path;
-	private static StreamWriter? _writer;
-	
-	// 默认启用Debug级别仅用于调试构建，生产环境默认关闭
-#if DEBUG
-	private static volatile bool _enableDebug = true;
+
+	// 托管侧镜像一份级别开关，用于在格式化/调用内核前提前短路（内核同样会再判一次）。
+	private static volatile bool _enableDebug;
 	private static volatile bool _enableInfo = true;
 	private static volatile bool _enableWarning = true;
 	private static volatile bool _enableError = true;
-#else
-	private static volatile bool _enableDebug = false;
-	private static volatile bool _enableInfo = true;
-	private static volatile bool _enableWarning = true;
-	private static volatile bool _enableError = true;
-#endif
 
 	public static string FilePath => _path;
 
@@ -37,90 +31,76 @@ internal static class Log
 
 	static Log()
 	{
-		_syncObj = new object();
 		_path = Path.Combine(AppHelper.GetAppDirectory(), "log.txt");
-		_writer = new StreamWriter(_path, append: true);
-		WriteLines(LogLevel.Info, "---", DateTime.Now.ToLongDateString() + " - " + DateTime.Now.ToLongTimeString(), "STARTING UP: " + Environment.CommandLine);
+		// 默认启用 Debug 仅用于调试构建，生产环境默认关闭。
+#if DEBUG
+		InitNative(true, true, true, true);
+#else
+		InitNative(false, true, true, true);
+#endif
+		WriteLines(LogLevel.Info, "---",
+			DateTime.Now.ToLongDateString() + " - " + DateTime.Now.ToLongTimeString(),
+			"STARTING UP: " + Environment.CommandLine);
 		Flush();
 		AppDomain.CurrentDomain.ProcessExit += (_, _) => Close();
 	}
 
-	private static string _cachedTimestamp = "";
-	private static long _lastTimestampSecond;
+	private static void InitNative(bool debug, bool info, bool warning, bool error)
+	{
+		_enableDebug = debug;
+		_enableInfo = info;
+		_enableWarning = warning;
+		_enableError = error;
+		SteameditNative.LogInit(_path);
+		SteameditNative.LogConfigure(debug, info, warning, error);
+	}
 
-	/// <summary>
-	/// 配置日志级别启用状态
-	/// </summary>
+	/// <summary>配置日志级别启用状态。</summary>
 	public static void ConfigureLevels(bool debug, bool info, bool warning, bool error)
 	{
 		_enableDebug = debug;
 		_enableInfo = info;
 		_enableWarning = warning;
 		_enableError = error;
+		SteameditNative.LogConfigure(debug, info, warning, error);
 	}
 
-	/// <summary>
-	/// 设置最低日志级别（包含）
-	/// </summary>
+	/// <summary>设置最低日志级别（包含）。</summary>
 	public static void SetMinimumLevel(LogLevel level)
-	{
-		_enableDebug = level <= LogLevel.Debug;
-		_enableInfo = level <= LogLevel.Info;
-		_enableWarning = level <= LogLevel.Warning;
-		_enableError = level <= LogLevel.Error;
-	}
+		=> ConfigureLevels(
+			level <= LogLevel.Debug,
+			level <= LogLevel.Info,
+			level <= LogLevel.Warning,
+			level <= LogLevel.Error);
 
-	public static void WriteLine(string line)
-	{
-		WriteLines(LogLevel.Info, line);
-	}
+	public static void WriteLine(string line) => WriteLines(LogLevel.Info, line);
 
 	public static void WriteLine(string fmt, params object[] args)
-	{
-		WriteLines(LogLevel.Info, string.Format(fmt, args));
-	}
+		=> WriteLines(LogLevel.Info, string.Format(fmt, args));
 
-	public static void WriteLine(LogLevel level, string line)
-	{
-		WriteLines(level, line);
-	}
+	public static void WriteLine(LogLevel level, string line) => WriteLines(level, line);
 
 	public static void WriteLine(LogLevel level, string fmt, params object[] args)
-	{
-		WriteLines(level, string.Format(fmt, args));
-	}
+		=> WriteLines(level, string.Format(fmt, args));
 
-	private static void WriteLines(params string[] lines)
-	{
-		WriteLines(LogLevel.Info, lines);
-	}
+	private static void WriteLines(params string[] lines) => WriteLines(LogLevel.Info, lines);
 
 	private static void WriteLines(LogLevel level, params string[] lines)
 	{
 		if (!IsLevelEnabled(level)) return;
-		
-		long nowSec = DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond;
-		if (nowSec != _lastTimestampSecond)
+
+		string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+		var levelCode = (uint)level;
+		foreach (string line in lines)
 		{
-			_cachedTimestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-			_lastTimestampSecond = nowSec;
+			SteameditNative.LogWrite(levelCode, timestamp, line);
 		}
-		string timestamp = _cachedTimestamp;
-		string levelStr = GetLevelString(level);
-		
-		lock (_syncObj)
-		{
-			if (_writer == null) return;
-			foreach (string line in lines)
-			{
-				_writer.WriteLine($"{timestamp} [{levelStr}] {line}");
-			}
 #if DEBUG
-			Console.WriteLine($"[{levelStr}] {string.Join(Environment.NewLine + $"[{levelStr}] ", lines)}");
+		string levelStr = GetLevelString(level);
+		Console.WriteLine($"[{levelStr}] {string.Join(Environment.NewLine + $"[{levelStr}] ", lines)}");
 #endif
-		}
 	}
-	
+
 	private static bool IsLevelEnabled(LogLevel level)
 	{
 		return level switch
@@ -132,7 +112,7 @@ internal static class Log
 			_ => true
 		};
 	}
-	
+
 	private static string GetLevelString(LogLevel level)
 	{
 		return level switch
@@ -146,57 +126,23 @@ internal static class Log
 	}
 
 	public static string[] GetRecentLines(int count = 100)
-	{
-		try
-		{
-			lock (_syncObj) { _writer?.Flush(); }
-			if (!File.Exists(_path)) return [];
-			var recent = new List<string>(count);
-			using var reader = new StreamReader(_path);
-			string? line;
-			while ((line = reader.ReadLine()) != null)
-			{
-				recent.Add(line);
-				if (recent.Count > count)
-					recent.RemoveRange(0, recent.Count - count);
-			}
-			return recent.ToArray();
-		}
-		catch
-		{
-			return [];
-		}
-	}
+		=> SteameditNative.LogRecent(count);
 
-	public static void Flush()
-	{
-		lock (_syncObj)
-		{
-			_writer?.Flush();
-		}
-	}
+	public static void Flush() => SteameditNative.LogFlush();
 
-	public static void Close()
-	{
-		lock (_syncObj)
-		{
-			_writer?.Flush();
-			_writer?.Dispose();
-			_writer = null;
-		}
-	}
+	public static void Close() => SteameditNative.LogClose();
 
 	/// <summary>
-	/// 重置日志系统状态（仅用于测试，避免测试间状态泄漏）
+	/// 重置日志系统状态（仅用于测试，避免测试间状态泄漏）。
 	/// </summary>
 	[System.Diagnostics.Conditional("DEBUG")]
 	public static void Reset()
 	{
-		Close();
-		_writer = new StreamWriter(_path, append: false) { AutoFlush = true };
 		_enableDebug = true;
 		_enableInfo = true;
 		_enableWarning = true;
 		_enableError = true;
+		SteameditNative.LogReset(_path);
+		SteameditNative.LogConfigure(true, true, true, true);
 	}
 }

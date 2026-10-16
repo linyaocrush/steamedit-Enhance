@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Common;
@@ -31,17 +30,17 @@ internal readonly record struct CoverPreloadResult(int Total, int Already, int D
 internal sealed class CoverPreloader
 {
 	private readonly SteamCoverResolver _resolver;
-	private readonly CoverDownloader _downloader;
+	private readonly ICoverDownloader _downloader;
 	private readonly string _cacheDir;
 	private readonly int _concurrency;
 
-	public CoverPreloader(string steamDir, string cacheDir, int concurrency = 6, HttpClient? httpClient = null)
+	public CoverPreloader(string steamDir, string cacheDir, int concurrency = 6, ICoverDownloader? downloader = null)
 	{
 		_resolver = new SteamCoverResolver(steamDir ?? "");
 		_cacheDir = string.IsNullOrWhiteSpace(cacheDir)
 			? Path.Combine(AppHelper.GetAppDirectory(), "cache")
 			: cacheDir;
-		_downloader = new CoverDownloader(httpClient);
+		_downloader = downloader ?? new CoverDownloader();
 		_concurrency = Math.Max(1, concurrency);
 	}
 

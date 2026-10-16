@@ -1,172 +1,19 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using steamedit_Enhance.Data.Native;
 
 namespace Common;
 
-internal sealed class AiTranslator
+/// <summary>
+/// AI 游戏名翻译。提示词模板、变量替换与本地化显示名解析仍留在托管侧（依赖界面语言资源）；
+/// 所有 HTTP 交互——OpenAI 兼容的 <c>/chat/completions</c>、<c>/models</c>、重试退避与
+/// 熔断器——全部由 Rust 内核 (<c>ste_net_ai_*</c>) 承担。
+/// </summary>
+internal static class AiTranslator
 {
-	private enum CircuitState { Closed, Open, HalfOpen }
-
-	private CircuitState _circuitState = CircuitState.Closed;
-	private int _consecutiveFailures;
-	private DateTime _lastFailureTime;
-	private readonly object _circuitLock = new();
-	private const int FailureThreshold = 5;
-	private static readonly TimeSpan CircuitOpenTimeout = TimeSpan.FromSeconds(30);
-
-	private readonly HttpClient _httpClient;
-
-	private static readonly SocketsHttpHandler _sharedHandler = new()
-	{
-		PooledConnectionLifetime = TimeSpan.FromMinutes(5)
-	};
-
-	internal AiTranslator(HttpClient? httpClient = null)
-	{
-		_httpClient = httpClient ?? CreateDefaultClient();
-	}
-
-	private void CheckCircuitBreaker(CancellationToken cancellationToken)
-	{
-		lock (_circuitLock)
-		{
-			if (_circuitState == CircuitState.Closed)
-				return;
-
-			switch (_circuitState)
-			{
-				case CircuitState.Open:
-					if (DateTime.UtcNow - _lastFailureTime >= CircuitOpenTimeout)
-					{
-						_circuitState = CircuitState.HalfOpen;
-						Log.WriteLine("Circuit breaker: Closed→HalfOpen, allowing trial request");
-						return;
-					}
-					double remaining = (CircuitOpenTimeout - (DateTime.UtcNow - _lastFailureTime)).TotalSeconds;
-					Log.WriteLine("Circuit breaker: Open, failing fast ({0:F0}s remaining)", Math.Max(0, remaining));
-					throw new AiTranslationException(AiErrorKind.CircuitOpen,
-						$"Circuit breaker is open ({remaining:F0}s remaining). Service may be unavailable.");
-				case CircuitState.HalfOpen:
-					return;
-			}
-		}
-	}
-
-	private void RecordSuccess()
-	{
-		lock (_circuitLock)
-		{
-			_consecutiveFailures = 0;
-			if (_circuitState != CircuitState.Closed)
-			{
-				_circuitState = CircuitState.Closed;
-				Log.WriteLine("Circuit breaker: request succeeded, reset to Closed");
-			}
-		}
-	}
-
-	private void RecordFailure()
-	{
-		lock (_circuitLock)
-		{
-			_consecutiveFailures++;
-			_lastFailureTime = DateTime.UtcNow;
-			if (_consecutiveFailures >= FailureThreshold && _circuitState != CircuitState.Open)
-			{
-				_circuitState = CircuitState.Open;
-				Log.WriteLine("Circuit breaker: {0} consecutive failures, Open", _consecutiveFailures);
-			}
-			else if (_circuitState == CircuitState.HalfOpen)
-			{
-				_circuitState = CircuitState.Open;
-				Log.WriteLine("Circuit breaker: HalfOpen trial failed, back to Open");
-			}
-		}
-	}
-
-	private static HttpClient CreateDefaultClient()
-	{
-		int timeout = Settings.Default.AiTimeoutSeconds;
-		return new HttpClient(_sharedHandler) { Timeout = TimeSpan.FromSeconds(timeout) };
-	}
-
-	internal static readonly AiTranslator Default = new();
-
-	internal async Task<List<string>> FetchModelsAsyncImpl(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
-	{
-		apiUrl = apiUrl.TrimEnd('/');
-
-		// Strip /chat/completions to get base URL, then call /models
-		string baseUrl = apiUrl;
-		if (baseUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
-			baseUrl = baseUrl[..^"/chat/completions".Length];
-
-		string modelsUrl = baseUrl + "/models";
-		Log.WriteLine("AI: Fetching models from {0}", modelsUrl);
-
-		using var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
-		if (!string.IsNullOrWhiteSpace(apiKey))
-			request.Headers.Add("Authorization", $"Bearer {apiKey}");
-
-		HttpResponseMessage response;
-		try
-		{
-			response = await _httpClient.SendAsync(request, cancellationToken);
-		}
-		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-		{
-			throw; // 用户取消，直接传播
-		}
-		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-		{
-			Log.WriteLine("AI: Network error fetching models: {0}", ex.Message);
-			throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
-		}
-		string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-		if (!response.IsSuccessStatusCode)
-		{
-			Log.WriteLine("AI: Models fetch failed: {0}", (int)response.StatusCode);
-			throw new AiTranslationException(AiErrorKind.ApiError, $"API error {(int)response.StatusCode}: {responseBody}", (int)response.StatusCode);
-		}
-
-		var contentType = response.Content.Headers.ContentType?.MediaType;
-		if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
-		{
-			Log.WriteLine("AI: Unexpected content type: {0}", contentType);
-			throw new AiTranslationException(AiErrorKind.ParseError, $"Expected JSON response but got {contentType}");
-		}
-
-		var models = new List<string>();
-		using var doc = JsonDocument.Parse(responseBody);
-		if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
-		{
-			foreach (var item in data.EnumerateArray())
-			{
-				if (item.TryGetProperty("id", out var idProp))
-				{
-					string? id = idProp.GetString();
-					if (!string.IsNullOrEmpty(id))
-						models.Add(id);
-				}
-			}
-		}
-		else
-		{
-			Log.WriteLine("AI: Unexpected models response format");
-		}
-		models.Sort(StringComparer.OrdinalIgnoreCase);
-		Log.WriteLine("AI: Got {0} models", models.Count);
-		return models;
-	}
-
 	public const string DefaultSystemPrompt = @"You are a game name translator. Translate the given game name into {target_lang}.
 
 Rules:
@@ -179,133 +26,63 @@ Rules:
 
 	public const string DefaultUserMessage = "{game_name}";
 
-	internal async Task<string> CallChatCompletionAsync(
-		string systemPrompt,
-		string userMessage,
-		string apiUrl,
-		string apiKey,
-		string model,
-		int maxTokens = 4096,
-		float temperature = 0.1f,
-		CancellationToken cancellationToken = default)
+	/// <summary>把内核错误分类映射回 <see cref="AiTranslationException"/>。</summary>
+	private static AiTranslationException NativeError()
 	{
-		apiUrl = apiUrl.TrimEnd('/');
-
-		if (string.IsNullOrWhiteSpace(apiUrl))
-			throw new InvalidOperationException("AI API URL is not configured.");
-
-		if (!apiUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
-			apiUrl += "/chat/completions";
-
-		if (string.IsNullOrWhiteSpace(model)) model = "gpt-4o-mini";
-
-		string requestBody = JsonSerializer.Serialize(new
+		var (kind, status) = SteameditNative.AiError();
+		string message = SteameditNative.LastError;
+		return kind switch
 		{
-			model,
-			messages = new[]
-			{
-				new { role = "system", content = systemPrompt },
-				new { role = "user", content = userMessage }
-			},
-			max_tokens = maxTokens,
-			temperature
-		});
-
-		Log.WriteLine("AI: Requesting {0}", apiUrl);
-
-		CheckCircuitBreaker(cancellationToken);
-
-		const int maxRetries = 3;
-		const int maxBackoffMs = 30_000;
-		string responseBody = null!;
-
-		for (int attempt = 0; ; attempt++)
-		{
-			using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
-			if (!string.IsNullOrWhiteSpace(apiKey))
-				request.Headers.Add("Authorization", $"Bearer {apiKey}");
-			request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-			HttpResponseMessage response;
-			try
-			{
-				response = await _httpClient.SendAsync(request, cancellationToken);
-			}
-			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-			{
-				throw; // 用户取消，直接传播
-			}
-			catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-			{
-				if (attempt < maxRetries - 1)
-				{
-					Log.WriteLine("AI: Network error (attempt {0}/{1}): {2}", attempt + 1, maxRetries, ex.Message);
-					await Task.Delay(Math.Min(1000 << attempt, maxBackoffMs), cancellationToken);
-					continue;
-				}
-				Log.WriteLine("AI: Network error: {0}", ex.Message);
-				RecordFailure();
-				throw new AiTranslationException(AiErrorKind.NetworkError, $"Network error: {ex.Message}", innerException: ex);
-			}
-			responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-			Log.WriteLine("AI: Response {0}, body length={1}", (int)response.StatusCode, responseBody.Length);
-
-			if (!response.IsSuccessStatusCode)
-			{
-				int statusCode = (int)response.StatusCode;
-				if ((statusCode == 429 || statusCode == 503) && attempt < maxRetries - 1)
-				{
-					Log.WriteLine("AI: Transient error {0} (attempt {1}/{2}), retrying...", statusCode, attempt + 1, maxRetries);
-					await Task.Delay(Math.Min(1000 << attempt, maxBackoffMs), cancellationToken);
-					continue;
-				}
-				Log.WriteLine("AI: Request failed: {0}", responseBody.Length > 200 ? responseBody[..200] : responseBody);
-				RecordFailure();
-				throw new AiTranslationException(AiErrorKind.ApiError, $"API error {statusCode}: {responseBody}", statusCode);
-			}
-
-			var ct = response.Content.Headers.ContentType?.MediaType;
-			if (ct != null && !ct.Contains("json", StringComparison.OrdinalIgnoreCase))
-			{
-				Log.WriteLine("AI: Unexpected content type: {0}", ct);
-				throw new AiTranslationException(AiErrorKind.ParseError, $"Expected JSON response but got {ct}");
-			}
-
-			break;
-		}
-
-		RecordSuccess();
-
-		using var doc = JsonDocument.Parse(responseBody);
-		string? result = null;
-
-		try
-		{
-			var choices = doc.RootElement.GetProperty("choices");
-			if (choices.GetArrayLength() > 0)
-			{
-				var choice = choices[0];
-				if (choice.TryGetProperty("message", out var message))
-				{
-					result = message.GetProperty("content").GetString();
-				}
-				else if (choice.TryGetProperty("text", out var text))
-				{
-					result = text.GetString();
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.WriteLine("AI: Failed to parse response: {0}", ex.Message);
-			throw new AiTranslationException(AiErrorKind.ParseError, $"Failed to parse AI response: {ex.Message}", innerException: ex);
-		}
-
-		return result?.Trim() ?? "";
+			SteameditNative.AiKindApi => new AiTranslationException(AiErrorKind.ApiError, message, status),
+			SteameditNative.AiKindParse => new AiTranslationException(AiErrorKind.ParseError, message),
+			SteameditNative.AiKindCircuit => new AiTranslationException(AiErrorKind.CircuitOpen, message),
+			_ => new AiTranslationException(AiErrorKind.NetworkError, message),
+		};
 	}
 
-	internal async Task<string> TranslateWithContextAsyncImpl(
+	/// <summary>调用一次 chat completion；失败时抛出 <see cref="AiTranslationException"/>。</summary>
+	private static string CallChatCompletion(
+		string systemPrompt, string userMessage, int maxTokens, float temperature)
+	{
+		string apiUrl = Settings.Default.AiApiUrl ?? "";
+		if (string.IsNullOrWhiteSpace(apiUrl))
+			throw new InvalidOperationException("AI API URL is not configured.");
+		string apiKey = Settings.Default.AiApiKey ?? "";
+		string model = Settings.Default.AiModel ?? "gpt-4o-mini";
+		int timeout = Settings.Default.AiTimeoutSeconds;
+
+		Log.WriteLine("AI: Requesting {0}", apiUrl);
+		string? result = SteameditNative.AiChat(
+			systemPrompt, userMessage, apiUrl, apiKey, model, maxTokens, temperature, timeout);
+		if (result == null)
+		{
+			Log.WriteLine("AI: Request failed: {0}", SteameditNative.LastError);
+			throw NativeError();
+		}
+		return result;
+	}
+
+	public static async Task<List<string>> FetchModelsAsync(
+		string apiUrl, string apiKey, CancellationToken cancellationToken = default)
+	{
+		string url = apiUrl ?? "";
+		string key = apiKey ?? "";
+		int timeout = Settings.Default.AiTimeoutSeconds;
+
+		Log.WriteLine("AI: Fetching models from {0}", url);
+		string[]? models = await Task.Run(
+			() => SteameditNative.AiModels(url, key, timeout),
+			cancellationToken).ConfigureAwait(false);
+		if (models == null)
+		{
+			Log.WriteLine("AI: Models fetch failed: {0}", SteameditNative.LastError);
+			throw NativeError();
+		}
+		Log.WriteLine("AI: Got {0} models", models.Length);
+		return new List<string>(models);
+	}
+
+	public static async Task<string> TranslateWithContextAsync(
 		string gameName,
 		string targetLanguage,
 		string? context = null,
@@ -358,17 +135,17 @@ Rules:
 
 		Log.WriteLine("AI: Translating \"{0}\" -> {1}", gameName, targetLanguage);
 
-		string apiUrl = Settings.Default.AiApiUrl ?? "";
-		string apiKey = Settings.Default.AiApiKey ?? "";
-		string model = Settings.Default.AiModel ?? "gpt-4o-mini";
-		string result = await CallChatCompletionAsync(systemPrompt, userMessage, apiUrl, apiKey, model, 4096, 0.1f, cancellationToken);
+		cancellationToken.ThrowIfCancellationRequested();
+		string result = await Task.Run(
+			() => CallChatCompletion(systemPrompt, userMessage, 4096, 0.1f),
+			cancellationToken).ConfigureAwait(false);
 		result = result.Trim('"', '\'', '\n', '\r');
 		Log.WriteLine("AI: Result: \"{0}\"", result);
 
 		return result;
 	}
 
-	internal async Task<string> AnalyzeTranslationRulesAsyncImpl(
+	public static async Task<string> AnalyzeTranslationRulesAsync(
 		string glossaryJsonContent, string? customSystemPrompt = null, CancellationToken cancellationToken = default)
 	{
 		string systemPromptSection = "";
@@ -403,12 +180,12 @@ Translation pairs:
 
 		Log.WriteLine("AI: Analyzing translation rules");
 
-		string apiUrl = Settings.Default.AiApiUrl ?? "";
-		string apiKey = Settings.Default.AiApiKey ?? "";
-		string model = Settings.Default.AiModel ?? "gpt-4o-mini";
-		string result = await CallChatCompletionAsync(
-			"You are a translation style analyst. Output ONLY the rules as a bullet list. Do NOT include any preamble, greeting, introduction, or concluding remarks. Start directly with the first rule.",
-			analysisPrompt, apiUrl, apiKey, model, 4096, 0.3f, cancellationToken);
+		cancellationToken.ThrowIfCancellationRequested();
+		string result = await Task.Run(
+			() => CallChatCompletion(
+				"You are a translation style analyst. Output ONLY the rules as a bullet list. Do NOT include any preamble, greeting, introduction, or concluding remarks. Start directly with the first rule.",
+				analysisPrompt, 4096, 0.3f),
+			cancellationToken).ConfigureAwait(false);
 
 		Log.WriteLine("AI: Translation rules analysis complete, length={0}", result.Length);
 		return result;
@@ -423,21 +200,4 @@ Translation pairs:
 
 		return parts.Count > 0 ? string.Join("\n", parts) : null;
 	}
-
-	public static async Task<List<string>> FetchModelsAsync(string apiUrl, string apiKey, CancellationToken cancellationToken = default)
-		=> await Default.FetchModelsAsyncImpl(apiUrl, apiKey, cancellationToken);
-
-	public static async Task<string> TranslateWithContextAsync(
-		string gameName,
-		string targetLanguage,
-		string? context = null,
-		string? customSystemPrompt = null,
-		string? customUserMessage = null,
-		CancellationToken cancellationToken = default,
-		string? existingTranslation = null)
-		=> await Default.TranslateWithContextAsyncImpl(gameName, targetLanguage, context, customSystemPrompt, customUserMessage, cancellationToken, existingTranslation);
-
-	public static async Task<string> AnalyzeTranslationRulesAsync(
-		string glossaryJsonContent, string? customSystemPrompt = null, CancellationToken cancellationToken = default)
-		=> await Default.AnalyzeTranslationRulesAsyncImpl(glossaryJsonContent, customSystemPrompt, cancellationToken);
 }

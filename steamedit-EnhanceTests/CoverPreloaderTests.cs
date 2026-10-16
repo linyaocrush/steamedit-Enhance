@@ -2,8 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,12 +10,38 @@ using steamedit_Enhance.Data;
 
 namespace steamedit_EnhanceTests;
 
+/// <summary>
+/// 封面批量预加载的分类/统计逻辑仍在托管侧，通过注入 <see cref="ICoverDownloader"/>
+/// 替身来验证（真实下载由 Rust 内核负责，另在原生侧测试）。
+/// </summary>
 [TestClass]
 public class CoverPreloaderTests
 {
     private static string _root = null!;
 
     private static readonly byte[] s_jpeg = { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46 };
+
+    /// <summary>写入固定 JPEG 内容的下载器替身；记录调用次数，可指定哪些 app 失败。</summary>
+    private sealed class FakeDownloader : ICoverDownloader
+    {
+        private readonly Func<int, bool> _shouldSucceed;
+        private int _calls;
+
+        public FakeDownloader(Func<int, bool>? shouldSucceed = null)
+            => _shouldSucceed = shouldSucceed ?? (_ => true);
+
+        public int Calls => Volatile.Read(ref _calls);
+
+        public Task<bool> DownloadPortraitAsync(int appId, string destFile, CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _calls);
+            if (!_shouldSucceed(appId))
+                return Task.FromResult(false);
+            Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+            File.WriteAllBytes(destFile, s_jpeg);
+            return Task.FromResult(true);
+        }
+    }
 
     [TestInitialize]
     public void Setup()
@@ -51,36 +76,29 @@ public class CoverPreloaderTests
         WriteFile(@"steam\appcache\librarycache\10\library_600x900.jpg", s_jpeg);
         // app 20: 无本地封面但 cache 目录已有下载文件
         WriteFile(@"cache\20.jpg", s_jpeg);
-        // app 30 / 40 / 50: 需要下载
+        // app 30 / 40 / 50: 需要下载（40 会失败）
 
         var targets = new List<CoverTarget>
         {
             Target(10, "Local Game", AppInfoEntryType.Game),
             Target(20, "Cached Game", AppInfoEntryType.Demo),
             Target(30, "Needs Download", AppInfoEntryType.DLC),
-            Target(40, "Will 404", AppInfoEntryType.Game),
+            Target(40, "Will Fail", AppInfoEntryType.Game),
             Target(50, "Application", AppInfoEntryType.Application),
             // 非候选类型应被排除
             Target(60, "Tool", AppInfoEntryType.Tool),
             Target(0, "Bad Id", AppInfoEntryType.Game),
         };
 
-        var mock = new MockHttpHandler(request =>
-        {
-            string url = request.RequestUri!.ToString();
-            if (url.Contains("/40/"))
-                return new HttpResponseMessage(HttpStatusCode.NotFound);
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(s_jpeg) };
-        });
-        using var client = new HttpClient(mock);
-        var preloader = new CoverPreloader(SteamDir, CacheDir, concurrency: 2, httpClient: client);
+        var downloader = new FakeDownloader(id => id != 40);
+        var preloader = new CoverPreloader(SteamDir, CacheDir, concurrency: 2, downloader: downloader);
 
         var result = await preloader.RunAsync(targets);
 
         Assert.AreEqual(5, result.Total);          // 10,20,30,40,50
         Assert.AreEqual(2, result.Already);        // 10(local), 20(cached)
         Assert.AreEqual(2, result.Downloaded);     // 30,50 成功
-        Assert.AreEqual(1, result.Failed);         // 40 返回 404
+        Assert.AreEqual(1, result.Failed);         // 40 失败
         Assert.IsTrue(File.Exists(Path.Combine(CacheDir, "30.jpg")));
         Assert.IsTrue(File.Exists(Path.Combine(CacheDir, "50.jpg")));
         Assert.IsFalse(File.Exists(Path.Combine(CacheDir, "40.jpg")));
@@ -102,9 +120,8 @@ public class CoverPreloaderTests
     public async Task Run_AllOffline_FailedCounts()
     {
         var targets = new List<CoverTarget> { Target(1, "A", AppInfoEntryType.Game) };
-        var mock = new MockHttpHandler(_ => throw new HttpRequestException("offline"));
-        using var client = new HttpClient(mock);
-        var preloader = new CoverPreloader(SteamDir, CacheDir, httpClient: client);
+        var downloader = new FakeDownloader(_ => false);
+        var preloader = new CoverPreloader(SteamDir, CacheDir, downloader: downloader);
 
         var result = await preloader.RunAsync(targets);
         Assert.AreEqual(1, result.Failed);
@@ -115,13 +132,11 @@ public class CoverPreloaderTests
     public async Task Run_AlreadyHasLocalPortrait_NoDownloadAttempted()
     {
         WriteFile(@"steam\appcache\librarycache\77\library_600x900.jpg", s_jpeg);
-        int calls = 0;
-        var mock = new MockHttpHandler(_ => { calls++; return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(s_jpeg) }; });
-        using var client = new HttpClient(mock);
-        var preloader = new CoverPreloader(SteamDir, CacheDir, httpClient: client);
+        var downloader = new FakeDownloader();
+        var preloader = new CoverPreloader(SteamDir, CacheDir, downloader: downloader);
 
         var result = await preloader.RunAsync(new List<CoverTarget> { Target(77, "Owned", AppInfoEntryType.Game) });
         Assert.AreEqual(1, result.Already);
-        Assert.AreEqual(0, calls);
+        Assert.AreEqual(0, downloader.Calls);
     }
 }

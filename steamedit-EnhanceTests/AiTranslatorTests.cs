@@ -1,59 +1,18 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace steamedit_EnhanceTests;
 
-internal sealed class MockHttpHandler : HttpMessageHandler
-{
-    private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
-
-    public MockHttpHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
-    {
-        _handler = handler;
-    }
-
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(_handler(request));
-    }
-}
-
+/// <summary>
+/// AI 传输层（HTTP、重试、熔断、JSON 解析）已迁移到 Rust 内核并由原生测试覆盖
+/// （含本地 HTTP 模拟服务器）。这里只验证留在托管侧的纯逻辑：错误分类、提示词/上下文构建。
+/// </summary>
 [TestClass]
 public class AiTranslatorTests
 {
-    private string _savedApiUrl = "";
-    private string _savedApiKey = "";
-    private string _savedModel = "";
-
-    [TestInitialize]
-    public void InitHttpTests()
-    {
-        _savedApiUrl = Settings.Default.AiApiUrl;
-        _savedApiKey = Settings.Default.AiApiKey;
-        _savedModel = Settings.Default.AiModel;
-        Settings.Default.AiApiUrl = "https://api.openai.com/v1/chat/completions";
-        Settings.Default.AiApiKey = "test-key";
-        Settings.Default.AiModel = "gpt-4o-mini";
-    }
-
-    [TestCleanup]
-    public void CleanupHttpTests()
-    {
-        Settings.Default.AiApiUrl = _savedApiUrl;
-        Settings.Default.AiApiKey = _savedApiKey;
-        Settings.Default.AiModel = _savedModel;
-    }
-
     [TestMethod]
     public void AiTranslationException_ApiError_HasCorrectKind()
     {
@@ -162,99 +121,5 @@ public class AiTranslatorTests
         string? result = AiTranslator.BuildContext(longStr, "", "");
         Assert.IsNotNull(result);
         Assert.IsTrue(result.Contains(longStr));
-    }
-
-    private static HttpResponseMessage JsonResponse(string json, HttpStatusCode status = HttpStatusCode.OK)
-    {
-        return new HttpResponseMessage(status)
-        {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
-    }
-
-    [TestMethod]
-    public async Task TranslateWithContext_SendsCorrectRequest()
-    {
-        var mockHandler = new MockHttpHandler(request =>
-        {
-            Assert.AreEqual(HttpMethod.Post, request.Method);
-            Assert.IsTrue(request.RequestUri!.ToString().EndsWith("/chat/completions"));
-            Assert.IsTrue(request.Headers.Contains("Authorization"));
-
-            var body = request.Content!.ReadAsStringAsync().Result;
-            using var doc = JsonDocument.Parse(body);
-            Assert.AreEqual("gpt-4o-mini", doc.RootElement.GetProperty("model").GetString());
-
-            return JsonResponse("{\"choices\":[{\"message\":{\"content\":\"\u6d4b\u8bd5\u540d\u79f0\"}}]}");
-        });
-
-        using var httpClient = new HttpClient(mockHandler);
-        var translator = new AiTranslator(httpClient);
-        var result = await translator.TranslateWithContextAsyncImpl("Test Game", "zh-CN");
-        Assert.AreEqual("测试名称", result);
-    }
-
-    [TestMethod]
-    public async Task TranslateWithContext_HandlesSuccessResponse()
-    {
-        var mockHandler = new MockHttpHandler(_ => JsonResponse("{\"choices\":[{\"message\":{\"content\":\"\u6e38\u620f\"}}]}"));
-
-        using var httpClient = new HttpClient(mockHandler);
-        var translator = new AiTranslator(httpClient);
-        var result = await translator.TranslateWithContextAsyncImpl("Game", "zh-CN");
-        Assert.AreEqual("游戏", result);
-    }
-
-    [TestMethod]
-    public async Task TranslateWithContext_RetriesOnFailure()
-    {
-        int callCount = 0;
-        var mockHandler = new MockHttpHandler(_ =>
-        {
-            callCount++;
-            if (callCount <= 2)
-                return new HttpResponseMessage((HttpStatusCode)503);
-            return JsonResponse("{\"choices\":[{\"message\":{\"content\":\"retried\"}}]}");
-        });
-
-        using var httpClient = new HttpClient(mockHandler);
-        var translator = new AiTranslator(httpClient);
-        var result = await translator.TranslateWithContextAsyncImpl("Game", "zh-CN");
-        Assert.AreEqual("retried", result);
-        Assert.IsTrue(callCount >= 3, $"Expected at least 3 calls, got {callCount}");
-    }
-
-    [TestMethod]
-    public async Task TranslateWithContext_ThrowsOnTimeout()
-    {
-        var mockHandler = new MockHttpHandler(_ =>
-        {
-            throw new HttpRequestException("The operation timed out", null, HttpStatusCode.RequestTimeout);
-        });
-
-        using var httpClient = new HttpClient(mockHandler);
-        var translator = new AiTranslator(httpClient);
-        await Assert.ThrowsExceptionAsync<AiTranslationException>(() =>
-            translator.TranslateWithContextAsyncImpl("Game", "zh-CN"));
-    }
-
-    [TestMethod]
-    public async Task FetchModels_SendsCorrectRequest()
-    {
-        var mockHandler = new MockHttpHandler(request =>
-        {
-            Assert.AreEqual(HttpMethod.Get, request.Method);
-            Assert.IsTrue(request.RequestUri!.ToString().EndsWith("/models"));
-            Assert.IsTrue(request.Headers.Contains("Authorization"));
-
-            return JsonResponse("{\"data\":[{\"id\":\"gpt-4\"},{\"id\":\"gpt-3.5-turbo\"}]}");
-        });
-
-        using var httpClient = new HttpClient(mockHandler);
-        var translator = new AiTranslator(httpClient);
-        var models = await translator.FetchModelsAsyncImpl("https://api.openai.com/v1/chat/completions", "test-key");
-        Assert.AreEqual(2, models.Count);
-        Assert.AreEqual("gpt-3.5-turbo", models[0]);
-        Assert.AreEqual("gpt-4", models[1]);
     }
 }

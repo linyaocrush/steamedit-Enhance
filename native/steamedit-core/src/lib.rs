@@ -18,6 +18,13 @@
 //!   side load an entire `appinfo.vdf` while building small "summary" trees for the
 //!   list UI, deferring full trees until an entry is actually viewed or edited.
 
+mod cover;
+mod glossary;
+mod image;
+mod logging;
+mod namecache;
+mod net;
+
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::os::raw::c_char;
@@ -1200,6 +1207,679 @@ pub unsafe extern "C" fn ste_mods_from_flat(
     let bytes = slice(flat, flat_len);
     run(
         || Ok((mods_from_flat(bytes)?, 0)),
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+// ── network C ABI ───────────────────────────────────────────────────────────
+//
+// The managed side is a UI shell: every outbound request (image download, Steam
+// store lookups, AI chat completions) goes through these entry points. Strings
+// cross the boundary as UTF-8; results are length-prefixed buffers released with
+// [`ste_free`], and failures are reported through [`ste_last_error`] (plus
+// [`ste_net_ai_error`] for the AI-specific error classification).
+
+/// Borrows a NUL-terminated UTF-8 C string as a `&str`.
+///
+/// # Safety
+/// `p` must be null or point to a valid NUL-terminated C string.
+unsafe fn cstr<'a>(p: *const c_char) -> Result<&'a str, String> {
+    if p.is_null() {
+        return Err("null string argument".to_string());
+    }
+    std::ffi::CStr::from_ptr(p)
+        .to_str()
+        .map_err(|_| "argument is not valid UTF-8".to_string())
+}
+
+/// Downloads the portrait cover for `app_id` to `dest` (UTF-8). Returns `1` on
+/// success, `0` otherwise.
+///
+/// # Safety
+/// `dest` must be a valid NUL-terminated UTF-8 path.
+#[no_mangle]
+pub unsafe extern "C" fn ste_net_cover_download(app_id: i32, dest: *const c_char) -> i32 {
+    match cstr(dest) {
+        Ok(d) if net::cover_download(app_id, d) => 1,
+        _ => 0,
+    }
+}
+
+/// Fetches the localized official name for `app_id`. Returns UTF-8 bytes (empty
+/// when unavailable) or null on a malformed argument.
+///
+/// # Safety
+/// `locale` must be a valid NUL-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_net_official_name(
+    app_id: i32,
+    locale: *const c_char,
+    out_len: *mut usize,
+) -> *mut u8 {
+    let locale = match cstr(locale) {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            set_err(&e);
+            if !out_len.is_null() {
+                *out_len = 0;
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    run(
+        || Ok((net::official_name(app_id, &locale).map(String::into_bytes).unwrap_or_default(), 0)),
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// Runs an OpenAI-compatible chat completion. On success returns the assistant
+/// content as UTF-8 bytes; on failure returns null, sets [`ste_last_error`], and
+/// records `(kind, status)` retrievable via [`ste_net_ai_error`].
+///
+/// # Safety
+/// All string pointers must be valid NUL-terminated UTF-8.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn ste_net_ai_chat(
+    system: *const c_char,
+    user: *const c_char,
+    url: *const c_char,
+    api_key: *const c_char,
+    model: *const c_char,
+    max_tokens: i32,
+    temperature: f32,
+    timeout_secs: u32,
+    out_len: *mut usize,
+) -> *mut u8 {
+    let args = (|| -> Result<(String, String, String, String, String), String> {
+        Ok((
+            cstr(system)?.to_string(),
+            cstr(user)?.to_string(),
+            cstr(url)?.to_string(),
+            cstr(api_key)?.to_string(),
+            cstr(model)?.to_string(),
+        ))
+    })();
+    match args {
+        Ok((system, user, url, api_key, model)) => run(
+            || {
+                let content = net::ai_chat(
+                    &system,
+                    &user,
+                    &url,
+                    &api_key,
+                    &model,
+                    max_tokens,
+                    temperature,
+                    std::time::Duration::from_secs(timeout_secs.max(1) as u64),
+                )?;
+                Ok((content.into_bytes(), 0))
+            },
+            out_len,
+            std::ptr::null_mut(),
+        ),
+        Err(e) => {
+            set_err(&e);
+            if !out_len.is_null() {
+                *out_len = 0;
+            }
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Lists AI model ids from `GET {base}/models`, newline-joined. Returns null on
+/// failure (see [`ste_last_error`] / [`ste_net_ai_error`]).
+///
+/// # Safety
+/// `url`/`api_key` must be valid NUL-terminated UTF-8 strings.
+#[no_mangle]
+pub unsafe extern "C" fn ste_net_ai_models(
+    url: *const c_char,
+    api_key: *const c_char,
+    timeout_secs: u32,
+    out_len: *mut usize,
+) -> *mut u8 {
+    let args = (|| -> Result<(String, String), String> {
+        Ok((cstr(url)?.to_string(), cstr(api_key)?.to_string()))
+    })();
+    match args {
+        Ok((url, api_key)) => run(
+            || {
+                let models = net::ai_models(
+                    &url,
+                    &api_key,
+                    std::time::Duration::from_secs(timeout_secs.max(1) as u64),
+                )?;
+                Ok((models.join("\n").into_bytes(), 0))
+            },
+            out_len,
+            std::ptr::null_mut(),
+        ),
+        Err(e) => {
+            set_err(&e);
+            if !out_len.is_null() {
+                *out_len = 0;
+            }
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Returns the kind of the most recent AI failure and writes its status code to
+/// `out_status` (0 when not applicable). `-1` means "no failure recorded".
+///
+/// # Safety
+/// `out_status` may be null.
+#[no_mangle]
+pub unsafe extern "C" fn ste_net_ai_error(out_status: *mut i32) -> i32 {
+    let (kind, status) = net::ai_error();
+    if !out_status.is_null() {
+        *out_status = status;
+    }
+    kind
+}
+
+// ── cover resolver C ABI ────────────────────────────────────────────────────
+
+use cover::CoverResolver;
+
+/// Creates a cover resolver bound to `steam_dir`.
+///
+/// # Safety
+/// `steam_dir` must be a valid NUL-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_cover_resolver_new(steam_dir: *const c_char) -> *mut CoverResolver {
+    match cstr(steam_dir) {
+        Ok(s) => Box::into_raw(Box::new(CoverResolver::new(s))),
+        Err(e) => {
+            set_err(&e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Resolves the portrait cover path; returns UTF-8 bytes (empty when not found).
+///
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_cover_resolver_portrait(
+    h: *mut CoverResolver,
+    app_id: i32,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if h.is_null() {
+        set_err("null cover resolver handle");
+        if !out_len.is_null() {
+            *out_len = 0;
+        }
+        return std::ptr::null_mut();
+    }
+    run(
+        || {
+            let r = unsafe { &mut *h };
+            Ok((
+                r.portrait_path(app_id)
+                    .map(String::into_bytes)
+                    .unwrap_or_default(),
+                0,
+            ))
+        },
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// Resolves the wide/banner fallback cover path; empty when not found.
+///
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_cover_resolver_wide(
+    h: *mut CoverResolver,
+    app_id: i32,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if h.is_null() {
+        set_err("null cover resolver handle");
+        if !out_len.is_null() {
+            *out_len = 0;
+        }
+        return std::ptr::null_mut();
+    }
+    run(
+        || {
+            let r = unsafe { &mut *h };
+            Ok((
+                r.wide_path(app_id)
+                    .map(String::into_bytes)
+                    .unwrap_or_default(),
+                0,
+            ))
+        },
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// # Safety
+/// `h` must be a handle from [`ste_cover_resolver_new`] not yet freed.
+#[no_mangle]
+pub unsafe extern "C" fn ste_cover_resolver_free(h: *mut CoverResolver) {
+    if !h.is_null() {
+        drop(Box::from_raw(h));
+    }
+}
+
+// ── localized-name cache C ABI ──────────────────────────────────────────────
+
+use namecache::NameCache;
+
+/// Creates an (unloaded) name cache bound to `path`.
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_new(path: *const c_char) -> *mut NameCache {
+    match cstr(path) {
+        Ok(p) => Box::into_raw(Box::new(NameCache::new(p))),
+        Err(e) => {
+            set_err(&e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Looks up an official name; returns UTF-8 bytes (empty when absent) or null on
+/// a bad argument.
+///
+/// # Safety
+/// `h` must be a valid handle and `locale` a valid UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_get(
+    h: *mut NameCache,
+    app_id: i32,
+    locale: *const c_char,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if h.is_null() {
+        set_err("null name cache handle");
+        if !out_len.is_null() {
+            *out_len = 0;
+        }
+        return std::ptr::null_mut();
+    }
+    let locale = match cstr(locale) {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            set_err(&e);
+            if !out_len.is_null() {
+                *out_len = 0;
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    run(
+        || {
+            let c = unsafe { &mut *h };
+            Ok((
+                c.get(app_id, &locale)
+                    .map(String::into_bytes)
+                    .unwrap_or_default(),
+                0,
+            ))
+        },
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// # Safety
+/// `h` must be a valid handle and `locale` a valid UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_contains(
+    h: *mut NameCache,
+    app_id: i32,
+    locale: *const c_char,
+) -> i32 {
+    if h.is_null() {
+        return 0;
+    }
+    match cstr(locale) {
+        Ok(loc) => i32::from((&mut *h).contains(app_id, loc)),
+        Err(_) => 0,
+    }
+}
+
+/// Inserts a name; returns whether the stored value changed.
+///
+/// # Safety
+/// `h` must be a valid handle and all strings valid UTF-8.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_set(
+    h: *mut NameCache,
+    app_id: i32,
+    locale: *const c_char,
+    name: *const c_char,
+) -> i32 {
+    if h.is_null() {
+        return 0;
+    }
+    match (cstr(locale), cstr(name)) {
+        (Ok(loc), Ok(nm)) => i32::from((&mut *h).set(app_id, loc, nm)),
+        _ => 0,
+    }
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_total(h: *mut NameCache) -> u64 {
+    if h.is_null() {
+        return 0;
+    }
+    (&mut *h).total_count() as u64
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_save(h: *mut NameCache) {
+    if !h.is_null() {
+        (&mut *h).save();
+    }
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_clear(h: *mut NameCache) {
+    if !h.is_null() {
+        (&mut *h).clear();
+    }
+}
+
+/// # Safety
+/// `h` must be a handle from [`ste_namecache_new`] not yet freed.
+#[no_mangle]
+pub unsafe extern "C" fn ste_namecache_free(h: *mut NameCache) {
+    if !h.is_null() {
+        drop(Box::from_raw(h));
+    }
+}
+
+// ── translation glossary C ABI ──────────────────────────────────────────────
+
+use glossary::Glossary;
+
+/// # Safety
+/// Always safe; returns an owned handle.
+#[no_mangle]
+pub extern "C" fn ste_glossary_new() -> *mut Glossary {
+    Box::into_raw(Box::new(Glossary::new()))
+}
+
+/// # Safety
+/// `h` must be a valid handle and `data_dir` a valid UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_initialize(h: *mut Glossary, data_dir: *const c_char) -> i32 {
+    if h.is_null() {
+        return 0;
+    }
+    match cstr(data_dir) {
+        Ok(d) => {
+            (&mut *h).initialize(d);
+            1
+        }
+        Err(e) => {
+            set_err(&e);
+            0
+        }
+    }
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_has_app(h: *mut Glossary, app_id: i32) -> i32 {
+    if h.is_null() {
+        return 0;
+    }
+    i32::from((&*h).has_app(app_id))
+}
+
+/// # Safety
+/// `h` must be a valid handle and the strings valid UTF-8.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_update(
+    h: *mut Glossary,
+    app_id: i32,
+    original: *const c_char,
+    translated: *const c_char,
+) -> i32 {
+    if h.is_null() {
+        return 0;
+    }
+    match (cstr(original), cstr(translated)) {
+        (Ok(o), Ok(t)) => i32::from((&mut *h).update(app_id, o, t)),
+        _ => 0,
+    }
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_count(h: *mut Glossary) -> u64 {
+    if h.is_null() {
+        return 0;
+    }
+    (&*h).entry_count() as u64
+}
+
+/// # Safety
+/// `h` must be a valid handle and `original` a valid UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_find(
+    h: *mut Glossary,
+    original: *const c_char,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if h.is_null() {
+        set_err("null glossary handle");
+        if !out_len.is_null() {
+            *out_len = 0;
+        }
+        return std::ptr::null_mut();
+    }
+    let original = match cstr(original) {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            set_err(&e);
+            if !out_len.is_null() {
+                *out_len = 0;
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    run(
+        || {
+            let g = unsafe { &*h };
+            Ok((
+                g.find_by_original(&original)
+                    .map(String::into_bytes)
+                    .unwrap_or_default(),
+                0,
+            ))
+        },
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_prompt(
+    h: *mut Glossary,
+    max_entries: usize,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if h.is_null() {
+        set_err("null glossary handle");
+        if !out_len.is_null() {
+            *out_len = 0;
+        }
+        return std::ptr::null_mut();
+    }
+    run(
+        || {
+            let g = unsafe { &*h };
+            Ok((
+                g.to_prompt_string(max_entries)
+                    .map(String::into_bytes)
+                    .unwrap_or_default(),
+                0,
+            ))
+        },
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// # Safety
+/// `h` must be a valid handle.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_flush(h: *mut Glossary) {
+    if !h.is_null() {
+        (&mut *h).flush();
+    }
+}
+
+/// # Safety
+/// `h` must be a handle from [`ste_glossary_new`] not yet freed.
+#[no_mangle]
+pub unsafe extern "C" fn ste_glossary_free(h: *mut Glossary) {
+    if !h.is_null() {
+        drop(Box::from_raw(h));
+    }
+}
+
+// ── log C ABI ───────────────────────────────────────────────────────────────
+
+/// Opens `path` (UTF-8) for appending and activates the logger. Returns `1` on
+/// success, `0` on failure (see [`ste_last_error`]).
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_log_init(path: *const c_char) -> i32 {
+    match cstr(path) {
+        Ok(p) => match logging::init(p) {
+            Ok(()) => 1,
+            Err(e) => {
+                set_err(&e);
+                0
+            }
+        },
+        Err(e) => {
+            set_err(&e);
+            0
+        }
+    }
+}
+
+/// Reopens `path` with truncation and enables all levels (test helper).
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn ste_log_reset(path: *const c_char) -> i32 {
+    match cstr(path) {
+        Ok(p) => match logging::reset(p) {
+            Ok(()) => 1,
+            Err(e) => {
+                set_err(&e);
+                0
+            }
+        },
+        Err(e) => {
+            set_err(&e);
+            0
+        }
+    }
+}
+
+/// Enables/disables each level (non-zero = enabled).
+#[no_mangle]
+pub extern "C" fn ste_log_configure(debug: i32, info: i32, warning: i32, error: i32) {
+    logging::configure(debug != 0, info != 0, warning != 0, error != 0);
+}
+
+/// Writes one record at `level` (0..=3) with the caller-supplied timestamp.
+/// Returns `1` if it was written.
+///
+/// # Safety
+/// `ts`/`line` must be valid NUL-terminated UTF-8 strings.
+#[no_mangle]
+pub unsafe extern "C" fn ste_log_write(level: u32, ts: *const c_char, line: *const c_char) -> i32 {
+    let ts = match cstr(ts) {
+        Ok(s) => s,
+        Err(_) => return 0,
+    };
+    let line = match cstr(line) {
+        Ok(s) => s,
+        Err(_) => return 0,
+    };
+    if logging::write(level, ts, line) {
+        1
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn ste_log_flush() {
+    logging::flush();
+}
+
+#[no_mangle]
+pub extern "C" fn ste_log_close() {
+    logging::close();
+}
+
+/// Returns the last `count` log lines ("\n"-joined).
+#[no_mangle]
+pub unsafe extern "C" fn ste_log_recent(count: usize, out_len: *mut usize) -> *mut u8 {
+    run(
+        || Ok((logging::recent(count).into_bytes(), 0)),
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+// ── image C ABI ─────────────────────────────────────────────────────────────
+
+/// Resamples a straight BGRA8 buffer (`sw*sh*4` bytes) to `dw x dh`. Returns the
+/// new buffer (`dw*dh*4` bytes) or null on failure (see [`ste_last_error`]).
+///
+/// # Safety
+/// `src`/`src_len` must describe a readable buffer.
+#[no_mangle]
+pub unsafe extern "C" fn ste_image_resize_bgra(
+    src: *const u8,
+    src_len: usize,
+    sw: u32,
+    sh: u32,
+    dw: u32,
+    dh: u32,
+    out_len: *mut usize,
+) -> *mut u8 {
+    let bytes = slice(src, src_len);
+    run(
+        || Ok((image::resize_bgra(bytes, sw, sh, dw, dh)?, 0)),
         out_len,
         std::ptr::null_mut(),
     )
