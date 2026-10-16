@@ -16,9 +16,17 @@ namespace steamedit_Enhance.Data;
 /// 此处只负责：把「文件字节 ↔ 扁平容器」与 C# 对象（<see cref="ModifiedEntry"/>）之间互转，
 /// 以及备份/落盘等 I/O 编排。
 /// </summary>
+/// <remarks>
+/// 读写版本：v7（<c>CurrentVersion</c>）。v4/v5/v6 仍可读取，读取时 Rust 会把其中的
+/// VDF 形式的 Changes 转成扁平树，保存时自动升级为 v7 —— 即「无缝迁移」。
+/// </remarks>
 internal class Mods
 {
-	private const uint CurrentVersion = 6u;
+	/// <summary>当前写出的 mods.dat 版本（v7：全长度前缀 + Changes 直接存扁平树，读写零转码）。</summary>
+	private const uint CurrentVersion = 7;
+
+	/// <summary>可读取的最老版本。</summary>
+	private const uint MinSupportedVersion = 4;
 
 	private readonly IAppInfo _appInfo;
 
@@ -40,7 +48,7 @@ internal class Mods
 			throw new InvalidDataException(SteameditNative.LastError);
 
 		uint version = ReadVersion(container);
-		if (version < 4u || version > 6u)
+		if (version < MinSupportedVersion || version > CurrentVersion)
 		{
 			Log.WriteLine("Mods file has unsupported version {0}", version);
 			return mods;
@@ -115,7 +123,8 @@ internal class Mods
 	}
 
 	/// <summary>扁平容器布局：<c>[u32 version][u32 count]</c>，随后每个条目
-	/// <c>[i32 id][属性表 flat][u32 version][u32 changeNumber][u32 dataLen][data]</c>。</summary>
+	/// <c>[i32 id][u32 changesLen][Changes flat][u32 originalDataVersion][u32 changeNumber][u32 dataLen][data]</c>。
+	/// 与 v7 文件同构（仅字段顺序不同），因此读写都是纯拷贝。</summary>
 	private static uint ReadVersion(byte[] container)
 		=> BinaryPrimitives.ReadUInt32LittleEndian(container);
 
@@ -130,7 +139,10 @@ internal class Mods
 			int id = BinaryPrimitives.ReadInt32LittleEndian(container.AsSpan(pos));
 			pos += 4;
 
-			PropertyTable changes = FlatTableCodec.FromFlat(container, ref pos, null);
+			// 扁平树自带长度前缀，可直接按长度解析（无需扫描找结尾）。
+			int changesLen = (int)ReadU32(container, ref pos);
+			PropertyTable changes = FlatTableCodec.FromFlat(container.AsSpan(pos, changesLen));
+			pos += changesLen;
 
 			uint dataVersion = ReadU32(container, ref pos);
 			uint changeNumber = ReadU32(container, ref pos);
@@ -161,7 +173,9 @@ internal class Mods
 		{
 			var mod = item.Modification!;
 			w.Write(mod.ID);
-			w.Write(FlatTableCodec.ToFlat(mod.Changes));
+			byte[] changes = FlatTableCodec.ToFlat(mod.Changes);
+			w.Write((uint)changes.Length);
+			w.Write(changes);
 			w.Write(mod.OriginalDataVersion);
 			w.Write(mod.OriginalDataChangeNumber);
 			byte[]? data = mod.OriginalData;

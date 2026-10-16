@@ -665,20 +665,36 @@ fn encode_table(
 }
 
 // ── mods.dat (modified-entry store) ─────────────────────────────────────────
+//
+// Layouts:
+//
+//   v4/v5/v6 (legacy, written by older builds / original SteamEdit):
+//     [i32 id][VDF-0x00000000 Changes][...version/changeNumber/data...]
+//     The `Changes` tree is a binary VDF blob, so it must be parsed to find its end.
+//
+//   v7 (current):
+//     [i32 id][u32 originalDataVersion][u32 originalDataChangeNumber]
+//     [u32 changesLen][changes...][u32 dataLen][data...]
+//     Every blob is length-prefixed and `changes` is stored in the *flat* form that the
+//     managed side consumes directly, so Rust performs **no VDF transcoding** at all —
+//     reading and writing are both plain copies. Legacy files are transparently upgraded:
+//     reading converts VDF -> flat, and the next save writes v7.
+const MODS_VERSION_CURRENT: u32 = 7;
+const MODS_VERSION_MIN: u32 = 4;
 
 /// Reads a `mods.dat` file into a flat container:
 /// `[u32 version][u32 count]` then per entry
-/// `[i32 id][properties-flat][u32 originalDataVersion][u32 changeNumber][u32 dataLen][data]`.
+/// `[i32 id][u32 changesLen][changes][u32 originalDataVersion][u32 changeNumber][u32 dataLen][data]`.
 ///
 /// Unsupported versions produce a container with `count = 0` (mirrors the managed
-/// behaviour of logging and ignoring the file). Legacy v4/v5 layouts are handled.
+/// behaviour of logging and ignoring the file).
 fn mods_to_flat(bytes: &[u8]) -> Result<Vec<u8>, String> {
     let mut r = Reader::new(bytes);
     let version = r.u32()?;
     let mut out = Vec::with_capacity(bytes.len() + 16);
     out.extend_from_slice(&version.to_le_bytes());
 
-    if !(4..=6).contains(&version) {
+    if !(MODS_VERSION_MIN..=MODS_VERSION_CURRENT).contains(&version) {
         out.extend_from_slice(&0u32.to_le_bytes());
         return Ok(out);
     }
@@ -697,7 +713,33 @@ fn mods_to_flat(bytes: &[u8]) -> Result<Vec<u8>, String> {
     for _ in 0..count {
         let id = r.i32()?;
         out.extend_from_slice(&id.to_le_bytes());
+
+        if version >= MODS_VERSION_CURRENT {
+            // v7: copy the length-prefixed blobs straight through (no transcoding).
+            let original_version = r.u32()?;
+            let change_number = r.u32()?;
+            let changes_len = r.u32()? as usize;
+            let changes = r.take(changes_len)?;
+            let data_len = r.u32()? as usize;
+            let data = r.take(data_len)?;
+
+            out.extend_from_slice(&(changes.len() as u32).to_le_bytes());
+            out.extend_from_slice(changes);
+            out.extend_from_slice(&original_version.to_le_bytes());
+            out.extend_from_slice(&change_number.to_le_bytes());
+            out.extend_from_slice(&(data.len() as u32).to_le_bytes());
+            out.extend_from_slice(data);
+            continue;
+        }
+
+        // Legacy: the Changes tree is binary VDF; decode it into the flat container,
+        // back-filling the length prefix once its size is known.
+        let len_pos = out.len();
+        out.extend_from_slice(&[0, 0, 0, 0]);
+        let tree_start = out.len();
         decode_table(&mut r, &mut out, 0, false, &[])?;
+        let tree_len = (out.len() - tree_start) as u32;
+        out[len_pos..len_pos + 4].copy_from_slice(&tree_len.to_le_bytes());
 
         // V4 has no OriginalDataVersion field (hard-coded 0).
         let mut original_version = if version >= 5 { r.u32()? } else { 0u32 };
@@ -752,8 +794,9 @@ fn mods_to_flat(bytes: &[u8]) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
-/// Converts a mods flat container (see [`mods_to_flat`]) into `mods.dat` bytes
-/// (always the current v6 layout).
+/// Converts a mods flat container (see [`mods_to_flat`]) into `mods.dat` bytes.
+/// Versions >= [`MODS_VERSION_CURRENT`] are written in the v7 layout (blobs copied
+/// verbatim); older versions keep the legacy v6 layout.
 fn mods_from_flat(flat: &[u8]) -> Result<Vec<u8>, String> {
     let mut r = Reader::new(flat);
     let version = r.u32()?;
@@ -765,18 +808,32 @@ fn mods_from_flat(flat: &[u8]) -> Result<Vec<u8>, String> {
     for _ in 0..count {
         let id = r.i32()?;
         out.extend_from_slice(&id.to_le_bytes());
-        let mut st = StringTable::new();
-        encode_table(&mut r, &mut out, 0, false, &mut st)?;
 
+        let changes_len = r.u32()? as usize;
+        let changes = r.take(changes_len)?;
         let data_version = r.u32()?;
         let change_number = r.u32()?;
         let data_len = r.u32()? as usize;
         let data = r.take(data_len)?;
 
-        out.extend_from_slice(&data_version.to_le_bytes());
-        out.extend_from_slice(&change_number.to_le_bytes());
-        out.extend_from_slice(&(data.len() as i32).to_le_bytes());
-        out.extend_from_slice(data);
+        if version >= MODS_VERSION_CURRENT {
+            // v7: blobs are already in their on-disk form.
+            out.extend_from_slice(&data_version.to_le_bytes());
+            out.extend_from_slice(&change_number.to_le_bytes());
+            out.extend_from_slice(&(changes.len() as u32).to_le_bytes());
+            out.extend_from_slice(changes);
+            out.extend_from_slice(&(data.len() as u32).to_le_bytes());
+            out.extend_from_slice(data);
+        } else {
+            // Legacy v6 layout: re-encode the flat tree back to binary VDF.
+            let mut tree_reader = Reader::new(changes);
+            let mut st = StringTable::new();
+            encode_table(&mut tree_reader, &mut out, 0, false, &mut st)?;
+            out.extend_from_slice(&data_version.to_le_bytes());
+            out.extend_from_slice(&change_number.to_le_bytes());
+            out.extend_from_slice(&(data.len() as i32).to_le_bytes());
+            out.extend_from_slice(data);
+        }
     }
     Ok(out)
 }
@@ -1130,7 +1187,7 @@ pub unsafe extern "C" fn ste_mods_to_flat(
     )
 }
 
-/// Encodes a flat mods container into `mods.dat` bytes (current v6 layout).
+/// Encodes a flat mods container into `mods.dat` bytes (current v7 layout).
 ///
 /// # Safety
 /// `flat`/`flat_len` must describe a readable buffer.

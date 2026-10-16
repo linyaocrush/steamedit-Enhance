@@ -6,6 +6,7 @@ using System.Linq;
 using Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using steamedit_Enhance.Data;
+using steamedit_Enhance.Data.Native;
 
 namespace steamedit_EnhanceTests;
 
@@ -237,16 +238,17 @@ public class ModsTests
             var mods = Mods.Load(tempFile, appInfo, RealFileSystem.Instance);
             mods.Save(tempFile, RealFileSystem.Instance);
 
-            // 1) 落盘字节必须是标准 v6 布局（由 Rust 内核生成）。
+            // 1) 落盘字节必须是标准 v7 布局（由 Rust 内核生成）。
             using (var br = new BinaryReader(File.OpenRead(tempFile)))
             {
-                Assert.AreEqual(6u, br.ReadUInt32());
+                Assert.AreEqual(7u, br.ReadUInt32());
                 Assert.AreEqual(1, br.ReadInt32());
                 Assert.AreEqual(12345, br.ReadInt32());
-                var changes = PropertyTableIO.ReadPropertyTable_0x00000000(br);
-                Assert.AreEqual("Modified Game Name", changes.GetPropertyValue<string>(null!, "common", "name"));
                 Assert.AreEqual(0x07564429u, br.ReadUInt32());
                 Assert.AreEqual(100u, br.ReadUInt32());
+                int changesLen = br.ReadInt32();
+                var changes = FlatTableCodec.FromFlat(br.ReadBytes(changesLen));
+                Assert.AreEqual("Modified Game Name", changes.GetPropertyValue<string>(null!, "common", "name"));
                 int len = br.ReadInt32();
                 CollectionAssert.AreEqual(originalData, br.ReadBytes(len));
             }
@@ -263,6 +265,70 @@ public class ModsTests
             CollectionAssert.AreEqual(originalData, reloadedEntry.Modification.OriginalData);
             Assert.AreEqual("Modified Game Name",
                 reloadedEntry.Modification.Changes.GetPropertyValue<string>(null!, "common", "name"));
+        }
+        finally
+        {
+            File.Delete(tempFile);
+            if (File.Exists(tempFile + ".bak")) File.Delete(tempFile + ".bak");
+        }
+    }
+
+    [TestMethod]
+    public void Load_LegacyV6_Then_Save_MigratesToV7()
+    {
+        var originalData = CreateSampleOriginalData();
+        string tempFile = Path.Combine(Path.GetTempPath(), $"mods-legacy-{Guid.NewGuid():N}.dat");
+        try
+        {
+            // 手写一个 v6 老格式文件（Changes 为二进制 VDF）。
+            using (var bw = new BinaryWriter(File.Create(tempFile)))
+            {
+                bw.Write(6u);
+                bw.Write(1);
+                bw.Write(12345);
+                PropertyTableIO.WritePropertyTable_0x00000000(bw, CreateSampleChanges());
+                bw.Write(0x07564429u);
+                bw.Write(100u);
+                bw.Write(originalData.Length);
+                bw.Write(originalData);
+            }
+
+            // 读老格式：必须能还原。
+            var appInfo = new TestAppInfo();
+            var entry = new MockAppInfoEntry(12345);
+            appInfo.AddEntry(entry);
+            var mods = Mods.Load(tempFile, appInfo, RealFileSystem.Instance);
+
+            Assert.IsNotNull(entry.Modification);
+            Assert.AreEqual("Modified Game Name",
+                entry.Modification!.Changes.GetPropertyValue<string>(null!, "common", "name"));
+            CollectionAssert.AreEqual(originalData, entry.Modification.OriginalData);
+
+            // 保存：无缝升级为 v7。
+            mods.Save(tempFile, RealFileSystem.Instance);
+            using (var br = new BinaryReader(File.OpenRead(tempFile)))
+            {
+                Assert.AreEqual(7u, br.ReadUInt32());
+                Assert.AreEqual(1, br.ReadInt32());
+                Assert.AreEqual(12345, br.ReadInt32());
+                Assert.AreEqual(0x07564429u, br.ReadUInt32());
+                Assert.AreEqual(100u, br.ReadUInt32());
+                int changesLen = br.ReadInt32();
+                var changes = FlatTableCodec.FromFlat(br.ReadBytes(changesLen));
+                Assert.AreEqual("Modified Game Name", changes.GetPropertyValue<string>(null!, "common", "name"));
+                int dataLen = br.ReadInt32();
+                CollectionAssert.AreEqual(originalData, br.ReadBytes(dataLen));
+            }
+
+            // 再读 v7，内容不变。
+            var appInfo2 = new TestAppInfo();
+            var entry2 = new MockAppInfoEntry(12345);
+            appInfo2.AddEntry(entry2);
+            Mods.Load(tempFile, appInfo2, RealFileSystem.Instance);
+            Assert.IsNotNull(entry2.Modification);
+            Assert.AreEqual("Modified Game Name",
+                entry2.Modification!.Changes.GetPropertyValue<string>(null!, "common", "name"));
+            CollectionAssert.AreEqual(originalData, entry2.Modification.OriginalData);
         }
         finally
         {

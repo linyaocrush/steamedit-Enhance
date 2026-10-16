@@ -28,20 +28,11 @@ internal static class FlatTableCodec
 
     public static PropertyTable FromFlat(ReadOnlySpan<byte> flat, IList<string>? stringTable)
     {
-        int pos = 0;
-        return FromFlat(flat, ref pos, stringTable);
-    }
-
-    /// <summary>
-    /// Parses one table starting at <paramref name="pos"/> and advances it past the
-    /// table's end token. Used to read embedded tables (e.g. inside a mods container).
-    /// </summary>
-    public static PropertyTable FromFlat(ReadOnlySpan<byte> flat, ref int pos, IList<string>? stringTable)
-    {
         var root = new PropertyTable();
         var stack = new Stack<PropertyTable>();
         stack.Push(root);
 
+        int pos = 0;
         while (pos < flat.Length)
         {
             byte kind = flat[pos++];
