@@ -3,6 +3,16 @@
   <Var name="InPath" value=".\bin\Release\net10.0-windows\win-x64" />
   <Var name="OutPath" value=".\bin\Release\net10.0-windows\win-x64\obfuscated" />
 
+  <!-- 运行时依赖若干「名字」，绝不能重命名属性/字段：
+         * WinForms 数据绑定（BindingConfigurator 通过字符串属性名绑定 PropertyEditorViewModel）
+         * System.Text.Json 序列化（设置 SettingsData、术语库 GlossaryData、AI 请求的匿名类型）
+         * 枚举名解析（Enum.Parse / Enum.TryParse，如 Filters、FiltersShowEntries）
+         * 遗留设置格式的反射读取（Settings 的 PropertyInfo.Name）
+       RenameFields=false 同时保留枚举成员名（枚举成员即字段）。
+       类型名与方法名仍然会被混淆。 -->
+  <Var name="RenameProperties" value="false" />
+  <Var name="RenameFields" value="false" />
+
   <Module file="$(InPath)\steamedit-Enhance.dll">
     <SkipType name="steamedit_Enhance.Program" />
     <SkipType name="steamedit_Enhance.Resources.Strings" />

@@ -166,6 +166,13 @@ dotnet publish steamedit-Enhance.csproj -c Release -p:SelfContained=false -p:Pub
 > - 原始 DLL → `bin/Release/net10.0-windows/win-x64/obfuscated/steamedit-Enhance.dll`
 > - `PublishSingleFile=true` 时，publish 流程使用混淆后的 DLL 打包单文件 EXE
 > - 跳过类型：`Program`（入口点）、`Strings`（资源文件）
+> - **保留属性名与字段名**（`RenameProperties`/`RenameFields=false`）。程序在运行时依赖这些名字，
+>   重命名会导致启动即崩溃或设置丢失：
+>   - WinForms 数据绑定（`BindingConfigurator` 用字符串属性名绑定 `PropertyEditorViewModel`）
+>   - `System.Text.Json`（`SettingsData`、术语库、AI 请求的匿名类型）
+>   - `Enum.Parse`/`Enum.TryParse`（`Filters`、`FiltersShowEntries` 存的是枚举名）
+>   - 遗留设置的反射读取（`Settings` 的 `PropertyInfo.Name`）
+>   仅混淆类型名与方法名。
 
 ---
 

@@ -65,6 +65,8 @@
     </PropertyGroup>
     <Message Text="Obfuscar: Running obfuscation..." Importance="high" />
     <Exec Command="&quot;$(ObfuscarConsolePath)&quot; &quot;$(ObfuscarConfigPath)&quot;" ConsoleToMSBuild="true" />
+    <!-- 防止再次开启属性/字段重命名：程序运行时依赖这些名字（数据绑定 / JSON / 枚举名 / 反射）。 -->
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;&amp; { $p = '$(OutDir)obfuscated\$(AssemblyName).dll'; $s = [IO.File]::ReadAllText($p, [Text.Encoding]::GetEncoding(28591)); $missing = @(); foreach ($n in 'IsHidden','EnableCompleted','OnlyModified') { if ($s.IndexOf($n) -lt 0) { $missing += $n } }; if ($missing.Count -gt 0) { Write-Host ('OBFUSCATION CHECK FAILED: required member names were renamed: ' + ($missing -join ', ')); exit 1 }; Write-Host 'Obfuscation name check passed.' }&quot;" />
     <!-- 单文件发布：用混淆后的 DLL 覆盖原始 DLL，使 publish 流程使用混淆版本 -->
     <Copy SourceFiles="$(OutDir)obfuscated\$(AssemblyName).dll" DestinationFiles="$(OutDir)$(AssemblyName).dll" Condition="'$(PublishSingleFile)' == 'true'" />
     <Message Text="Obfuscar: Obfuscation complete - obfuscated output in $(OutDir)obfuscated\" Importance="high" />
