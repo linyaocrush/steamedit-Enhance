@@ -30,6 +30,34 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Native Rust core (steamedit-core). Built with cargo and shipped next to the EXE.
+       Missing cargo or a build failure is non-fatal: the app falls back to the managed codec. -->
+  <PropertyGroup>
+    <RustCoreDir>$(MSBuildProjectDirectory)\native\steamedit-core</RustCoreDir>
+    <RustCoreDll>$(RustCoreDir)\target\release\steamedit_core.dll</RustCoreDll>
+  </PropertyGroup>
+
+  <Target Name="BuildRustCore" BeforeTargets="BeforeBuild"
+          Condition="'$(OS)' == 'Windows_NT' And '$(SkipRustBuild)' != 'true' And Exists('$(RustCoreDir)\Cargo.toml')">
+    <Exec Command="cargo build --release --manifest-path &quot;$(RustCoreDir)\Cargo.toml&quot;"
+          ContinueOnError="true" />
+  </Target>
+
+  <Target Name="CopyRustCore" AfterTargets="Build">
+    <Copy SourceFiles="$(RustCoreDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"
+          Condition="Exists('$(RustCoreDll)')" />
+  </Target>
+
+  <!-- Ensure the native DLL is also placed next to the published EXE (incl. single-file publish). -->
+  <Target Name="IncludeRustCoreInPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup Condition="Exists('$(RustCoreDll)')">
+      <ResolvedFileToPublish Include="$(RustCoreDll)">
+        <RelativePath>steamedit_core.dll</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
   <Target Name="Obfuscar" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <PropertyGroup>
       <ObfuscarConfigPath>$(MSBuildProjectDirectory)\obfuscar.xml</ObfuscarConfigPath>

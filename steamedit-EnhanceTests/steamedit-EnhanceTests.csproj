@@ -13,4 +13,13 @@
   <ItemGroup>
     <ProjectReference Include="..\steamedit-Enhance.csproj" />
   </ItemGroup>
+
+  <!-- Copy the native Rust core next to the test binaries so the native codec can be exercised. -->
+  <PropertyGroup>
+    <RustCoreDll>$(MSBuildProjectDirectory)\..\native\steamedit-core\target\release\steamedit_core.dll</RustCoreDll>
+  </PropertyGroup>
+  <Target Name="CopyRustCoreTest" AfterTargets="Build">
+    <Copy SourceFiles="$(RustCoreDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"
+          Condition="Exists('$(RustCoreDll)')" />
+  </Target>
 </Project>

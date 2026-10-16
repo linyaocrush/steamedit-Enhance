@@ -27,9 +27,18 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	protected byte[] _stuffBeforeHash = null!;
 	protected uint _changeNumber;
-	protected byte[] _originalData = null!;
 	protected PropertyTable _properties = null!;
 	protected ModifiedEntry? _modifications;
+
+	/// <summary>
+	/// 原始属性表（未执行 base_name/base_type 还原前）在文件中的字节。
+	/// 用于惰性生成 <see cref="_originalData"/>，避免加载时对每个条目做
+	/// “深拷贝 + 全量序列化”。
+	/// </summary>
+	private byte[]? _rawTableData;
+
+	/// <summary>惰性缓存：归一化为 0x00000000 格式的原始属性表字节。</summary>
+	protected byte[]? _originalData;
 
 	public abstract uint AppInfoVersion { get; }
 
@@ -54,7 +63,7 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 					Log.WriteLine("{0:X8} {1} : ChangeNumber doesn't match. Assuming Steam updated, replacing data in Mod. Appinfo: {2:X8}; Mod: {3:X8}", ID, Name, _changeNumber, originalDataChangeNumber);
 					value.OriginalDataVersion = AppInfoVersion;
 					value.OriginalDataChangeNumber = ChangeNumber;
-					value.OriginalData = _originalData;
+					value.OriginalData = EnsureOriginalData();
 				}
 			}
 			ClearCachedProps();
@@ -236,9 +245,23 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 
 	public byte[] GetOriginalDataCopy()
 	{
-		if (_originalData == null)
+		return (byte[])EnsureOriginalData().Clone();
+	}
+
+	/// <summary>
+	/// 惰性生成并缓存“归一化为 0x00000000 格式的原始属性表字节”。
+	/// 加载阶段不再对每个条目做深拷贝 + 全量序列化，仅保存原始字节；
+	/// 只有真正需要（新建修改 / 还原）时才解析并序列化一次。
+	/// </summary>
+	internal byte[] EnsureOriginalData()
+	{
+		if (_originalData != null)
+			return _originalData;
+		if (_rawTableData == null)
 			throw new InvalidOperationException($"GetOriginalDataCopy called on entry {ID:X8} before original data was initialized.");
-		return (byte[])_originalData.Clone();
+		PropertyTable parsed = ReadPropertyTableFrom(new BinaryReader(new MemoryStream(_rawTableData, writable: false)));
+		_originalData = PropertyTableIO.WritePropertyTable_0x00000000(parsed);
+		return _originalData;
 	}
 
 	public T GetPropertyValue<T>(T defaultValue, params string[] propertyPath)
@@ -483,17 +506,23 @@ internal abstract class AppInfoEntryBase : IAppInfoEntry
 		int count = reader.ReadInt32();
 		if (count < 0)
 			throw new InvalidDataException($"Entry data size {count} is negative.");
-		using (BinaryReader subReader = new BinaryReader(new MemoryStream(reader.ReadBytes(count))))
+		byte[] entryData = reader.ReadBytes(count);
+		using (BinaryReader subReader = new BinaryReader(new MemoryStream(entryData)))
 		{
 			_stuffBeforeHash = subReader.ReadBytes(StuffBeforeHashSize);
 			subReader.ReadBytes(Sha1HashSize);
 			_changeNumber = subReader.ReadUInt32();
 			for (int i = 1; i < HashBlockCount; i++)
 				subReader.ReadBytes(Sha1HashSize);
-			_properties = ReadPropertyTableFrom(subReader);
-			PropertyTable originalTable = new PropertyTable(_properties);
+
+			// 保留原始属性表字节（0x00000000 归一化数据在需要时惰性生成）。
+			long tableStart = subReader.BaseStream.Position;
+			int tableLength = (int)(subReader.BaseStream.Length - tableStart);
+			_rawTableData = new byte[tableLength];
+			Array.Copy(entryData, tableStart, _rawTableData, 0, tableLength);
+
+			_properties = ReadPropertyTableFrom(new BinaryReader(new MemoryStream(_rawTableData, writable: false)));
 			RestoreBaseProperties();
-			_originalData = PropertyTableIO.WritePropertyTable_0x00000000(originalTable);
 		}
 		OnReadCompleted();
 		ClearCachedProps();
