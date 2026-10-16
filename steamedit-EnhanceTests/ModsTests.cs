@@ -215,6 +215,62 @@ public class ModsTests
         }
     }
 
+    [TestMethod]
+    public void Save_Then_Load_RoundTrips_ThroughRustCodec()
+    {
+        var originalData = CreateSampleOriginalData();
+        var appInfo = new TestAppInfo();
+        appInfo.AddEntry(new MockAppInfoEntry(12345)
+        {
+            Modification = new ModifiedEntry(12345)
+            {
+                Changes = CreateSampleChanges(),
+                OriginalData = originalData,
+                OriginalDataVersion = 0x07564429,
+                OriginalDataChangeNumber = 100
+            }
+        });
+
+        string tempFile = Path.Combine(Path.GetTempPath(), $"mods-{Guid.NewGuid():N}.dat");
+        try
+        {
+            var mods = Mods.Load(tempFile, appInfo, RealFileSystem.Instance);
+            mods.Save(tempFile, RealFileSystem.Instance);
+
+            // 1) 落盘字节必须是标准 v6 布局（由 Rust 内核生成）。
+            using (var br = new BinaryReader(File.OpenRead(tempFile)))
+            {
+                Assert.AreEqual(6u, br.ReadUInt32());
+                Assert.AreEqual(1, br.ReadInt32());
+                Assert.AreEqual(12345, br.ReadInt32());
+                var changes = PropertyTableIO.ReadPropertyTable_0x00000000(br);
+                Assert.AreEqual("Modified Game Name", changes.GetPropertyValue<string>(null!, "common", "name"));
+                Assert.AreEqual(0x07564429u, br.ReadUInt32());
+                Assert.AreEqual(100u, br.ReadUInt32());
+                int len = br.ReadInt32();
+                CollectionAssert.AreEqual(originalData, br.ReadBytes(len));
+            }
+
+            // 2) 重新加载必须还原 Changes / OriginalData。
+            var reloadedAppInfo = new TestAppInfo();
+            var reloadedEntry = new MockAppInfoEntry(12345);
+            reloadedAppInfo.AddEntry(reloadedEntry);
+            Mods.Load(tempFile, reloadedAppInfo, RealFileSystem.Instance);
+
+            Assert.IsNotNull(reloadedEntry.Modification);
+            Assert.AreEqual(100u, reloadedEntry.Modification!.OriginalDataChangeNumber);
+            Assert.AreEqual(0x07564429u, reloadedEntry.Modification.OriginalDataVersion);
+            CollectionAssert.AreEqual(originalData, reloadedEntry.Modification.OriginalData);
+            Assert.AreEqual("Modified Game Name",
+                reloadedEntry.Modification.Changes.GetPropertyValue<string>(null!, "common", "name"));
+        }
+        finally
+        {
+            File.Delete(tempFile);
+            if (File.Exists(tempFile + ".bak")) File.Delete(tempFile + ".bak");
+        }
+    }
+
     private class TestAppInfo : IAppInfo
     {
         private readonly List<IAppInfoEntry> _entries = new();

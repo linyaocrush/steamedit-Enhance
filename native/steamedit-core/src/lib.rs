@@ -29,6 +29,12 @@ const MAX_DEPTH: usize = 64;
 /// Maximum size of a single string, mirrors `MaxZStringBuffer` on the C# side.
 const MAX_STRING: usize = 1024 * 1024;
 
+// mods.dat layout constants (mirrors the legacy `Mods` reader).
+const MAX_MODS_ENTRIES: i32 = 100_000;
+const V4_UNKNOWN_FIELD_SIZE: usize = 36;
+const V4_CHANGE_NUMBER_OFFSET: usize = 20;
+const V4_MIN_DATA_SIZE: i32 = 60;
+
 // ── flat wire format ────────────────────────────────────────────────────────
 //
 // A flat stream is a depth-first sequence of tokens:
@@ -658,6 +664,123 @@ fn encode_table(
     }
 }
 
+// ── mods.dat (modified-entry store) ─────────────────────────────────────────
+
+/// Reads a `mods.dat` file into a flat container:
+/// `[u32 version][u32 count]` then per entry
+/// `[i32 id][properties-flat][u32 originalDataVersion][u32 changeNumber][u32 dataLen][data]`.
+///
+/// Unsupported versions produce a container with `count = 0` (mirrors the managed
+/// behaviour of logging and ignoring the file). Legacy v4/v5 layouts are handled.
+fn mods_to_flat(bytes: &[u8]) -> Result<Vec<u8>, String> {
+    let mut r = Reader::new(bytes);
+    let version = r.u32()?;
+    let mut out = Vec::with_capacity(bytes.len() + 16);
+    out.extend_from_slice(&version.to_le_bytes());
+
+    if !(4..=6).contains(&version) {
+        out.extend_from_slice(&0u32.to_le_bytes());
+        return Ok(out);
+    }
+
+    let count = r.i32()?;
+    if count < 0 || count > MAX_MODS_ENTRIES {
+        return Err(format!("Mods entry count {count} is out of valid range."));
+    }
+    if (count as usize) > r.remaining() / 8 {
+        return Err(format!(
+            "Mods entry count {count} exceeds available stream data."
+        ));
+    }
+    out.extend_from_slice(&(count as u32).to_le_bytes());
+
+    for _ in 0..count {
+        let id = r.i32()?;
+        out.extend_from_slice(&id.to_le_bytes());
+        decode_table(&mut r, &mut out, 0, false, &[])?;
+
+        // V4 has no OriginalDataVersion field (hard-coded 0).
+        let mut original_version = if version >= 5 { r.u32()? } else { 0u32 };
+
+        let (mut change_number, data): (u32, &[u8]) = if version <= 5 {
+            // V4/V5 legacy layout: dataSize, 36 unknown bytes, changeNumber, 20 unknown, data.
+            let data_size = r.i32()?;
+            let data_remaining = r.remaining() as i64;
+            if (data_size as i64) < V4_MIN_DATA_SIZE as i64 || (data_size as i64) > data_remaining {
+                return Err(format!(
+                    "Mods entry dataSize {data_size} is out of valid range (remaining={data_remaining})."
+                ));
+            }
+            r.take(V4_UNKNOWN_FIELD_SIZE)?;
+            let cn = r.u32()?;
+            r.take(V4_CHANGE_NUMBER_OFFSET)?;
+            let data_len = (data_size - V4_MIN_DATA_SIZE) as usize;
+            (cn, r.take(data_len)?)
+        } else {
+            // V6 compact layout: changeNumber, dataSize, data.
+            let cn = r.u32()?;
+            let data_size = r.i32()?;
+            if data_size < 0 {
+                return Err(format!("Mods entry dataSize {data_size} is negative."));
+            }
+            if data_size > 0 {
+                if (data_size as usize) > r.remaining() {
+                    return Err(format!(
+                        "Mods entry dataSize {data_size} exceeds available stream data (remaining={}).",
+                        r.remaining()
+                    ));
+                }
+                (cn, r.take(data_size as usize)?)
+            } else {
+                (cn, &[])
+            }
+        };
+
+        // V5: 0x07564429 entries did not persist original data.
+        let mut data = data;
+        if version == 5 && original_version >= 123094057 {
+            data = &[];
+            original_version = 0;
+            change_number = 0;
+        }
+
+        out.extend_from_slice(&original_version.to_le_bytes());
+        out.extend_from_slice(&change_number.to_le_bytes());
+        out.extend_from_slice(&(data.len() as u32).to_le_bytes());
+        out.extend_from_slice(data);
+    }
+    Ok(out)
+}
+
+/// Converts a mods flat container (see [`mods_to_flat`]) into `mods.dat` bytes
+/// (always the current v6 layout).
+fn mods_from_flat(flat: &[u8]) -> Result<Vec<u8>, String> {
+    let mut r = Reader::new(flat);
+    let version = r.u32()?;
+    let count = r.u32()?;
+    let mut out = Vec::with_capacity(flat.len());
+    out.extend_from_slice(&version.to_le_bytes());
+    out.extend_from_slice(&(count as i32).to_le_bytes());
+
+    for _ in 0..count {
+        let id = r.i32()?;
+        out.extend_from_slice(&id.to_le_bytes());
+        let mut st = StringTable::new();
+        encode_table(&mut r, &mut out, 0, false, &mut st)?;
+
+        let data_version = r.u32()?;
+        let change_number = r.u32()?;
+        let data_len = r.u32()? as usize;
+        let data = r.take(data_len)?;
+
+        out.extend_from_slice(&data_version.to_le_bytes());
+        out.extend_from_slice(&change_number.to_le_bytes());
+        out.extend_from_slice(&(data.len() as i32).to_le_bytes());
+        out.extend_from_slice(data);
+    }
+    Ok(out)
+}
+
 // ── error reporting ─────────────────────────────────────────────────────────
 
 static LAST_ERROR: Mutex<Option<CString>> = Mutex::new(None);
@@ -986,4 +1109,41 @@ pub unsafe extern "C" fn ste_pathset_free(p: *mut PathSet) {
     if !p.is_null() {
         drop(Box::from_raw(p));
     }
+}
+
+/// Decodes a `mods.dat` file into a flat mods container. See [`mods_to_flat`] for the
+/// container layout.
+///
+/// # Safety
+/// `src`/`src_len` must describe a readable buffer.
+#[no_mangle]
+pub unsafe extern "C" fn ste_mods_to_flat(
+    src: *const u8,
+    src_len: usize,
+    out_len: *mut usize,
+) -> *mut u8 {
+    let bytes = slice(src, src_len);
+    run(
+        || Ok((mods_to_flat(bytes)?, 0)),
+        out_len,
+        std::ptr::null_mut(),
+    )
+}
+
+/// Encodes a flat mods container into `mods.dat` bytes (current v6 layout).
+///
+/// # Safety
+/// `flat`/`flat_len` must describe a readable buffer.
+#[no_mangle]
+pub unsafe extern "C" fn ste_mods_from_flat(
+    flat: *const u8,
+    flat_len: usize,
+    out_len: *mut usize,
+) -> *mut u8 {
+    let bytes = slice(flat, flat_len);
+    run(
+        || Ok((mods_from_flat(bytes)?, 0)),
+        out_len,
+        std::ptr::null_mut(),
+    )
 }

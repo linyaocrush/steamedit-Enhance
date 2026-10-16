@@ -60,6 +60,12 @@ internal static unsafe class SteameditNative
     private static extern void ste_pathset_free(IntPtr pathset);
 
     [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+    private static extern byte* ste_mods_to_flat(byte* src, nuint srcLen, out nuint outLen);
+
+    [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+    private static extern byte* ste_mods_from_flat(byte* flat, nuint flatLen, out nuint outLen);
+
+    [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
     private static extern byte* ste_flat_to_vdf(byte* flat, nuint flatLen, out nuint outLen);
 
     [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
@@ -181,6 +187,26 @@ internal static unsafe class SteameditNative
     public static void PathSetFree(IntPtr pathset)
     {
         if (pathset != IntPtr.Zero) ste_pathset_free(pathset);
+    }
+
+    /// <summary>Decodes a <c>mods.dat</c> file into a flat mods container (null on failure).</summary>
+    public static byte[]? ModsToFlat(ReadOnlySpan<byte> src)
+    {
+        fixed (byte* p = src)
+        {
+            byte* outPtr = ste_mods_to_flat(p, (nuint)src.Length, out nuint len);
+            return outPtr == null ? null : CopyAndFree(outPtr, len);
+        }
+    }
+
+    /// <summary>Encodes a flat mods container into <c>mods.dat</c> bytes (null on failure).</summary>
+    public static byte[]? ModsFromFlat(ReadOnlySpan<byte> flat)
+    {
+        fixed (byte* p = flat)
+        {
+            byte* outPtr = ste_mods_from_flat(p, (nuint)flat.Length, out nuint len);
+            return outPtr == null ? null : CopyAndFree(outPtr, len);
+        }
     }
 
     private static byte[] CopyAndFree(byte* ptr, nuint len)
