@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -46,35 +45,30 @@ public class LoadPerfProbe
         if (path == null) { Assert.Inconclusive("未找到 appinfo.vdf（非 Steam 机器），跳过。"); return; }
 
         Console.WriteLine($"appinfo.vdf = {path}");
-        foreach (bool native in new[] { false, true })
+        var times = new System.Collections.Generic.List<long>();
+        long checksum = 0;
+        int count = 0;
+        for (int i = 0; i < 8; i++)
         {
-            PropertyTableIO.UseNative = native;
-            Console.WriteLine($"--- UseNative={native} (active={PropertyTableIO.Native}) ---");
-            var times = new List<long>();
-            long checksum = 0;
-            int count = 0;
-            for (int i = 0; i < 8; i++)
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            var sw = Stopwatch.StartNew();
+            var data = AppInfoFactory.Load(path);
+            var entries = data.Entries.ToList();
+            // Simulate GameListViewModel.Refresh(): read the hot fields for every entry.
+            foreach (var e in entries)
             {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                var sw = Stopwatch.StartNew();
-                var data = AppInfoFactory.Load(path);
-                var entries = data.Entries.ToList();
-                foreach (var e in entries)
-                {
-                    string name = e.Name ?? "";
-                    checksum += name.Length + (int)e.Type + (e.IsHidden ? 1 : 0) + (e.IsCompleted ? 1 : 0);
-                    checksum += e.NormalizedSortAs.Length;
-                }
-                sw.Stop();
-                count = entries.Count;
-                if (i > 0) times.Add(sw.ElapsedMilliseconds);
+                string name = e.Name ?? "";
+                checksum += name.Length + (int)e.Type + (e.IsHidden ? 1 : 0) + (e.IsCompleted ? 1 : 0);
+                checksum += e.NormalizedSortAs.Length;
             }
-            times.Sort();
-            double avg = times.Sum() / (double)times.Count;
-            Console.WriteLine($"  best={times[0]} ms  avg={avg:F0} ms  min2={times[1]} ms  entries={count}  checksum={checksum}");
-            Assert.IsTrue(count > 0);
+            sw.Stop();
+            count = entries.Count;
+            if (i > 0) times.Add(sw.ElapsedMilliseconds);
         }
-        PropertyTableIO.UseNative = true;
+        times.Sort();
+        double avg = times.Sum() / (double)times.Count;
+        Console.WriteLine($"  best={times[0]} ms  avg={avg:F0} ms  entries={count}  checksum={checksum}");
+        Assert.IsTrue(count > 0);
     }
 }

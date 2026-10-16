@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Common;
+using steamedit_Enhance.Data.Native;
 
 namespace steamedit_Enhance.Data.Impl;
 
@@ -18,7 +19,6 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 
 	protected override PropertyTable ReadSummaryFrom(BinaryReader reader)
 		=> PropertyTableIO.ReadPropertyTableSparse_0x07564429(reader, _stringTable!);
-
 	protected override void OnReadCompleted(PropertyTable table)
 	{
 		if (!table.HasProperty(AppInfoPaths.NameLocalized))
@@ -42,11 +42,11 @@ internal class AppInfoEntry_0x07564429 : AppInfoEntryBase
 	public static AppInfoEntry_0x07564429? FromReader(BinaryReader reader, IList<string> stringTable)
 		=> ReadFromReader<AppInfoEntry_0x07564429>(reader, entry => entry._stringTable = stringTable);
 
-	public void Write(BinaryWriter writer, List<string> stringTable, Dictionary<string, uint> stringLookup)
+	public void Write(BinaryWriter writer, NativeStringTable stringTable)
 	{
 		WriteEntryCore(writer, 2, (subWriter, table) =>
 		{
-			byte[] tableData = PropertyTableIO.WritePropertyTable_0x07564429(table, stringTable, stringLookup);
+			byte[] tableData = PropertyTableIO.WritePropertyTable_0x07564429(table, stringTable);
 			subWriter.Write(tableData);
 		});
 	}

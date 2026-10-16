@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace steamedit_Enhance.Data.Native;
@@ -9,34 +10,34 @@ namespace steamedit_Enhance.Data.Native;
 /// the hot <c>appinfo.vdf</c> property-table codec.
 /// </summary>
 /// <remarks>
-/// Every method returns <c>null</c> on failure; the native message is then available via
-/// <see cref="LastError"/>. When the library is not present, <see cref="Available"/> is
-/// <c>false</c> and callers must fall back to the managed codec. The native build can be
-/// suppressed entirely with the <c>STEAMEDIT_DISABLE_NATIVE=1</c> environment variable.
+/// The native kernel is <b>mandatory</b>: this build ships no managed fallback. Call
+/// <see cref="EnsureLoaded"/> during static initialization to fail fast with a clear,
+/// actionable message if the library cannot be loaded.
 /// </remarks>
 internal static unsafe class SteameditNative
 {
     private const string Dll = "steamedit_core";
 
-    /// <summary>True when the native library loaded and native code paths may be used.</summary>
-    public static bool Available { get; } = Probe();
-
-    private static bool Probe()
+    /// <summary>
+    /// Verifies the native kernel can be loaded and an expected export resolves.
+    /// Throws an actionable exception otherwise — there is no managed fallback.
+    /// </summary>
+    public static void EnsureLoaded()
     {
-        string? disable = Environment.GetEnvironmentVariable("STEAMEDIT_DISABLE_NATIVE");
-        if (disable is "1" or "true" or "TRUE")
-            return false;
         try
         {
             if (!NativeLibrary.TryLoad(Dll, out IntPtr handle) || handle == IntPtr.Zero)
-                return false;
-            // Smoke-test that an expected entry point resolves (guards against a stale/foreign DLL).
+                throw new DllNotFoundException($"无法加载 {Dll}.dll");
+            // Resolve a known entry point to guard against a stale/foreign DLL of the same name.
             _ = ste_last_error();
-            return true;
         }
-        catch
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
         {
-            return false;
+            throw new InvalidOperationException(
+                $"原生内核 \"{Dll}.dll\" 不可用，且本版本不再提供托管回退，无法继续。" +
+                $"请确认该 DLL 与程序位于同一目录。" +
+                $"手动构建：cargo build --release --manifest-path native/steamedit-core/Cargo.toml",
+                ex);
         }
     }
 
@@ -215,6 +216,25 @@ internal sealed class NativeStringTable : IDisposable
     public IntPtr Handle => _handle;
 
     public byte[]? Dump() => SteameditNative.StrTabDump(_handle);
+
+    /// <summary>Exports the table as an index-ordered string list (used for index-resolving decodes/tests).</summary>
+    public List<string> ToList()
+    {
+        var list = new List<string>();
+        byte[]? dump = Dump();
+        if (dump == null) return list;
+        int pos = 0;
+        uint count = BitConverter.ToUInt32(dump, pos);
+        pos += 4;
+        for (uint i = 0; i < count; i++)
+        {
+            uint len = BitConverter.ToUInt32(dump, pos);
+            pos += 4;
+            list.Add(System.Text.Encoding.UTF8.GetString(dump, pos, (int)len));
+            pos += (int)len;
+        }
+        return list;
+    }
 
     public void Dispose()
     {

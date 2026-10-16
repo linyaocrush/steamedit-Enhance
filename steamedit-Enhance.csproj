@@ -30,8 +30,8 @@
     </PackageReference>
   </ItemGroup>
 
-  <!-- Native Rust core (steamedit-core). Built with cargo and shipped next to the EXE.
-       Missing cargo or a build failure is non-fatal: the app falls back to the managed codec. -->
+  <!-- Native Rust core (steamedit-core). The kernel is mandatory — there is no managed
+       fallback — so a missing toolchain or a failed build is a hard error. -->
   <PropertyGroup>
     <RustCoreDir>$(MSBuildProjectDirectory)\native\steamedit-core</RustCoreDir>
     <RustCoreDll>$(RustCoreDir)\target\release\steamedit_core.dll</RustCoreDll>
@@ -39,13 +39,13 @@
 
   <Target Name="BuildRustCore" BeforeTargets="BeforeBuild"
           Condition="'$(OS)' == 'Windows_NT' And '$(SkipRustBuild)' != 'true' And Exists('$(RustCoreDir)\Cargo.toml')">
-    <Exec Command="cargo build --release --manifest-path &quot;$(RustCoreDir)\Cargo.toml&quot;"
-          ContinueOnError="true" />
+    <Exec Command="cargo build --release --manifest-path &quot;$(RustCoreDir)\Cargo.toml&quot;" />
   </Target>
 
   <Target Name="CopyRustCore" AfterTargets="Build">
-    <Copy SourceFiles="$(RustCoreDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"
-          Condition="Exists('$(RustCoreDll)')" />
+    <Error Text="原生内核未生成：$(RustCoreDll) 不存在。本版本仅使用 Rust 内核，请安装 Rust 工具链后重新构建。"
+           Condition="!Exists('$(RustCoreDll)')" />
+    <Copy SourceFiles="$(RustCoreDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 
   <!-- Ensure the native DLL is also placed next to the published EXE (incl. single-file publish). -->

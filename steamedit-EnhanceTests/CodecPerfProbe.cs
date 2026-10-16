@@ -2,15 +2,14 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using steamedit_Enhance.Data;
+using steamedit_Enhance.Data.Native;
 
 namespace steamedit_EnhanceTests;
 
 /// <summary>
-/// 编解码器微基准：在“大属性表”上对比原生（Rust）与托管实现，
-/// 排除条目级对象图构建带来的噪声。
+/// 编解码器微基准：直接在“大属性表”上压测原生（Rust）内核的编解码吞吐。
 /// </summary>
 [TestClass]
 [TestCategory("Perf")]
@@ -49,53 +48,31 @@ public class CodecPerfProbe
     }
 
     [TestMethod]
-    public void CodecNativeVsManaged()
+    public void CodecThroughput()
     {
         var table = BuildTable(2000);
         const int iterations = 30;
 
-        foreach (bool native in new[] { false, true })
+        byte[] encoded = Array.Empty<byte>();
+        long encodeMs = Time(() => encoded = PropertyTableIO.WritePropertyTable_0x00000000(table), iterations);
+        long decodeMs = Time(() =>
         {
-            PropertyTableIO.UseNative = native;
-            bool active = PropertyTableIO.Native;
+            using var ms = new MemoryStream(encoded);
+            using var br = new BinaryReader(ms);
+            PropertyTableIO.ReadPropertyTable_0x00000000(br);
+        }, iterations);
+        Console.WriteLine($"0x00000000 encoded={encoded.Length} bytes  encode={encodeMs} ms  decode={decodeMs} ms  ({iterations} iters)");
 
-            byte[] encoded = Array.Empty<byte>();
-            long encodeMs = Time(() => encoded = PropertyTableIO.WritePropertyTable_0x00000000(table), iterations);
-
-            long decodeMs = Time(() =>
-            {
-                using var ms = new MemoryStream(encoded);
-                using var br = new BinaryReader(ms);
-                PropertyTableIO.ReadPropertyTable_0x00000000(br);
-            }, iterations);
-
-            Console.WriteLine($"0x00000000 UseNative={native} (active={active}) encoded={encoded.Length} bytes  " +
-                              $"encode={encodeMs} ms  decode={decodeMs} ms  ({iterations} iters)");
-        }
-
-        // 0x07564429 (string-table format): the real-world encoding for modern appinfo.vdf.
-        var stringTable = new System.Collections.Generic.List<string>();
-        var stringLookup = new System.Collections.Generic.Dictionary<string, uint>();
         var table29 = BuildTable(2000);
-        foreach (bool native in new[] { false, true })
+        using var strtab = NativeStringTable.CreateEmpty();
+        byte[] encoded29 = PropertyTableIO.WritePropertyTable_0x07564429(table29, strtab);
+        var strings = strtab.ToList();
+        long decode29Ms = Time(() =>
         {
-            PropertyTableIO.UseNative = native;
-            bool active = PropertyTableIO.Native;
-
-            stringTable.Clear();
-            stringLookup.Clear();
-            byte[] encoded = PropertyTableIO.WritePropertyTable_0x07564429(table29, stringTable, stringLookup);
-
-            long decodeMs = Time(() =>
-            {
-                using var ms = new MemoryStream(encoded);
-                using var br = new BinaryReader(ms);
-                PropertyTableIO.ReadPropertyTable_0x07564429(br, stringTable);
-            }, iterations);
-
-            Console.WriteLine($"0x07564429 UseNative={native} (active={active}) encoded={encoded.Length} bytes  " +
-                              $"stringTable={stringTable.Count}  decode={decodeMs} ms  ({iterations} iters)");
-        }
-        PropertyTableIO.UseNative = true;
+            using var ms = new MemoryStream(encoded29);
+            using var br = new BinaryReader(ms);
+            PropertyTableIO.ReadPropertyTable_0x07564429(br, strings);
+        }, iterations);
+        Console.WriteLine($"0x07564429 encoded={encoded29.Length} bytes  stringTable={strings.Count}  decode={decode29Ms} ms  ({iterations} iters)");
     }
 }

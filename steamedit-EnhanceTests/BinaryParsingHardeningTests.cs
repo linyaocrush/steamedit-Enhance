@@ -156,7 +156,7 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ReadWideString_0x07564429_IndexOutOfBounds_ThrowsInvalidDataException()
+    public void ReadPropertyTable_0x07564429_IndexOutOfBounds_ThrowsInvalidDataException()
     {
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
@@ -176,7 +176,7 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ReadWideString_0x07564429_MaxUIntIndex_ThrowsInvalidDataException()
+    public void ReadPropertyTable_0x07564429_MaxUIntIndex_ThrowsInvalidDataException()
     {
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
@@ -225,7 +225,7 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ReadPropertyTableCore_DepthExceeds64_ThrowsInvalidDataException()
+    public void ReadPropertyTable_DepthExceeds64_ThrowsInvalidDataException()
     {
         // Build binary data with 65 nested Table properties
         using var ms = new MemoryStream();
@@ -252,7 +252,7 @@ public class BinaryParsingHardeningTests
     }
 
     [TestMethod]
-    public void ReadPropertyTableCore_DepthExactly64_DoesNotThrow()
+    public void ReadPropertyTable_DepthExactly64_DoesNotThrow()
     {
         // Build binary data with exactly 64 nested Table properties (at the limit)
         using var ms = new MemoryStream();

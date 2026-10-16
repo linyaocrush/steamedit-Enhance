@@ -1,6 +1,6 @@
 #nullable enable
-using System.Collections.Generic;
 using System.IO;
+using steamedit_Enhance.Data.Native;
 
 namespace steamedit_Enhance.Data.Impl;
 
@@ -35,18 +35,15 @@ internal class AppInfo_0x07564429 : AppInfoBase<AppInfoEntry_0x07564429>
 
 	protected override void SaveEntries(BinaryWriter writer)
 	{
-		var stringTable = new List<string>();
-		var stringLookup = new Dictionary<string, uint>();
+		using var stringTable = NativeStringTable.CreateEmpty();
 		using var entryWriter = new BinaryWriter(new MemoryStream());
 		foreach (var entry in Entries)
-			((AppInfoEntry_0x07564429)entry).Write(entryWriter, stringTable, stringLookup);
+			((AppInfoEntry_0x07564429)entry).Write(entryWriter, stringTable);
 		entryWriter.Write(0);
 		// 写入字符串表偏移量 → 条目数据 → 字符串表
 		long stringTableOffsetPos = writer.BaseStream.Position + 8 + entryWriter.BaseStream.Length;
 		writer.Write(stringTableOffsetPos);
 		writer.Write(((MemoryStream)entryWriter.BaseStream).ToArray());
-		writer.Write((uint)stringTable.Count);
-		foreach (string s in stringTable)
-			PropertyTableIO.WriteZString(writer, s);
+		PropertyTableIO.WriteStringTableDump(writer, stringTable.Dump()!);
 	}
 }

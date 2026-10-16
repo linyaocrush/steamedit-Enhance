@@ -2,7 +2,6 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -10,18 +9,15 @@ using steamedit_Enhance.Data.Native;
 
 namespace steamedit_Enhance.Data;
 
+/// <summary>
+/// appinfo.vdf 属性表编解码器。
+/// 实现完全由原生 Rust 内核（<c>steamedit-core</c>）提供，**没有托管回退**：
+/// 原生库不可用时静态构造会抛出带修复指引的异常。
+/// 仅字符串表（ZString）的读写保留在此处——它属于文件级结构，不参与属性表编解码。
+/// </summary>
 internal static class PropertyTableIO
 {
 	private const int MaxZStringBuffer = 1024 * 1024; // 1MB cap to prevent OOM on malformed files
-
-	/// <summary>
-	/// 是否优先使用原生（Rust）编解码器。原生库缺失或设置 <c>STEAMEDIT_DISABLE_NATIVE=1</c>
-	/// 时自动回退到托管实现。默认开启。
-	/// </summary>
-	internal static bool UseNative { get; set; } = true;
-
-	/// <summary>当前是否实际走原生路径（原生库可用且未被关闭）。</summary>
-	internal static bool Native => UseNative && SteameditNative.Available;
 
 	/// <summary>缓存 <c>IList&lt;string&gt;</c> 字符串表对应的原生 dump，避免每个条目重复序列化。</summary>
 	private static readonly ConditionalWeakTable<object, byte[]> s_stringTableDumps = new();
@@ -30,7 +26,13 @@ internal static class PropertyTableIO
 	private static readonly ConditionalWeakTable<object, NativeStringTable> s_nativeStringTables = new();
 
 	/// <summary>全局热路径句柄（进程生命周期内复用）。</summary>
-	private static readonly IntPtr s_hotPathSet = SteameditNative.Available ? BuildHotPathSet() : IntPtr.Zero;
+	private static readonly IntPtr s_hotPathSet;
+
+	static PropertyTableIO()
+	{
+		SteameditNative.EnsureLoaded();
+		s_hotPathSet = BuildHotPathSet();
+	}
 
 	private static IntPtr BuildHotPathSet()
 	{
@@ -117,6 +119,8 @@ internal static class PropertyTableIO
 			return buffer;
 		});
 	}
+
+	// ── 文件级字符串表（ZString）：不属于属性表编解码，保留托管实现 ──
 
 	internal static string ReadZString(BinaryReader reader)
 	{
@@ -209,269 +213,84 @@ internal static class PropertyTableIO
 		}
 	}
 
-	private static string ReadString_0x00000000(BinaryReader reader) => ReadZString(reader);
-
-	private static string ReadWideString_0x00000000(BinaryReader reader)
+	/// <summary>把原生字符串表 dump（<c>[u32 count][(u32 len)(utf8)]*</c>）按文件格式写出。</summary>
+	internal static void WriteStringTableDump(BinaryWriter writer, byte[] dump)
 	{
-		long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
-		if (remaining <= 0)
-			throw new InvalidDataException("ReadWideString: no data remaining");
-
-		int byteCount = (int)Math.Min(remaining, MaxZStringBuffer);
-		byte[] buffer = ArrayPool<byte>.Shared.Rent(byteCount);
-		try
+		int pos = 0;
+		uint count = BitConverter.ToUInt32(dump, pos);
+		pos += 4;
+		writer.Write(count);
+		for (uint i = 0; i < count; i++)
 		{
-			reader.Read(buffer, 0, byteCount);
-			int nullPos = -1;
-			for (int i = 0; i < byteCount - 1; i += 2)
-			{
-				if (buffer[i] == 0 && buffer[i + 1] == 0)
-				{
-					nullPos = i;
-					break;
-				}
-			}
-			if (nullPos < 0)
-				throw new InvalidDataException("ReadWideString: null terminator not found");
-			// 将流位置回退到 null 终止符之后
-			reader.BaseStream.Position -= byteCount - (nullPos + 2);
-			return Encoding.Unicode.GetString(buffer, 0, nullPos);
-		}
-		finally
-		{
-			ArrayPool<byte>.Shared.Return(buffer);
+			uint len = BitConverter.ToUInt32(dump, pos);
+			pos += 4;
+			writer.Write(dump, pos, (int)len);
+			writer.Write((byte)0);
+			pos += (int)len;
 		}
 	}
 
-	internal static void WriteString_0x00000000(BinaryWriter writer, string str) => WriteZString(writer, str);
-
-	internal static void WriteWideString_0x00000000(BinaryWriter writer, string str)
-	{
-		byte[] bytes = Encoding.Unicode.GetBytes(str);
-		writer.Write(bytes);
-		writer.Write((ushort)0);
-	}
-
-	private static string ReadWideString_0x07564429(BinaryReader reader, IList<string> stringTable)
-	{
-		uint index = reader.ReadUInt32();
-		if (index >= (uint)stringTable.Count)
-			throw new InvalidDataException(
-				$"String table index {index} out of range (table size={stringTable.Count}). File may be corrupted.");
-		return stringTable[(int)index];
-	}
-
-	internal static void WriteWideString_0x07564429(BinaryWriter writer, string str, List<string> stringTable, Dictionary<string, uint> stringLookup)
-	{
-		uint value = uint.MaxValue;
-		if (!stringLookup.TryGetValue(str, out value))
-		{
-			value = (uint)stringTable.Count;
-			stringTable.Add(str);
-			stringLookup.Add(str, value);
-		}
-		writer.Write(value);
-	}
-
-	private static Color ReadColor_0x00000000(BinaryReader reader)
-	{
-		byte red = reader.ReadByte();
-		byte green = reader.ReadByte();
-		byte blue = reader.ReadByte();
-		return Color.FromArgb(red, green, blue);
-	}
-
-	private static void WriteColor_0x00000000(BinaryWriter writer, Color color)
-	{
-		writer.Write(color.R);
-		writer.Write(color.G);
-		writer.Write(color.B);
-	}
-
-	// ── Core read/write with delegate injection ──
-
-	private static PropertyTable ReadPropertyTableCore(
-		BinaryReader reader,
-		Func<BinaryReader, string> readName,
-		Func<BinaryReader, string> readWString,
-		int depth = 0)
-	{
-		if (depth > PropertyTable.MaxNestingDepth)
-			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {PropertyTable.MaxNestingDepth}. File may be corrupted.");
-
-		PropertyTable propertyTable = new PropertyTable();
-		PropertyType propertyType;
-		while ((propertyType = (PropertyType)reader.ReadByte()) != PropertyType._EndOfTable_)
-		{
-			string name = readName(reader);
-			propertyTable.AddPropertyValue(value: propertyType switch
-			{
-				PropertyType.Table => ReadPropertyTableCore(reader, readName, readWString, depth + 1),
-				PropertyType.String => ReadString_0x00000000(reader),
-				PropertyType.WString => readWString(reader),
-				PropertyType.Int32 => reader.ReadInt32(),
-				PropertyType.Uint64 => reader.ReadUInt64(),
-				PropertyType.Float => reader.ReadSingle(),
-				PropertyType.Color => ReadColor_0x00000000(reader),
-				_ => throw new InvalidDataException("Unknown property type " + (byte)propertyType + " at position " + reader.BaseStream.Position + ". File may be corrupted."),
-			}, name: name, type: propertyType);
-		}
-		return propertyTable;
-	}
-
-	private static void WritePropertyTableCore(
-		BinaryWriter writer,
-		PropertyTable table,
-		Action<BinaryWriter, string> writeName,
-		Action<BinaryWriter, string> writeWString,
-		int depth = 0)
-	{
-		if (depth > PropertyTable.MaxNestingDepth)
-			throw new InvalidDataException($"Property table nesting depth {depth} exceeds maximum {PropertyTable.MaxNestingDepth}.");
-
-		foreach (Property property in table.Properties)
-		{
-			writer.Write((byte)property.PropertyType);
-			writeName(writer, property.Name);
-			switch (property.PropertyType)
-			{
-			case PropertyType.Table:
-				WritePropertyTableCore(writer, (PropertyTable)property.Value!, writeName, writeWString, depth + 1);
-				break;
-			case PropertyType.String:
-				WriteString_0x00000000(writer, (string)property.Value!);
-				break;
-			case PropertyType.WString:
-				writeWString(writer, (string)property.Value!);
-				break;
-			case PropertyType.Int32:
-				writer.Write((int)property.Value!);
-				break;
-			case PropertyType.Uint64:
-				writer.Write((ulong)property.Value!);
-				break;
-			case PropertyType.Float:
-				writer.Write((float)property.Value!);
-				break;
-			case PropertyType.Color:
-				WriteColor_0x00000000(writer, (Color)property.Value!);
-				break;
-			default:
-				throw new InvalidDataException("The property type " + property.PropertyType.ToString() + " has not been implemented.");
-			}
-		}
-		writer.Write((byte)PropertyType._EndOfTable_);
-	}
-
-	// ── Public API: thin wrappers (native when available, managed otherwise) ──
+	// ── 属性表读取（全部走原生内核） ──
 
 	public static PropertyTable ReadPropertyTable_0x00000000(BinaryReader reader)
-	{
-		if (Native)
-		{
-			long start = reader.BaseStream.Position;
-			if (TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
-			{
-				byte[]? flat = SteameditNative.VdfToFlat(src, out int consumed);
-				if (flat == null)
-					throw new InvalidDataException(SteameditNative.LastError);
-				reader.BaseStream.Position = start + consumed;
-				return FlatTableCodec.FromFlat(flat);
-			}
-		}
-		return ReadPropertyTableCore(reader, ReadString_0x00000000, ReadWideString_0x00000000);
-	}
-
-	public static void WritePropertyTable_0x00000000(BinaryWriter writer, PropertyTable table)
-	{
-		if (Native)
-		{
-			byte[]? data = SteameditNative.FlatToVdf(FlatTableCodec.ToFlat(table));
-			if (data == null)
-				throw new InvalidDataException(SteameditNative.LastError);
-			writer.Write(data);
-			return;
-		}
-		WritePropertyTableCore(writer, table, WriteString_0x00000000, WriteWideString_0x00000000);
-	}
-
-	public static byte[] WritePropertyTable_0x00000000(PropertyTable table)
-	{
-		if (Native)
-		{
-			byte[]? data = SteameditNative.FlatToVdf(FlatTableCodec.ToFlat(table));
-			if (data == null)
-				throw new InvalidDataException(SteameditNative.LastError);
-			return data;
-		}
-		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
-		WritePropertyTableCore(binaryWriter, table, WriteString_0x00000000, WriteWideString_0x00000000);
-		return ((MemoryStream)binaryWriter.BaseStream).ToArray();
-	}
-
-	public static PropertyTable ReadPropertyTable_0x07564429(BinaryReader reader, IList<string> stringTable)
-	{
-		if (Native)
-		{
-			long start = reader.BaseStream.Position;
-			if (TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
-			{
-				NativeStringTable nativeTable = GetNativeStringTable(stringTable);
-				byte[]? flat = SteameditNative.VdfToFlat07564429(src, nativeTable.Handle, out int consumed);
-				if (flat == null)
-					throw new InvalidDataException(SteameditNative.LastError);
-				reader.BaseStream.Position = start + consumed;
-				return FlatTableCodec.FromFlat(flat, stringTable);
-			}
-		}
-		return ReadPropertyTableCore(reader, r => ReadWideString_0x07564429(r, stringTable), r => ReadWideString_0x07564429(r, stringTable));
-	}
-
-	public static void WritePropertyTable_0x07564429(BinaryWriter writer, PropertyTable table, List<string> stringTable, Dictionary<string, uint> stringLookup)
-		=> WritePropertyTableCore(writer, table, (w, s) => WriteWideString_0x07564429(w, s, stringTable, stringLookup), (w, s) => WriteWideString_0x07564429(w, s, stringTable, stringLookup));
-
-	public static byte[] WritePropertyTable_0x07564429(PropertyTable table, List<string> stringTable, Dictionary<string, uint> stringLookup)
-	{
-		using BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
-		WritePropertyTable_0x07564429(binaryWriter, table, stringTable, stringLookup);
-		return ((MemoryStream)binaryWriter.BaseStream).ToArray();
-	}
-
-	// ── Sparse (hot-path) reads: emit only the paths the list UI needs; the rest of
-	//    the entry is materialized later on demand from the retained raw bytes. ──
+		=> ReadNative(reader, format29: false, IntPtr.Zero, stringTable: null, sparse: false);
 
 	public static PropertyTable ReadPropertyTableSparse_0x00000000(BinaryReader reader)
-	{
-		if (Native && s_hotPathSet != IntPtr.Zero)
-		{
-			long start = reader.BaseStream.Position;
-			if (TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
-			{
-				byte[]? flat = SteameditNative.VdfToFlatSparse(src, format29: false, IntPtr.Zero, s_hotPathSet, out int consumed);
-				if (flat == null)
-					throw new InvalidDataException(SteameditNative.LastError);
-				reader.BaseStream.Position = start + consumed;
-				return FlatTableCodec.FromFlat(flat);
-			}
-		}
-		return ReadPropertyTable_0x00000000(reader);
-	}
+		=> ReadNative(reader, format29: false, IntPtr.Zero, stringTable: null, sparse: true);
+
+	public static PropertyTable ReadPropertyTable_0x07564429(BinaryReader reader, IList<string> stringTable)
+		=> ReadNative(reader, format29: true, GetNativeStringTable(stringTable).Handle, stringTable, sparse: false);
 
 	public static PropertyTable ReadPropertyTableSparse_0x07564429(BinaryReader reader, IList<string> stringTable)
+		=> ReadNative(reader, format29: true, GetNativeStringTable(stringTable).Handle, stringTable, sparse: true);
+
+	private static PropertyTable ReadNative(BinaryReader reader, bool format29, IntPtr strtab, IList<string>? stringTable, bool sparse)
 	{
-		if (Native && s_hotPathSet != IntPtr.Zero)
-		{
-			long start = reader.BaseStream.Position;
-			if (TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
-			{
-				NativeStringTable nativeTable = GetNativeStringTable(stringTable);
-				byte[]? flat = SteameditNative.VdfToFlatSparse(src, format29: true, nativeTable.Handle, s_hotPathSet, out int consumed);
-				if (flat == null)
-					throw new InvalidDataException(SteameditNative.LastError);
-				reader.BaseStream.Position = start + consumed;
-				return FlatTableCodec.FromFlat(flat, stringTable);
-			}
-		}
-		return ReadPropertyTable_0x07564429(reader, stringTable);
+		long start = reader.BaseStream.Position;
+		if (!TryGetRemainingSource(reader, start, out ReadOnlySpan<byte> src))
+			throw new InvalidDataException("Property table data is empty; cannot decode.");
+
+		byte[]? flat;
+		int consumed;
+		if (sparse)
+			flat = SteameditNative.VdfToFlatSparse(src, format29, strtab, s_hotPathSet, out consumed);
+		else if (format29)
+			flat = SteameditNative.VdfToFlat07564429(src, strtab, out consumed);
+		else
+			flat = SteameditNative.VdfToFlat(src, out consumed);
+
+		if (flat == null)
+			throw new InvalidDataException(SteameditNative.LastError);
+		reader.BaseStream.Position = start + consumed;
+		return FlatTableCodec.FromFlat(flat, stringTable);
+	}
+
+	// ── 属性表写入（全部走原生内核） ──
+
+	public static void WritePropertyTable_0x00000000(BinaryWriter writer, PropertyTable table)
+		=> writer.Write(Encode0x00000000(table));
+
+	public static byte[] WritePropertyTable_0x00000000(PropertyTable table) => Encode0x00000000(table);
+
+	public static void WritePropertyTable_0x07564429(BinaryWriter writer, PropertyTable table, NativeStringTable stringTable)
+		=> writer.Write(Encode0x07564429(table, stringTable));
+
+	public static byte[] WritePropertyTable_0x07564429(PropertyTable table, NativeStringTable stringTable)
+		=> Encode0x07564429(table, stringTable);
+
+	private static byte[] Encode0x00000000(PropertyTable table)
+	{
+		byte[]? data = SteameditNative.FlatToVdf(FlatTableCodec.ToFlat(table));
+		if (data == null)
+			throw new InvalidDataException(SteameditNative.LastError);
+		return data;
+	}
+
+	private static byte[] Encode0x07564429(PropertyTable table, NativeStringTable stringTable)
+	{
+		byte[]? data = SteameditNative.FlatToVdf07564429(FlatTableCodec.ToFlat(table), stringTable.Handle);
+		if (data == null)
+			throw new InvalidDataException(SteameditNative.LastError);
+		return data;
 	}
 }

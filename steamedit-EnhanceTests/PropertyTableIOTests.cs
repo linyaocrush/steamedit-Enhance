@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using steamedit_Enhance.Data;
+using steamedit_Enhance.Data.Native;
 
 namespace steamedit_EnhanceTests;
 
@@ -61,14 +62,13 @@ public class PropertyTableIOTests
     public void Roundtrip_0x07564429_AllTypes()
     {
         var original = CreateSampleTable();
-        var stringTable = new List<string>();
-        var stringLookup = new Dictionary<string, uint>();
+        using var stringTable = NativeStringTable.CreateEmpty();
         using var ms = new MemoryStream();
         using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
-            PropertyTableIO.WritePropertyTable_0x07564429(writer, original, stringTable, stringLookup);
+            PropertyTableIO.WritePropertyTable_0x07564429(writer, original, stringTable);
         ms.Position = 0;
         using var reader = new BinaryReader(ms);
-        var loaded = PropertyTableIO.ReadPropertyTable_0x07564429(reader, stringTable);
+        var loaded = PropertyTableIO.ReadPropertyTable_0x07564429(reader, stringTable.ToList());
         Assert.AreEqual("Hello", loaded.GetPropertyValue<string>("str"));
         Assert.AreEqual(42, loaded.GetPropertyValue<int>("int"));
         var nested = loaded.GetPropertyValue<PropertyTable>("table");
@@ -80,14 +80,13 @@ public class PropertyTableIOTests
     public void Roundtrip_0x07564429_EmptyTable()
     {
         var original = new PropertyTable();
-        var stringTable = new List<string>();
-        var stringLookup = new Dictionary<string, uint>();
+        using var stringTable = NativeStringTable.CreateEmpty();
         using var ms = new MemoryStream();
         using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
-            PropertyTableIO.WritePropertyTable_0x07564429(writer, original, stringTable, stringLookup);
+            PropertyTableIO.WritePropertyTable_0x07564429(writer, original, stringTable);
         ms.Position = 0;
         using var reader = new BinaryReader(ms);
-        var loaded = PropertyTableIO.ReadPropertyTable_0x07564429(reader, stringTable);
+        var loaded = PropertyTableIO.ReadPropertyTable_0x07564429(reader, stringTable.ToList());
         Assert.AreEqual(0, loaded.Count);
     }
 
@@ -125,14 +124,13 @@ public class PropertyTableIOTests
         for (int i = 0; i < 100; i++)
             original.AddPropertyValue($"prop{i}", PropertyType.String, $"value{i}");
 
-        var stringTable = new List<string>();
-        var stringLookup = new Dictionary<string, uint>();
+        using var stringTable = NativeStringTable.CreateEmpty();
         using var ms = new MemoryStream();
         using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
-            PropertyTableIO.WritePropertyTable_0x07564429(writer, original, stringTable, stringLookup);
+            PropertyTableIO.WritePropertyTable_0x07564429(writer, original, stringTable);
         ms.Position = 0;
         using var reader = new BinaryReader(ms);
-        var loaded = PropertyTableIO.ReadPropertyTable_0x07564429(reader, stringTable);
+        var loaded = PropertyTableIO.ReadPropertyTable_0x07564429(reader, stringTable.ToList());
         for (int i = 0; i < 100; i++)
             Assert.AreEqual($"value{i}", loaded.GetPropertyValue<string>($"prop{i}"));
     }
