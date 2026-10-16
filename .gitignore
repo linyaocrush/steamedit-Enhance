@@ -1,4 +1,5 @@
 **/bin/
 **/obj/
 AGENTS.md
+dist/
 native/steamedit-core/target/
