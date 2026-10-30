@@ -21,6 +21,7 @@ internal class GameListManager : IDisposable
 	private readonly Timer _filterDebounceTimer = new();
 	private readonly EventHandler _onLanguageChangedHandler;
 	private bool _refreshingGamesListAfterEdit;
+	private bool _pendingListRefresh;
 
 	public GameListDrawer Drawer { get; }
 	public GameListInputHandler InputHandler { get; }
@@ -75,7 +76,7 @@ internal class GameListManager : IDisposable
 
 		// 创建子组件
 		Drawer = new GameListDrawer(viewModel, appSelection, _ctx, filterImages);
-		InputHandler = new GameListInputHandler(Drawer, appSelection, toolTips, idx => GetEntryToolTip(_ctx.Entries[idx]), _ctx.Entries);
+		InputHandler = new GameListInputHandler(Drawer, appSelection, toolTips, idx => GetEntryToolTip(_ctx.Entries[idx]));
 		MenuBuilder = new GameListMenuBuilder(viewModel, filterImages, filterSelectorMenu, sortSelectorMenu, appSelection);
 
 		// 菜单事件转发
@@ -127,12 +128,9 @@ internal class GameListManager : IDisposable
 
 		// 列表事件
 		appSelection.SelectedIndexChanged += OnAppSelection_SelectedIndexChanged;
-		appSelection.SizeChanged += (_, _) =>
-		{
-			if (appSelection.Columns.Count > 0)
-				appSelection.Columns[0].Width = appSelection.ClientSize.Width - 4;
-			_appSelection.Invalidate();
-		};
+		// 监听 ClientSizeChanged：滚动条出现/消失时控件 Size 可能不变而 ClientSize 变化，
+		// 只看 SizeChanged 会让列宽停留在旧值上。
+		appSelection.ClientSizeChanged += (_, _) => UpdateListColumnWidth();
 		appSelection.RetrieveVirtualItem += (_, e) => e.Item = new ListViewItem();
 
 		// 搜索文本
@@ -181,6 +179,7 @@ internal class GameListManager : IDisposable
 
 	public void RefreshGameList()
 	{
+		_pendingListRefresh = false;
 		var selected = GetSelectedEntry();
 		_viewModel.Refresh();
 		SyncFromViewModel();
@@ -224,15 +223,9 @@ internal class GameListManager : IDisposable
 
 	public void NotifyEntryEdited(IAppInfoEntry entry)
 	{
-		InvalidateDisplayName(entry);
-		_refreshingGamesListAfterEdit = true;
-		try
-		{
-		}
-		finally
-		{
-			_refreshingGamesListAfterEdit = false;
-		}
+		// 编辑（例如修改游戏名称）时不立即重建列表：保留显示名缓存与当前选中项，
+		// 等用户点选另一条游戏后再统一刷新（见 OnAppSelection_SelectedIndexChanged）。
+		_pendingListRefresh = true;
 		InvalidateItem(entry);
 	}
 
@@ -240,6 +233,7 @@ internal class GameListManager : IDisposable
 
 	public void NotifyEntryReverted(IAppInfoEntry entry)
 	{
+		_pendingListRefresh = false;
 		ClearDisplayNameCache();
 		_viewModel.Refresh();
 		SyncFromViewModel();
@@ -251,6 +245,8 @@ internal class GameListManager : IDisposable
 
 	private void SyncFromViewModel()
 	{
+		// 列表已经整体重建，编辑后遗留的延迟刷新标记不再需要
+		_pendingListRefresh = false;
 		var allEntries = new List<IAppInfoEntry>(_viewModel.AllGames.Count);
 		var visibleEntries = new List<IAppInfoEntry>(_viewModel.VisibleGames.Count);
 		foreach (var g in _viewModel.AllGames)
@@ -263,10 +259,26 @@ internal class GameListManager : IDisposable
 		RebuildListBoxItems();
 	}
 
+	/// <summary>
+	/// 让列宽跟随客户区宽度变化，避免窗口缩放（或分栏拖动）后列宽与可视区域失配。
+	/// </summary>
+	private void UpdateListColumnWidth()
+	{
+		if (_appSelection.Columns.Count == 0) return;
+		int width = Math.Max(0, _appSelection.ClientSize.Width - 4);
+		if (_appSelection.Columns[0].Width != width)
+			_appSelection.Columns[0].Width = width;
+	}
+
 	private void RebuildListBoxItems()
 	{
-		_appSelection.VirtualListSize = _ctx.Entries.Count;
-		_appSelection.Invalidate();
+		int count = _ctx.Entries.Count;
+		if (_appSelection.VirtualListSize != count)
+			_appSelection.VirtualListSize = count;
+		UpdateListColumnWidth();
+		// 虚拟列表重建后必须整块重绘：只调用 Invalidate() 时，WinForms 可能只重绘局部区域，
+		// 未被重绘的行会残留旧像素——表现为切换筛选后大量空白行、点击到某行后才显示名称。
+		_appSelection.Refresh();
 	}
 
 	private void RestoreSelection(IAppInfoEntry? selected)
@@ -302,8 +314,47 @@ internal class GameListManager : IDisposable
 
 	private void OnAppSelection_SelectedIndexChanged(object? sender, EventArgs e)
 	{
-		if (!_refreshingGamesListAfterEdit)
-			SelectedEntryChanged?.Invoke(this, GetSelectedEntry()!);
+		if (_refreshingGamesListAfterEdit) return;
+
+		ApplyPendingRefresh();
+
+		var entry = GetSelectedEntry();
+		if (entry != null)
+			SelectedEntryChanged?.Invoke(this, entry);
+	}
+
+	/// <summary>
+	/// 是否还有编辑后待应用的延迟刷新（点选另一条游戏时才应用）。
+	/// </summary>
+	internal bool HasPendingListRefresh => _pendingListRefresh;
+
+	/// <summary>
+	/// 编辑后延迟刷新：在用户点选另一条游戏时重建列表，并保持当前选中的条目。
+	/// </summary>
+	/// <returns>本次是否执行了刷新。</returns>
+	internal bool ApplyPendingRefresh()
+	{
+		if (!_pendingListRefresh) return false;
+		_pendingListRefresh = false;
+		RefreshAfterDeferredEdit();
+		return true;
+	}
+
+	private void RefreshAfterDeferredEdit()
+	{
+		var selected = GetSelectedEntry();
+		_refreshingGamesListAfterEdit = true;
+		try
+		{
+			ClearDisplayNameCache();
+			_viewModel.Refresh();
+			SyncFromViewModel();
+			RestoreSelection(selected);
+		}
+		finally
+		{
+			_refreshingGamesListAfterEdit = false;
+		}
 	}
 
 	private void ApplyBatchLanguage()
@@ -322,9 +373,9 @@ internal class GameListManager : IDisposable
 
 	private void OnEntryModified(object? sender, EventArgs e)
 	{
-		ClearDisplayNameCache();
-		_viewModel.Refresh();
-		SyncFromViewModel();
+		// AppInfo.Modified 会在每次属性变化时触发。这里只标记待刷新，
+		// 避免修改游戏名称时左侧列表立即重建。
+		_pendingListRefresh = true;
 	}
 
 	public void Dispose()

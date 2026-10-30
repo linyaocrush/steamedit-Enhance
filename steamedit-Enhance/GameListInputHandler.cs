@@ -14,7 +14,6 @@ internal sealed class GameListInputHandler : IDisposable
 	private readonly ListView _appSelection;
 	private readonly ToolTip _toolTips;
 	private readonly Func<int, string> _getToolTip;
-	private readonly IReadOnlyList<IAppInfoEntry> _entries;
 
 	private readonly Timer _appSearchTermTimer = new();
 	private readonly StringBuilder _appSearchTerm = new();
@@ -23,14 +22,12 @@ internal sealed class GameListInputHandler : IDisposable
 		GameListDrawer drawer,
 		ListView appSelection,
 		ToolTip toolTips,
-		Func<int, string> getToolTip,
-		IReadOnlyList<IAppInfoEntry> entries)
+		Func<int, string> getToolTip)
 	{
 		_drawer = drawer;
 		_appSelection = appSelection;
 		_toolTips = toolTips;
 		_getToolTip = getToolTip;
-		_entries = entries;
 
 		_appSearchTermTimer.Interval = 500;
 		_appSearchTermTimer.Tick += (_, _) => { _appSearchTerm.Clear(); _appSearchTermTimer.Stop(); };
@@ -50,9 +47,10 @@ internal sealed class GameListInputHandler : IDisposable
 		string text = _appSearchTerm.ToString();
 		int start = _appSelection.SelectedIndices.Count > 0 ? _appSelection.SelectedIndices[0] : 0;
 		if (text.Length == 1) start++;
-		for (int i = 0; i < _entries.Count; i++)
+		int count = _appSelection.VirtualListSize;
+		for (int i = 0; i < count; i++)
 		{
-			int idx = (start + i) % _entries.Count;
+			int idx = (start + i) % count;
 			if (_getToolTip(idx).StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
 			{
 				_appSelection.SelectedIndices.Clear();
@@ -65,7 +63,7 @@ internal sealed class GameListInputHandler : IDisposable
 	private void OnMouseMove(object? sender, MouseEventArgs e)
 	{
 		int idx = _appSelection.HitTest(e.Location).Item?.Index ?? -1;
-		if (idx >= 0 && idx < _entries.Count)
+		if (idx >= 0 && idx < _appSelection.VirtualListSize)
 		{
 			_drawer.LastHoverIndex = idx;
 			_toolTips.Active = false;
@@ -89,7 +87,7 @@ internal sealed class GameListInputHandler : IDisposable
 	{
 		if (e.Button != MouseButtons.Right) return;
 		int idx = _appSelection.HitTest(e.Location).Item?.Index ?? -1;
-		if (idx >= 0 && idx < _entries.Count)
+		if (idx >= 0 && idx < _appSelection.VirtualListSize)
 		{
 			if (_appSelection.SelectedIndices.Contains(idx))
 				return;

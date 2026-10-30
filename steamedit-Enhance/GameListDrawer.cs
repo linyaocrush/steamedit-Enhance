@@ -105,13 +105,21 @@ internal sealed class GameListDrawer : IDisposable
 	private void OnListViewDrawItem(object? sender, DrawListViewItemEventArgs e)
 	{
 		var entries = _ctx.Entries;
-		if (e.ItemIndex < 0 || e.ItemIndex >= entries.Count) return;
+		if (e.ItemIndex < 0) return;
+
+		Rectangle bounds = new Rectangle(0, e.Bounds.Y, _appSelection.ClientSize.Width, e.Bounds.Height);
+
+		if (e.ItemIndex >= entries.Count)
+		{
+			// 条目数少于虚拟列表尺寸时也要画出底色与分隔线，避免留下整块空白
+			e.Graphics.FillRectangle(_brushListBackColor, bounds);
+			e.Graphics.DrawLine(_penBorder, bounds.X, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+			return;
+		}
 
 		bool selected = e.Item.Selected;
 		bool focused = _appSelection.Focused;
 		bool hover = e.ItemIndex == _lastHoverIndex && !selected;
-
-		Rectangle bounds = new Rectangle(0, e.Bounds.Y, _appSelection.ClientSize.Width, e.Bounds.Height);
 
 		// Background
 		Brush backBrush;
